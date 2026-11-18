@@ -490,3 +490,10 @@
 .dot-reihe > .pet-punkt-weg {
   opacity: 0 !important;
 }
+
+/* Von einer Fledermaus ausgetrunkener Punkt (punkte.ts, 18.11.2026): der Ring
+   bleibt, die Füllung steht nur bis --pet-pegel und läuft langsam wieder voll.
+   !important, weil DotPool den Hintergrund inline setzt. */
+.dot-reihe > .pet-punkt-getrunken {
+  background: linear-gradient(to top, var(--pet-farbe) var(--pet-pegel, 100%), transparent var(--pet-pegel, 100%)) !important;
+}

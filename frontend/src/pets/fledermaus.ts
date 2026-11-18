@@ -23,11 +23,18 @@
  * - Bärbel will sie unbedingt fressen (flug.ts): sie flieht; ab und zu
  *   erwischt Bärbel sie, verschluckt sie, rülpst und spuckt sie zerzaust aus.
  * - Antippen = freuen, 3 s halten = packen und werfen (wie die anderen Pets).
+ * - Trinkt Punkte (Mark, 18.11.2026: „wie eine Fruitbat in die Kugel beißen und
+ *   sie dann austrinken“): schwebt flatternd unter einem gefüllten Punkt im
+ *   Charakterbogen, beißt hinein und trinkt ihn leer (Tropfen fliegen ins Maul),
+ *   gern die Reihe entlang. Nur Optik; der Punkt läuft in 10–15 Minuten wieder
+ *   voll (punkte.ts). Höchstens 6 je Besuch. Der Vampir wird dafür kurz wieder
+ *   zur Fledermaus.
  */
 
 import { PACKEN_MS, type Darstellung, type Masse, type Meldung, type Quelle, type Umgebung } from "./bewegung";
 import type { PetSteuerung } from "./flug";
 import { FLEDERMAUS_TAKT, type FledermausStufe } from "./fledermausstufen";
+import { nachbarPunkt, punktAnbeissen, punktLage, punktNachfuellen, punktTrinken, sichtbarePunkte, tropfen } from "./punkte";
 import { beuteTiere } from "./treffen";
 
 type Zustand =
@@ -47,6 +54,7 @@ type Zustand =
   | "wurf"
   | "verschluckt"
   | "taumeln"
+  | "trinken" // schwebt unter einem Punkt und trinkt ihn aus
   | "raus";
 
 /** Wo sie gerade ist: unter einer Kante hängend, auf etwas stehend, oder nirgends. */
@@ -81,6 +89,10 @@ const HUTPUFF_MS = 700;
 const VOLL_ZUTRAULICH = 40;
 /** Verschluckt, aber Bärbel spuckt nie aus (Tablet weg) — dann kommt sie selbst raus. */
 const NOTAUSGANG_MS = 8000;
+/** Punkte trinken (18.11.2026, Annahmen Neko): Biss, Austrinken, höchstens so viele je Besuch. */
+const BISS_MS = 320;
+const AUSTRINKEN_MS = 1900;
+const TRINK_MAX = 6;
 
 export class FledermausBewegung implements PetSteuerung {
   private x: number;
@@ -115,6 +127,11 @@ export class FledermausBewegung implements PetSteuerung {
   private rausGemeldet = false;
   private rausSeite: "links" | "rechts" | "oben" = "rechts";
   private verschlucktSeit = 0;
+  private trink: { id: string; t0: number } | null = null;
+  /** Von welcher Seite sie in die Kugel beißt (−1 links, 1 rechts). */
+  private trinkSeite = 1;
+  private getrunken = 0;
+  private naechstesTrinken: number;
 
   private masse: () => Masse;
   private u: Umgebung;
@@ -147,6 +164,7 @@ export class FledermausBewegung implements PetSteuerung {
     }
     this.besuchEnde = jetzt + BESUCH_MIN_MS + z() * (BESUCH_MAX_MS - BESUCH_MIN_MS);
     this.naechsteVerwandlung = jetzt + 8_000 + z() * 20_000;
+    this.naechstesTrinken = jetzt + 5_000 + z() * 12_000;
     this.flatternZu(this.zufallsZiel(), jetzt);
     beuteTiere.set(o.petId, {
       mitte: () => this.mitte(),
@@ -166,6 +184,7 @@ export class FledermausBewegung implements PetSteuerung {
   }
 
   aufraeumen() {
+    this.trinkAbbrechen();
     beuteTiere.delete(this.o.petId);
   }
 
@@ -259,6 +278,7 @@ export class FledermausBewegung implements PetSteuerung {
   // ── Abläufe ─────────────────────────────────────────────────────────────
 
   private flatternZu(ziel: { x: number; y: number }, jetzt: number, dort: ((jetzt: number) => void) | null = null) {
+    this.trinkAbbrechen();
     this.form = "fledermaus";
     this.ort = null;
     this.ziel = ziel;
@@ -390,6 +410,7 @@ export class FledermausBewegung implements PetSteuerung {
       });
       return;
     }
+    if (this.durstig(jetzt) && z() < 0.45 && this.trinkenStarten(jetzt)) return;
     const r = z();
     const f = this.vertrauen();
     const pVampir = 0.12 + 0.38 * f;
@@ -422,8 +443,69 @@ export class FledermausBewegung implements PetSteuerung {
     this.flatternZu(this.zufallsZiel(), jetzt);
   }
 
+  // ── Punkte trinken (18.11.2026) ─────────────────────────────────────────
+
+  /** Wo sie schwebt, um am Punkt zu trinken: seitlich daneben, schräg zur
+   *  Kugel geneigt, das Maul beißt in ihren Rand — die Kugel selbst bleibt
+   *  sichtbar (dort sieht man sie leer laufen). Maul im Flug-Streifen bei etwa
+   *  52 % der Höhe (Augen ~47 %). */
+  private trinkPlatz(id: string) {
+    const l = punktLage(id);
+    if (!l) return null;
+    const s = this.s();
+    const st = this.o.stufe;
+    const mx = l.x + this.trinkSeite * l.r * 1.15;
+    const my = l.y + l.r * 0.3;
+    return { x: mx - (st.breite / 2) * s, y: my - st.hoehe * 0.52 * s };
+  }
+
+  /** Durst? Einen gefüllten Punkt suchen, unter dem Platz zum Schweben ist. */
+  private durstig(jetzt: number) {
+    return jetzt > this.naechstesTrinken && this.getrunken < TRINK_MAX;
+  }
+
+  private trinkenStarten(jetzt: number): boolean {
+    const { bh } = this.masse();
+    const z = this.u.zufall;
+    const punkte = sichtbarePunkte().filter((p) => p.y > 30 && p.y + bh < this.u.hoehe - 4 && p.x > 10 && p.x < this.u.breite - 10);
+    if (!punkte.length) return false;
+    const p = punkte[Math.floor(z() * punkte.length)];
+    return this.zumPunkt(p.id, jetzt);
+  }
+
+  private zumPunkt(id: string, jetzt: number): boolean {
+    const l = punktLage(id);
+    if (l) this.trinkSeite = l.x < this.x + this.masse().bw / 2 ? 1 : -1;
+    const platz = this.trinkPlatz(id);
+    if (!platz) return false;
+    this.flatternZu(platz, jetzt, (j) => {
+      if (!punktAnbeissen(id)) {
+        this.entscheiden(j);
+        return;
+      }
+      this.trink = { id, t0: j };
+      this.zustand = "trinken";
+      this.setzeAnim(j);
+    });
+    return true;
+  }
+
+  /** Weggeflogen, gepackt, verschluckt: der Punkt läuft ab seinem Stand wieder voll. */
+  private trinkAbbrechen() {
+    if (!this.trink) return;
+    punktNachfuellen(this.trink.id);
+    this.trink = null;
+  }
+
   private entscheidenVampir(jetzt: number) {
     const z = this.u.zufall;
+    // Durst: kurz zurück zur Fledermaus, dann in einen Punkt beißen.
+    if (this.durstig(jetzt) && !this.hut && z() < 0.25 && sichtbarePunkte().length) {
+      this.zurFledermaus(jetzt, (j) => {
+        if (!this.trinkenStarten(j)) this.flatternZu(this.zufallsZiel(), j);
+      });
+      return;
+    }
     // Zeit ist um (oder sie muss weiter): Hut ab, dann zurück zur Fledermaus.
     if (jetzt > this.vampirBis || jetzt > this.besuchEnde) {
       if (this.hut) {
@@ -504,6 +586,7 @@ export class FledermausBewegung implements PetSteuerung {
 
   private verschlucken(jetzt: number): boolean {
     if (["gehalten", "getragen", "wurf", "verschluckt", "raus", "verwandeln"].includes(this.zustand)) return false;
+    this.trinkAbbrechen();
     this.form = "fledermaus";
     this.hut = false;
     this.ort = null;
@@ -674,6 +757,37 @@ export class FledermausBewegung implements PetSteuerung {
         if (jetzt > this.bis) this.flatternZu(this.zufallsZiel(), jetzt);
         break;
       }
+      case "trinken": {
+        const t = this.trink;
+        const platz = t && this.trinkPlatz(t.id);
+        if (!t || !platz) {
+          // Bogen zu oder weggescrollt: sie lässt los.
+          this.flatternZu(this.zufallsZiel(), jetzt);
+          break;
+        }
+        this.x = platz.x;
+        this.y = platz.y;
+        const k = (jetzt - t.t0 - BISS_MS) / AUSTRINKEN_MS;
+        if (k > 0) {
+          punktTrinken(t.id, 1 - k);
+          if (u.zufall() < dt * 14) {
+            const s = this.s();
+            tropfen(t.id, this.x + (this.o.stufe.breite / 2) * s, this.y + this.o.stufe.hoehe * 0.55 * s);
+          }
+        }
+        if (k >= 1) {
+          punktNachfuellen(t.id);
+          this.trink = null;
+          this.getrunken += 1;
+          // Die Reihe entlang weitertrinken — oder satt weiterfliegen.
+          const weiter = this.getrunken < TRINK_MAX && u.zufall() < 0.6 ? nachbarPunkt(t.id) : null;
+          if (weiter && this.zumPunkt(weiter, jetzt)) break;
+          this.naechstesTrinken = jetzt + 25_000 + u.zufall() * 35_000;
+          this.freudeStart = jetzt;
+          this.flatternZu({ x: this.x + (u.zufall() - 0.5) * 220, y: Math.max(10, this.y - 120 - u.zufall() * 120) }, jetzt);
+        }
+        break;
+      }
       case "verschluckt":
         if (jetzt - this.verschlucktSeit > NOTAUSGANG_MS) {
           const m = this.mitte();
@@ -704,6 +818,7 @@ export class FledermausBewegung implements PetSteuerung {
         if (jetzt - this.griff!.start >= PACKEN_MS) {
           // Gepackt: als Vampir puff zur Fledermaus — die flattert dann panisch am Finger.
           if (this.form === "vampir") this.hutPuff = jetzt;
+          this.trinkAbbrechen();
           this.form = "fledermaus";
           this.hut = false;
           this.ort = null;
@@ -743,6 +858,7 @@ export class FledermausBewegung implements PetSteuerung {
     this.zustand = this.griff.vorher;
     this.bis = this.griff.bis + dauer;
     this.vampirBis += dauer;
+    if (this.trink) this.trink.t0 += dauer;
     if (this.haeufchenUm) this.haeufchenUm += dauer;
     this.griff = null;
     this.fingerSpur = [];
@@ -874,6 +990,18 @@ export class FledermausBewegung implements PetSteuerung {
         animation = "taumeln";
         rot = Math.sin(jetzt / 90) * 25;
         break;
+      case "trinken": {
+        // Flatternd unter der Kugel: erst ein Ruck nach oben (Biss), dann saugen.
+        animation = "flattern";
+        // Kopf schräg zur Kugel geneigt, um das Maul gedreht.
+        rot = -this.trinkSeite * 24;
+        drehpunkt = `50% ${st.hoehe * 0.52 * s}px`;
+        flip = false;
+        const t = this.trink ? jetzt - this.trink.t0 : 1e9;
+        if (t < BISS_MS) top -= Math.sin((t / BISS_MS) * Math.PI) * 3 * s;
+        else top += Math.sin(jetzt / 110) * 1.2 * s;
+        break;
+      }
       case "verschluckt":
         animation = "flattern";
         frame = 0;

@@ -2,6 +2,13 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Fledermäuse trinken Punkte (18.11.2026)
+
+Mark: statt Blut Fertigkeits-/Attributpunkte austrinken, „wie eine Fruitbat in die Kugel beißen“, langsam wieder voll in 10–15 Minuten. Wiki: `entities/critter-pet.md` (Abschnitt Fledermäuse trinken Punkte).
+- `punkte.ts`: `punktAnbeissen`/`punktTrinken`/`punktNachfuellen`/`nachbarPunkt`/`tropfen`, Klasse `pet-punkt-getrunken` mit `--pet-pegel`/`--pet-farbe` (pets.css), Nachlauf-Uhr alle 3 s. Nur Optik, kein Server. `sichtbarePunkte` lässt angetrunkene Punkte aus (Tummy).
+- `fledermaus.ts`: Zustand `trinken` (schwebt seitlich, geneigt, Maul bei 52 % der Streifenhöhe), `TRINK_MAX = 6` je Besuch, Vampir wird dafür zur Fledermaus. Abbruch über `flatternZu`/Packen/Verschlucken → Punkt läuft ab Stand nach.
+- Getestet: Browser-Harness (Biss, Austrinken, Reihe entlang, Nachlaufen).
+
 ## KI-Reinigungslaser (18.11.2026)
 
 Mark: „ein Strahl, der an einem Punkt beginnt und immer schneller wird, bis er wie ein Fächer aussieht, der allen Schmutz der anderen Pets wegbrennt“. Wiki: `entities/critter-pet.md` (Abschnitt KI-Reinigungslaser).

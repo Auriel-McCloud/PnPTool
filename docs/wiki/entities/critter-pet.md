@@ -579,7 +579,7 @@ Vorschlag Neko dazu (offen):
 - Angetippt oder gepackt bricht der Schuss ab; danach macht sie mit dem Putzen weiter.
 - **Annahmen Neko:** Schusslänge ~3 s (Jagd kürzer), Abstand über der Spur, Fächerbreite je Stufe, höchstens 40 Schüsse je Putzrunde, Zeichen wachsen mit ihr; Schuldige ohne Spur-Verursacher (Datenpaket, Napf) zählen nicht; sie putzt keine Spuren, die ihre Stufe noch nicht kann, auch wenn sie wütend ist.
 
-## Fledermäuse trinken Punkte (Idee 18.11.2026, offen)
+## Fledermäuse trinken Punkte (18.11.2026, gebaut)
 
 Mark: „Die könnten die Fähigkeits- und Attributpunkte austrinken! So anstelle von Blut, und die füllen sich dann nur ganz langsam wieder auf, das könnte fast 10–15 Minuten dauern, bis die wieder ganz voll sind.“
 
@@ -589,6 +589,15 @@ Vorschlag Neko (offen):
 - Rückkehr: Punkt für Punkt, gestaffelt, bis alles nach 10–15 Minuten wieder voll ist; neu laden füllt sofort. Höchstens 6 Punkte je Besuch.
 - Vampirgestalt trinkt auch (beugt sich elegant über die Reihe, beißt zu).
 - Die KI holt getrunkene Punkte nicht zurück — die kommen ja von selbst.
+
+**Mark 18.11.:** „Ja passt super“ zum Vorschlag, dazu: „wie eine Fruitbat in die Kugel beißen und sie dann austrinken“.
+
+### Gebaut 18.11.2026
+
+- Die Fledermaus (alle Stufen) schwebt flatternd seitlich an einem gefüllten Punkt im Charakterbogen, schräg zur Kugel geneigt, beißt hinein (Kugel zuckt) und trinkt sie aus: die Füllung sinkt von oben, der Ring bleibt, Tropfen in der Punktfarbe fliegen ins Maul. Die Kugel liegt dabei vor ihrem Maul (über der Pet-Ebene). Danach trinkt sie oft den Nachbarn in derselben Reihe, sonst fliegt sie satt mit einer Freudenrolle weg.
+- Nur Optik (`punkte.ts`: `punktAnbeissen`/`punktTrinken`/`punktNachfuellen`, Klasse `pet-punkt-getrunken`, Füllstand `--pet-pegel`). Jeder ausgetrunkene Punkt läuft in 10–15 Minuten langsam wieder voll; neu laden füllt sofort. Der Tummy-Acher frisst keine angetrunkenen Punkte.
+- Als Vampir wird sie bei Durst kurz wieder zur Fledermaus und trinkt dann (Abweichung vom Vorschlag „beugt sich über die Reihe“: dafür gäbe es keine Pose; Mark wollte ohnehin den Fruitbat-Biss).
+- **Annahmen Neko:** höchstens 6 Punkte je Besuch, ein Punkt dauert ~2 s, Durst frühestens 5–17 s nach der Ankunft und nach dem Trinken 25–60 s Pause; Abbruch (gepackt, Bärbel, Feuer) lässt den Punkt ab seinem Stand nachlaufen.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 
