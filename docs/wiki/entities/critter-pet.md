@@ -550,6 +550,23 @@ Offene Fragen (am 18.11. gestellt, Vorschlag zuerst):
 - Anderes Pet im Fächer? Vorschlag: verrußt wie nach Bärbels Blitz und schüttelt sich ab. Alternativen: flüchtet; nichts.
 - Auslöser? Vorschlag: von selbst ab 3 Spuren auf dem Schirm, höchstens alle 2 Minuten. Alternativen: bei jeder Spur; nur auf Antippen des Besitzers.
 
+**Mark 18.11.:** „am Anfang nur kleine Dinge wegbrennen wie Kot oder Seiten, später dann Schleim und danach Brandflecken; er könnte auch lernen, den Tummy zu jagen und die Punkte zurückzuholen.“
+
+Vorschlag Neko dazu (offen):
+- Geist: dünner Punktstrahl, nur Häufchen und Seiten · Wesen: Strahl pendelt, dazu Schleim und Raureif · Entität: voller Fächer, dazu Brandflecken und Krater. Raureif und Krater hat Neko zugeordnet.
+- Tummy-Jagd ab Entität: hat der Tummy-Acher Punkte im Bauch, jagt die KI ihn und kitzelt ihn mit dem Strahl; er hickst, rülpst, die Punkte fliegen zurück (wie beim Streicheln, `punkte.ts::ausspucken`).
+
+## Fledermäuse trinken Punkte (Idee 18.11.2026, offen)
+
+Mark: „Die könnten die Fähigkeits- und Attributpunkte austrinken! So anstelle von Blut, und die füllen sich dann nur ganz langsam wieder auf, das könnte fast 10–15 Minuten dauern, bis die wieder ganz voll sind.“
+
+Vorschlag Neko (offen):
+- Nur Optik wie beim Tummy-Acher, der Wert bleibt gleich.
+- Fledermaus hängt kopfüber unter einer Punktereihe und saugt; die Punkte werden ausgehöhlt (Umriss bleibt) statt verschwinden.
+- Rückkehr: Punkt für Punkt, gestaffelt, bis alles nach 10–15 Minuten wieder voll ist; neu laden füllt sofort. Höchstens 6 Punkte je Besuch.
+- Vampirgestalt trinkt auch (beugt sich elegant über die Reihe, beißt zu).
+- Die KI holt getrunkene Punkte nicht zurück — die kommen ja von selbst.
+
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 
 - Wanderziel: nur Party-Mitglieder (Skizze 24.09.) oder alle eingeloggten
