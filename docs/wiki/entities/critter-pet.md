@@ -538,6 +538,18 @@ Mark hat das Bärbel-Duell abgenommen: meist entkommt die Fledermaus knapp, ab u
 - **Annahmen Neko:** Pausen, Dauern und Wahrscheinlichkeiten oben; Vampir-Laufen von vorn (Gehbewegung im Stand, der Rahmen wandert); Rauch dunkelviolett; Zylinder/Lüften und Gehstock nur beim erwachsenen Mann — **von Mark bestätigt 17.11.** („Den hat nur der Erwachsene!“).
 - Noch offen: Bärbel spuckt selbst Fledermäuse aus (Ideenliste); was der Vampir sonst noch tun könnte.
 
+## KI-Reinigungslaser (Idee 18.11.2026, offen)
+
+Mark: „ein Reinigungslaser! Ein Strahl, der an einem Punkt beginnt und dann immer schneller wird, bis er wie ein Fächer aussieht, der dann allen Schmutz der anderen Pets wegbrennen kann.“
+
+Skizze Neko (nichts entschieden): Die KI schwebt zum Schmutz, der Kern lädt sich auf, ein dünner Strahl in ihrer Farbe trifft einen Punkt am Boden, pendelt immer schneller, bis er als flimmernder Fächer steht. Alles im Fächer verdampft mit Funken und Rauchwölkchen. Passt zu „hinterlässt nichts“: die KI ist die Putzkraft der Pet-Bande.
+
+Offene Fragen (am 18.11. gestellt, Vorschlag zuerst):
+- Ab welcher Stufe? Vorschlag: ab Wesen, Entität mit breiterem Fächer. Alternativen: erst Entität, schon Geist.
+- Was brennt weg? Vorschlag: alle Spuren (Häufchen, Brandflecken, Krater, Raureif, Schleim, Seiten); Näpfe, Perle und Datenpakete bleiben.
+- Anderes Pet im Fächer? Vorschlag: verrußt wie nach Bärbels Blitz und schüttelt sich ab. Alternativen: flüchtet; nichts.
+- Auslöser? Vorschlag: von selbst ab 3 Spuren auf dem Schirm, höchstens alle 2 Minuten. Alternativen: bei jeder Spur; nur auf Antippen des Besitzers.
+
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 
 - Wanderziel: nur Party-Mitglieder (Skizze 24.09.) oder alle eingeloggten
