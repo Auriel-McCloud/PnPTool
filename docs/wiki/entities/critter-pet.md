@@ -556,6 +556,13 @@ Vorschlag Neko dazu (offen):
 - Geist: dünner Punktstrahl, nur Häufchen und Seiten · Wesen: Strahl pendelt, dazu Schleim und Raureif · Entität: voller Fächer, dazu Brandflecken und Krater. Raureif und Krater hat Neko zugeordnet.
 - Tummy-Jagd ab Entität: hat der Tummy-Acher Punkte im Bauch, jagt die KI ihn und kitzelt ihn mit dem Strahl; er hickst, rülpst, die Punkte fliegen zurück (wie beim Streicheln, `punkte.ts::ausspucken`).
 
+**Entschieden 18.11. (Mark):**
+- Feuert von selbst, fliegt dafür zum Schmutz hin.
+- Räumt alles auf, es bleiben keine Spuren übrig. **Lesart Neko:** sie putzt den Schirm komplett, soweit ihre Stufe die Spurart schon kann; Näpfe, Perle, Datenpakete sind keine Spuren.
+- Ab 3 Spuren auf dem Schirm schaltet sie in den Putzmodus: rotes **!** über dem Kopf.
+- Ab 10 Spuren ist sie wütend: drei blinkende **!** und das Anime-Zornader-Symbol (💢, rote gebogene Linien in Kreuzform).
+- Offen: anderes Pet im Fächer; Stufenzuordnung (Vorschlag oben) bestätigen.
+
 ## Fledermäuse trinken Punkte (Idee 18.11.2026, offen)
 
 Mark: „Die könnten die Fähigkeits- und Attributpunkte austrinken! So anstelle von Blut, und die füllen sich dann nur ganz langsam wieder auf, das könnte fast 10–15 Minuten dauern, bis die wieder ganz voll sind.“
