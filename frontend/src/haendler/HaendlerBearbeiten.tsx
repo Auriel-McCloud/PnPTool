@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { Fenster } from "../shell/Fenster";
-import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
+import { haendlerApi, type HaendlerEintrag, type PetSortimentEintrag, type SortimentEintrag } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { entitiesApi } from "../entities/api";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { TYP_KATALOG, symbolFuerTyp } from "../items/typKatalog";
 import { VorlagenAuswahlPopup } from "./VorlagenAuswahlPopup";
+import { PetAnbietenPopup } from "./PetAnbietenPopup";
 import { useNachladen } from "../shell/nachladen";
 import "./shop.css";
 
@@ -29,6 +30,7 @@ export function HaendlerBearbeiten({
   const [haendler, setHaendler] = useState<HaendlerEintrag | null>(null);
   const [sortiment, setSortiment] = useState<SortimentEintrag[]>([]);
   const [gegenstaende, setGegenstaende] = useState<GegenstandMitBesitzer[]>([]);
+  const [pets, setPets] = useState<PetSortimentEintrag[]>([]);
   const [läuft, setLäuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -37,23 +39,26 @@ export function HaendlerBearbeiten({
   const [mitBild, setMitBild] = useState(false);
 
   const [auswahlOffen, setAuswahlOffen] = useState(false);
+  const [petAnbietenOffen, setPetAnbietenOffen] = useState(false);
   const [rabattBearbeitet, setRabattBearbeitet] = useState<string | null>(null);
   const [rabattProzent, setRabattProzent] = useState("");
   const [rabattHinweis, setRabattHinweis] = useState("");
 
   async function holen() {
-    const [h, s, g] = await Promise.all([
+    const [h, s, g, p] = await Promise.all([
       haendlerApi.einzeln(campaignId, haendlerId),
       haendlerApi.sortiment(campaignId, haendlerId),
       itemsApi.listAlle(campaignId),
+      haendlerApi.petsSortiment(campaignId, haendlerId),
     ]);
-    return { h, s, g };
+    return { h, s, g, p };
   }
 
-  function anwenden(d: { h: HaendlerEintrag; s: SortimentEintrag[]; g: GegenstandMitBesitzer[] }) {
+  function anwenden(d: { h: HaendlerEintrag; s: SortimentEintrag[]; g: GegenstandMitBesitzer[]; p: PetSortimentEintrag[] }) {
     setHaendler(d.h);
     setSortiment(d.s);
     setGegenstaende(d.g);
+    setPets(d.p);
   }
 
   // Still nachladen wie Tutorial-Shop/ShopSeite — sonst bleibt der Preis im
@@ -117,6 +122,10 @@ export function HaendlerBearbeiten({
 
   async function wareEntfernen(gegenstandId: string) {
     await ausfuehren(() => haendlerApi.sortimentEntfernen(campaignId, haendlerId, gegenstandId));
+  }
+
+  async function petEntfernen(critterId: string) {
+    await ausfuehren(() => haendlerApi.petAusSortiment(campaignId, haendlerId, critterId));
   }
 
   function rabattBearbeiten(ware: SortimentEintrag) {
@@ -313,6 +322,49 @@ export function HaendlerBearbeiten({
             vorlagen={wählbareVorlagen}
             onHinzufuegen={vorlagenHinzufuegen}
             onSchliessen={() => setAuswahlOffen(false)}
+          />
+        </section>
+
+        <section>
+          <h3 className="gg-abschnitt">
+            <span>Pets im Angebot</span>
+            <span className="gg-abschnitt-zahl">{pets.length}</span>
+          </h3>
+          <p className="shop-ware-hinweis">
+            Fertig gebaute, noch besitzerlose Critter (Begleiter-Verwaltung) — ein Spieler kauft einen vollwertigen
+            Begleiter. Nur ein gekauftes Pet je Spieler; die Spielleitung darf weiterhin beliebig viele zuweisen.
+          </p>
+          <div className="shop-editor-liste">
+            {pets.map((p) => (
+              <div key={p.critterId} className="shop-editor-zeile">
+                <span className="shop-editor-zeile-name">{p.name}</span>
+                <span className="shop-editor-zeile-preis">{p.preis.toLocaleString("de-AT")}¥</span>
+                <span className="shop-editor-zeile-knoepfe">
+                  <button type="button" onClick={() => petEntfernen(p.critterId)} disabled={läuft}>
+                    Entfernen
+                  </button>
+                </span>
+              </div>
+            ))}
+            {pets.length === 0 && <p className="shop-leer">Kein Pet im Angebot.</p>}
+          </div>
+
+          <div className="shop-editor-hinzufuegen">
+            <button type="button" onClick={() => setPetAnbietenOffen(true)} disabled={läuft} style={{ flex: 1 }}>
+              Pet anbieten
+            </button>
+          </div>
+
+          <PetAnbietenPopup
+            offen={petAnbietenOffen}
+            campaignId={campaignId}
+            haendlerId={haendlerId}
+            bereitsImAngebot={pets}
+            onGeaendert={() => {
+              laden();
+              onGeaendert();
+            }}
+            onSchliessen={() => setPetAnbietenOffen(false)}
           />
         </section>
       </div>

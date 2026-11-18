@@ -53,6 +53,22 @@ export interface HaendlerGesicht {
   bildUrl: string;
 }
 
+/** Tierladen (18.11.2026): ein fertig gebauter Critter, den die SL über
+ * denselben Laden anbietet wie Gegenstände — Kauf erzeugt eine BEGLEITET-
+ * statt eine BESITZT-Kante. */
+export interface PetSortimentEintrag {
+  critterId: string;
+  name: string;
+  bildUrl: string;
+  petArt: string;
+  preis: number;
+}
+
+export interface PetKaufResponse {
+  critter: Record<string, unknown> | null;
+  kapitalNeu: number;
+}
+
 export interface HaendlerEintrag {
   id: string;
   name: string;
@@ -203,4 +219,17 @@ export const haendlerApi = {
     api.post<SortimentEintrag[]>(`${base(cid, haendlerId)}/unikat`, { name, typ, preis, description }),
   unikatEinhaengen: (cid: string, haendlerId: string, gegenstandId: string, preis?: number) =>
     api.post<SortimentEintrag[]>(`${base(cid, haendlerId)}/unikat-einhaengen`, { gegenstandId, preis }),
+
+  /** Tierladen (18.11.2026): Critter, die dieser Laden gerade verkauft. */
+  petsSortiment: (cid: string, haendlerId: string) =>
+    api.get<PetSortimentEintrag[]>(`${base(cid, haendlerId)}/pets`),
+  /** SL: hängt einen fertig gebauten, besitzerlosen Critter als Ware an den Laden. */
+  petVerkaufen: (cid: string, haendlerId: string, critterId: string, preis: number) =>
+    api.post<PetSortimentEintrag[]>(`${base(cid, haendlerId)}/pets`, { critterId, preis }),
+  /** SL: nimmt einen Critter wieder aus dem Angebot. */
+  petAusSortiment: (cid: string, haendlerId: string, critterId: string) =>
+    api.delete<PetSortimentEintrag[]>(`${base(cid, haendlerId)}/pets/${critterId}`),
+  /** Kauft einen Critter — 1-Begleiter-Limit gilt nur hier, siehe Backend. */
+  petKaufen: (cid: string, haendlerId: string, critterId: string, kaeuferPersonId?: string) =>
+    api.post<PetKaufResponse>(`${base(cid, haendlerId)}/pets/kaufen`, { critterId, kaeuferPersonId }),
 };

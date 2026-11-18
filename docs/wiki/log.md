@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-18] gebaut | Tierladen: Pet kaufen
+
+Spieler kaufen vorgefertigte Critter im Shop (eigener Reiter „Pets“, nur sichtbar wenn Angebot da und noch kein eigener Begleiter). SL baut den Critter fertig, bietet ihn ohne Besitzer über die VERKAUFT-Kante an; Kauf erzeugt BEGLEITET statt BESITZT. Limit 1 Begleiter pro Spieler nur beim Kauf, SL-Zuweisung bleibt unbegrenzt. Siehe [[entities/critter-pet]].
+
+## [2026-11-18] idee | Tierladen: Pet kaufen
+
+Spieler sollen vorgefertigte Critter im Shop kaufen können (eigener Reiter „Pets“, Limit 1 Begleiter pro Spieler nur beim Kauf, SL-Zuweisung bleibt unbegrenzt). Noch keine Datenmodell-Entscheidung, nur Skizze. Siehe [[entities/critter-pet]].
+
 ## [2026-11-18] gebaut | KI-Reinigungslaser
 
 Ab Geist brennt die KI Spuren weg (Punktstrahl → Fächer, je Stufe mehr Spur-Arten). Ab 3 Spuren rotes !, ab 10 wütend (drei !, Zornader, rot), jagt danach den Schuldigen über alle Tablets. Pets im Strahl verrußen; die Entität kitzelt dem Tummy-Acher die Punkte heraus. Siehe [[entities/critter-pet]].

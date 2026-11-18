@@ -130,6 +130,36 @@ class BestellungResponse(BaseModel):
     geliefertAm: str = ""
 
 
+class PetSortimentEintrag(BaseModel):
+    """Ein zum Verkauf stehender Critter (18.11.2026, Tierladen) — die SL baut
+    ihn fertig (voller Bogen) und bietet ihn über denselben `VERKAUFT`-
+    Kantentyp wie bei einem Unikat-Gegenstand an, nur das Ziel ist ein
+    Critter statt ein Gegenstand. Kein Vorlage/Kopie-Konzept nötig, jeder
+    gelistete Critter ist schon ein fertiges Einzelstück."""
+
+    critterId: str
+    name: str
+    bildUrl: str
+    petArt: str = ""
+    preis: int
+
+
+class PetVerkaufenRequest(BaseModel):
+    critterId: str
+    preis: int = 0
+
+
+class PetKaufRequest(BaseModel):
+    critterId: str
+    # Nur von der Spielleitung genutzt — dasselbe Muster wie KaufRequest.
+    kaeuferPersonId: str | None = None
+
+
+class PetKaufResponse(BaseModel):
+    critter: dict | None = None
+    kapitalNeu: int
+
+
 class HaendlerGesicht(BaseModel):
     """Porträt eines Händlers am Laden — Person bleibt für Kontakt/Verhandeln."""
 

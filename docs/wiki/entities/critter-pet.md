@@ -4,7 +4,7 @@ created: 2026-11-11
 updated: 2026-11-18
 type: entität
 tags: [ui, frontend, backend, datenmodell]
-sources: [../../ENTWICKLUNGSHISTORIE.md, gespräch 2026-11-11]
+sources: [../../ENTWICKLUNGSHISTORIE.md, gespräch 2026-11-11, gespräch 2026-11-18 (Tierladen)]
 status: teilweise-umgesetzt
 ---
 
@@ -610,6 +610,55 @@ Mark: „kannst du bitte für Bärbel die Animation machen, bei der sie Flederm�
 - **Antippen** scheucht eine Maus auf (sie fliegt weit weg); wegmachen kann sie nur Bärbel. SL „Alles sauber machen“ räumt sie mit weg.
 - **Annahmen Neko:** Niesen frühestens 20–60 s nach der Ankunft, danach 100–220 s Pause, nicht mehr ab 6 Mäusen im Bild; Jagdversuch alle 7–16 s, solange Mäuse da sind (nach dem Niesen erst 12–22 s flattern lassen); Ausweich-Chance 35 %; Tentakel bei hängender Maus 60 %, sonst Jagd mit Blitz; sie bleiben auf ihrem Tablet und wandern nicht mit (anders als die Perle); Feuer, Eis, Laser und die anderen Pets beachten sie noch nicht.
 - **Noch offen (Mark: „später“):** andere Pets jagen sie auch (z. B. Drache, Mongo, Vampir-Fledermaus).
+
+## Tierladen: Pet kaufen (gebaut 18.11.2026)
+
+Mark: „wie aufwändig wäre ein Petshop bei dem sich meine Spieler ein Pet
+kaufen könnten?“ — ein Laden, der Tiere UND Tiernahrung verkauft, wie das
+„in echt auch wäre“.
+
+**Entschieden (Mark, 18.11.):**
+- Die SL baut den Critter **fertig** (Begleiter-Verwaltung, volles Blatt,
+  Pet-Art, alles wie heute) — der Spieler baut sich nichts selbst
+  zusammen, er kauft ein fertiges Stück.
+- Käufer bekommt einen **vollwertigen Begleiter** (eigenes Blatt,
+  Kampfteilnahme — wie ein normaler Critter heute schon kann).
+- Im Laden ein **eigener Reiter „Pets“** neben der normalen Warenliste
+  (Tiernahrung bleibt ganz normal `istTierfutter`-Ware in der Liste).
+- **Limit 1 Begleiter pro Spieler — nur beim Kauf.** Die SL darf als SL
+  weiterhin beliebig viele Critter manuell zuweisen (Begleiter-Verwaltung,
+  unverändert). Der Shop-Kauf-Knopf prüft dagegen: hat der Käufer schon
+  **irgendeinen** `BEGLEITET`-Critter (egal ob SL-zugewiesen oder gekauft),
+  verweigert der Verkäufer den Verkauf — nicht nur „schon eins gekauft“.
+- Reiter nur sichtbar, wenn Pets im Angebot sind **und** der Spieler noch
+  keinen Begleiter hat. Kein eigener Ortstyp — derselbe Laden führt Tiere
+  und Tiernahrung zusammen.
+
+**Gebaut 18.11.2026:**
+- Ein zum Verkauf stehender Critter ist ein normaler `Person{istCritter}`
+  OHNE `BEGLEITET`-Kante, gelistet über dieselbe `Ort-[:VERKAUFT]->`-Kante
+  wie eine Unikat-Ware (Bärbel-Muster), nur das Ziel ist der Critter statt
+  ein `Gegenstand`. Preis direkt auf der Kante (`haendler/repository.py::
+  pets_sortiment`/`pet_verkaufen`/`pet_aus_sortiment_entfernen`/
+  `pet_regal_raeumen`).
+- SL-Seite: `HaendlerBearbeiten.tsx`, Abschnitt „Pets im Angebot“ +
+  `PetAnbietenPopup.tsx` (Picker aus besitzerlosen Crittern via
+  `entitiesApi.listCritter`, kein neuer Lookup-Endpunkt).
+- Kauf: `POST .../haendler/{id}/pets/kaufen` (`haendler/routes.py::
+  pet_kaufen`) — 1-Begleiter-Limit über `entities_repository.
+  critter_von_besitzer`, danach `haendler/uebergabe.py::critter_uebergeben`
+  (→ `critter_besitzer_setzen`, erzeugt `BEGLEITET` statt `BESITZT`).
+  Guthaben-/Tutorial-Buchung identisch zum Item-Kauf.
+- Frontend-Reiter: `ShopSeite.tsx` (Zustand `ansicht`), sichtbar nur wenn
+  `pets.length > 0 && meineCritter.length === 0` (`entitiesApi.
+  meineCritter`) — Kachel/Popup in `ShopPet.tsx`. Nur im normalen Shop,
+  NICHT im Tutorial-Shop (kein Freebee-Kauf).
+
+**Offen/Annahmen Neko:**
+- Ein Critter kann aktuell technisch an mehreren Läden gleichzeitig zum
+  Verkauf stehen (keine Sperre) — bewusst nicht verhindert, SL-Entscheidung.
+- Das 1-Begleiter-Limit zählt nur `Person{istCritter}` mit `BEGLEITET`,
+  nicht Bärbel/KI-Begleiter am Gegenstand.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

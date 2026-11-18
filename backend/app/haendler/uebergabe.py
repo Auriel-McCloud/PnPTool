@@ -137,3 +137,21 @@ async def unikat_einhaengen(
     verkaufspreis = None if preis is None else max(0, preis)
     if not await shop_repository.verkauft_hinzufuegen(campaign_id, shop_id, gegenstand_id, verkaufspreis):
         raise UnikatEinhangFehler("laden")
+
+
+async def critter_uebergeben(
+    campaign_id: str, shop_id: str, critter_id: str, kaeufer_id: str
+) -> dict | None:
+    """Gibt einen im Tierladen gekauften Critter an den Käufer (Tierladen,
+    18.11.2026) — dasselbe Grundmuster wie `stueck_uebergeben`, nur erzeugt
+    die Übergabe eine `BEGLEITET`- statt eine `BESITZT`-Kante (siehe
+    `entities/repository.py::critter_besitzer_setzen`). None, wenn der
+    Critter fehlt oder die Bindung fehlschlägt."""
+    from app.entities import repository as entities_repository
+    from app.haendler import repository as shop_repository
+
+    gekauft = await entities_repository.critter_besitzer_setzen(campaign_id, critter_id, kaeufer_id)
+    if gekauft is None:
+        return None
+    await shop_repository.pet_regal_raeumen(campaign_id, critter_id)
+    return gekauft

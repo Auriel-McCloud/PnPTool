@@ -21,7 +21,7 @@ from app.entities.visibility import is_visible_to, shop_fuer_viewer_sichtbar
 from app.haendler import repository
 from app.haendler import alltagswunsch
 from app.haendler import ki_vorschlag
-from app.haendler.uebergabe import UnikatEinhangFehler, regale_raeumen, stueck_uebergeben, unikat_anlegen, unikat_einhaengen
+from app.haendler.uebergabe import UnikatEinhangFehler, critter_uebergeben, regale_raeumen, stueck_uebergeben, unikat_anlegen, unikat_einhaengen
 from app.rassen import repository as rassen_repository
 from app.rassen.gratis_kauf import trifft as erster_kauf_gratis
 from app.haendler.ki_vorschlag import AnwendenErgebnis, SortimentVorschlag, VorschlaegeAntwort, WareAnlegenErgebnis
@@ -33,6 +33,10 @@ from app.haendler.schemas import (
     HaendlerEintrag,
     KaufRequest,
     KaufResponse,
+    PetKaufRequest,
+    PetKaufResponse,
+    PetSortimentEintrag,
+    PetVerkaufenRequest,
     RabattRequest,
     SortimentEintrag,
     SortimentHinzufuegenRequest,
@@ -328,6 +332,125 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
     )
 
     return KaufResponse(gegenstand=gekauft, kapitalNeu=kapital_neu, tutorialAusgegeben=tutorial_ausgegeben)
+
+
+# --- Tierladen: Pets im Sortiment (18.11.2026) -------------------------------
+#
+# Mark: "wie aufwändig wäre ein Petshop bei dem sich meine Spieler ein Pet
+# kaufen könnten?" — die SL baut den Critter fertig (voller Bogen) und bietet
+# ihn über denselben VERKAUFT-Kantentyp wie ein Unikat-Gegenstand an. Käufer
+# bekommt einen vollwertigen Begleiter (BEGLEITET-Kante), kein eigenes
+# Vorlage/Kopie-Konzept nötig. Nur im normalen Shop, NICHT im Tutorial-Shop
+# (Mark hat das nicht verlangt, Pets sind kein Freebee-Kauf). Reiter im
+# Frontend zeigt sich nur, wenn Pets im Angebot sind UND der Spieler noch
+# keines hat (Mark, 18.11.) — das 1-Begleiter-Limit gilt NUR beim Kauf, die
+# SL darf über die Begleiter-Verwaltung weiterhin beliebig viele zuweisen.
+
+
+@router.get("/{haendler_id}/pets", response_model=list[PetSortimentEintrag])
+async def pets_sortiment(campaign_id: str, haendler_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Welche Critter dieser Laden gerade verkauft."""
+    await _haendler_oder_404(campaign_id, haendler_id, viewer)
+    return await repository.pets_sortiment(campaign_id, haendler_id)
+
+
+@router.post(
+    "/{haendler_id}/pets", response_model=list[PetSortimentEintrag], dependencies=[Depends(require_campaign_gm)]
+)
+async def pet_verkaufen(campaign_id: str, haendler_id: str, body: PetVerkaufenRequest):
+    """Hängt einen fertig gebauten, besitzerlosen Critter als Ware an den Laden."""
+    if not await repository.pet_verkaufen(campaign_id, haendler_id, body.critterId, body.preis):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Laden oder Critter nicht gefunden")
+    return await repository.pets_sortiment(campaign_id, haendler_id)
+
+
+@router.delete(
+    "/{haendler_id}/pets/{critter_id}",
+    response_model=list[PetSortimentEintrag],
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def pet_aus_sortiment(campaign_id: str, haendler_id: str, critter_id: str):
+    """Nimmt einen Critter wieder aus dem Angebot (verkauft ihn nicht weiter)."""
+    await repository.pet_aus_sortiment_entfernen(campaign_id, haendler_id, critter_id)
+    return await repository.pets_sortiment(campaign_id, haendler_id)
+
+
+@router.post("/{haendler_id}/pets/kaufen", response_model=PetKaufResponse)
+async def pet_kaufen(campaign_id: str, haendler_id: str, body: PetKaufRequest, viewer: Viewer = Depends(get_viewer)):
+    """Kauft einen Critter aus dem Pet-Angebot dieses Händlers.
+
+    1-Begleiter-Limit NUR beim Kauf (Mark, 18.11.2026): hat der Käufer schon
+    irgendeinen Begleiter — egal ob SL-zugewiesen oder gekauft — verweigert
+    der Verkäufer den Verkauf. Die Spielleitung bleibt davon unberührt.
+    """
+    haendler = await _haendler_oder_404(campaign_id, haendler_id, viewer)
+
+    if viewer.role == "GM":
+        if not body.kaeuferPersonId:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "kaeuferPersonId erforderlich")
+        kaeufer_id = body.kaeuferPersonId
+    else:
+        if not viewer.person_id:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein eigener Charakter")
+        kaeufer_id = viewer.person_id
+
+    vorhandene = await entities_repository.critter_von_besitzer(campaign_id, kaeufer_id)
+    if vorhandene:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Dieser Charakter hat schon einen Begleiter — der Verkäufer gibt ihm keinen weiteren.",
+        )
+
+    sortiment = await repository.pets_sortiment(campaign_id, haendler_id)
+    eintrag = next((e for e in sortiment if e["critterId"] == body.critterId), None)
+    if eintrag is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Dieses Pet führt der Händler nicht (mehr)")
+    preis = eintrag["preis"] or 0
+
+    kaeufer = await entities_repository.get_node("Person", PERSON_FIELDS, campaign_id, kaeufer_id)
+    if kaeufer is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Käufer nicht gefunden")
+
+    kapital = kaeufer.get("kapital", 0)
+    if kapital < preis:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Guthaben reicht nicht — {kapital}¥ verfügbar, {preis}¥ nötig",
+        )
+
+    erstellt = not kaeufer.get("erstellungAbgeschlossen")
+    if erstellt:
+        gebucht = await repository.tutorial_ausgabe_buchen(campaign_id, kaeufer_id, preis)
+        if gebucht is None:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                f"Guthaben reicht nicht — {kapital}¥ verfügbar, {preis}¥ nötig",
+            )
+        kapital_neu = gebucht["kapital"]
+    else:
+        kapital_neu = kapital - preis
+        await entities_repository.update_node(
+            "Person", PERSON_FIELDS, campaign_id, kaeufer_id, {"kapital": kapital_neu}
+        )
+
+    try:
+        gekauft = await critter_uebergeben(campaign_id, haendler_id, body.critterId, kaeufer_id)
+        if gekauft is None:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kauf fehlgeschlagen")
+    except HTTPException:
+        if erstellt:
+            await repository.tutorial_ausgabe_erstatten(campaign_id, kaeufer_id, preis)
+        raise
+
+    await hooks.geld(
+        campaign_id,
+        betrag=preis,
+        art="AUSGABE",
+        von_person_id=kaeufer_id,
+        detail=f"{gekauft.get('name') or 'Pet'} bei {haendler['name']}" if haendler.get("name") else (gekauft.get("name") or "Pet"),
+    )
+
+    return PetKaufResponse(critter=gekauft, kapitalNeu=kapital_neu)
 
 
 class TutorialZurueckInput(BaseModel):

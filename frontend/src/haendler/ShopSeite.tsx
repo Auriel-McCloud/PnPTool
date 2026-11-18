@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
+import { haendlerApi, type HaendlerEintrag, type PetSortimentEintrag, type SortimentEintrag } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
+import { entitiesApi, type CritterEintrag } from "../entities/api";
 import { useNachladen } from "../shell/nachladen";
 import { verhandlungApi } from "../verhandlung/api";
 import { ShopWare } from "./ShopWare";
+import { ShopPet } from "./ShopPet";
 import { ShopKategorien } from "./ShopKategorien";
 import { ShopSortierleiste, gueltigesFeld, sortimentSortieren, type SortierRichtung } from "./ShopSortierung";
 import { HaendlerBearbeiten } from "./HaendlerBearbeiten";
@@ -39,9 +41,15 @@ export function ShopSeite({
   const [haendler, setHaendler] = useState<HaendlerEintrag | null>(null);
   const [sortiment, setSortiment] = useState<SortimentEintrag[]>([]);
   const [gegenstaende, setGegenstaende] = useState<GegenstandMitBesitzer[]>([]);
+  const [pets, setPets] = useState<PetSortimentEintrag[]>([]);
+  const [meineCritter, setMeineCritter] = useState<CritterEintrag[]>([]);
   const [fehler, setFehler] = useState<string | null>(null);
   const [erfolg, setErfolg] = useState<string | null>(null);
   const [bearbeitenOffen, setBearbeitenOffen] = useState(false);
+  // Reiter (18.11.2026, Tierladen): "pets" nur wählbar, wenn es überhaupt
+  // etwas zu kaufen gibt UND der Käufer noch keinen Begleiter hat (Mark:
+  // sonst ist der Reiter für ihn irrelevant) — siehe `zeigePetsReiter` unten.
+  const [ansicht, setAnsicht] = useState<"waren" | "pets">("waren");
   // Kategorie-Filter (10.10.2026, Marks Vorgabe): erst Kategorie wählen,
   // dann das Sortiment dieser Kategorie. null = "Alle".
   const [kategorie, setKategorie] = useState<string | null>(null);
@@ -66,18 +74,28 @@ export function ShopSeite({
   const [wunschRückmeldung, setWunschRückmeldung] = useState<string | null>(null);
 
   async function holen() {
-    const [h, s, g] = await Promise.all([
+    const [h, s, g, p, mc] = await Promise.all([
       haendlerApi.einzeln(campaignId, haendlerId),
       haendlerApi.sortiment(campaignId, haendlerId),
       itemsApi.listAlle(campaignId),
+      haendlerApi.petsSortiment(campaignId, haendlerId),
+      entitiesApi.meineCritter(campaignId),
     ]);
-    return { h, s, g };
+    return { h, s, g, p, mc };
   }
 
-  function anwenden(d: { h: HaendlerEintrag; s: SortimentEintrag[]; g: GegenstandMitBesitzer[] }) {
+  function anwenden(d: {
+    h: HaendlerEintrag;
+    s: SortimentEintrag[];
+    g: GegenstandMitBesitzer[];
+    p: PetSortimentEintrag[];
+    mc: CritterEintrag[];
+  }) {
     setHaendler(d.h);
     setSortiment(d.s);
     setGegenstaende(d.g);
+    setPets(d.p);
+    setMeineCritter(d.mc);
   }
 
   // Pause, solange die SL das Sortiment bearbeitet — das Fenster hat
@@ -100,6 +118,11 @@ export function ShopSeite({
     gegenstaende.find((g) => g.id === gegenstandId)?.seltenheit ?? 1;
 
   const istDigital = haendler.vertriebsart === "DIGITAL";
+  // Reiter nur zeigen, wenn es wirklich etwas zu kaufen gibt UND der
+  // Käufer noch keinen Begleiter hat (Mark, 18.11.2026) — sonst ist der
+  // Reiter irrelevant. meineCritter ist für die SL ohne eigenen Charakter
+  // immer leer, der Reiter zeigt sich ihr also schon bei leerem Angebot nicht.
+  const zeigePetsReiter = pets.length > 0 && meineCritter.length === 0;
 
   async function kaufen(gegenstandId: string) {
     setFehler(null);
@@ -112,6 +135,20 @@ export function ShopSeite({
       } else {
         setErfolg("Gekauft!");
       }
+      await laden();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Kauf fehlgeschlagen");
+      throw e;
+    }
+  }
+
+  async function kaufenPet(critterId: string) {
+    setFehler(null);
+    setErfolg(null);
+    ungueltig();
+    try {
+      await haendlerApi.petKaufen(campaignId, haendlerId, critterId, eigenePersonId ?? undefined);
+      setErfolg("Gekauft! Dein neuer Begleiter wartet in der Begleiter-Übersicht.");
       await laden();
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Kauf fehlgeschlagen");
@@ -203,36 +240,57 @@ export function ShopSeite({
       {fehler && <p className="shop-ware-fehler">{fehler}</p>}
       {erfolg && <p className="shop-ware-erfolg">{erfolg}</p>}
 
-      <div className="shop-waren-raster">
-        <ShopKategorien sortiment={sortiment} gewaehlt={kategorie} onWaehlen={setKategorie} />
-        <ShopSortierleiste
-          sortiment={sortiment}
-          kategorie={kategorie}
-          feld={sortierFeld}
-          richtung={sortierRichtung}
-          onAendern={(f, r) => {
-            setSortierFeld(f);
-            setSortierRichtung(r);
-          }}
-        />
-        {sortimentSortieren(
-          sortiment.filter((ware) => kategorie === null || ware.typ === kategorie),
-          sortierFeld,
-          sortierRichtung,
-        ).map((ware) => (
-          <ShopWare
-            key={ware.gegenstandId}
-            ware={ware}
-            seltenheit={seltenheitVon(ware.gegenstandId)}
-            kannVerhandeln={!istDigital && !istGm}
-            onKaufen={() => kaufen(ware.gegenstandId)}
-            onVerhandelnAnfragen={
-              !istDigital && !istGm ? (preis) => verhandeln(ware, preis) : undefined
-            }
+      {zeigePetsReiter && (
+        <div className="shop-kategorien-raster" style={{ marginBottom: 4 }}>
+          <button type="button" className="shop-kategorie-kachel" data-aktiv={ansicht === "waren"} onClick={() => setAnsicht("waren")}>
+            <span>Waren</span>
+          </button>
+          <button type="button" className="shop-kategorie-kachel" data-aktiv={ansicht === "pets"} onClick={() => setAnsicht("pets")}>
+            <span>Pets</span>
+            <span className="gg-abschnitt-zahl">{pets.length}</span>
+          </button>
+        </div>
+      )}
+
+      {ansicht === "pets" && zeigePetsReiter ? (
+        <div className="shop-waren-raster">
+          {pets.map((pet) => (
+            <ShopPet key={pet.critterId} pet={pet} onKaufen={() => kaufenPet(pet.critterId)} />
+          ))}
+          {pets.length === 0 && <p className="shop-leer">Dieser Laden führt gerade kein Pet.</p>}
+        </div>
+      ) : (
+        <div className="shop-waren-raster">
+          <ShopKategorien sortiment={sortiment} gewaehlt={kategorie} onWaehlen={setKategorie} />
+          <ShopSortierleiste
+            sortiment={sortiment}
+            kategorie={kategorie}
+            feld={sortierFeld}
+            richtung={sortierRichtung}
+            onAendern={(f, r) => {
+              setSortierFeld(f);
+              setSortierRichtung(r);
+            }}
           />
-        ))}
-        {sortiment.length === 0 && <p className="shop-leer">Dieser Shop führt gerade nichts.</p>}
-      </div>
+          {sortimentSortieren(
+            sortiment.filter((ware) => kategorie === null || ware.typ === kategorie),
+            sortierFeld,
+            sortierRichtung,
+          ).map((ware) => (
+            <ShopWare
+              key={ware.gegenstandId}
+              ware={ware}
+              seltenheit={seltenheitVon(ware.gegenstandId)}
+              kannVerhandeln={!istDigital && !istGm}
+              onKaufen={() => kaufen(ware.gegenstandId)}
+              onVerhandelnAnfragen={
+                !istDigital && !istGm ? (preis) => verhandeln(ware, preis) : undefined
+              }
+            />
+          ))}
+          {sortiment.length === 0 && <p className="shop-leer">Dieser Shop führt gerade nichts.</p>}
+        </div>
+      )}
 
       {!istGm && (
         <div className="shop-alltagswunsch">

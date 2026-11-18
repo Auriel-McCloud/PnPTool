@@ -847,3 +847,79 @@ async def shop_hat_vorlage_namens(campaign_id: str, shop_id: str, name: str) -> 
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, shop_id=shop_id, name=name)
         return await result.single() is not None
+
+
+# --- Tierladen: Pets im Sortiment (18.11.2026) -------------------------------
+#
+# Mark: ein Laden soll auch fertig gebaute Critter verkaufen können, wie bei
+# "Tieren und Tiernahrung" im echten Leben. Die SL baut den Critter komplett
+# fertig (voller Bogen, Begleiter-Verwaltung) OHNE ihn an einen Spieler zu
+# binden, und hängt ihn über dieselbe `VERKAUFT`-Kante wie ein Unikat-
+# Gegenstand an den Laden — nur das Ziel ist ein `Person{istCritter:true}`
+# statt ein `Gegenstand`. Der Kauf erzeugt eine `BEGLEITET`-Kante statt einer
+# `BESITZT`-Kante (siehe haendler/uebergabe.py::critter_uebergeben).
+
+
+async def pets_sortiment(campaign_id: str, haendler_id: str) -> list[dict]:
+    """Critter, die dieser Laden gerade im Angebot hat."""
+    driver = get_driver()
+    query = """
+        MATCH (o:Ort {id: $shop_id, campaignId: $campaign_id, istShop: true})
+              -[r:VERKAUFT]->(c:Person {istCritter: true})
+        WHERE NOT coalesce(c.geloescht, false)
+        RETURN c.id AS critterId, c.name AS name, coalesce(c.bildUrl, '') AS bildUrl,
+               coalesce(c.petArt, '') AS petArt, coalesce(r.preis, 0) AS preis
+        ORDER BY c.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, shop_id=haendler_id)
+        return [dict(r) async for r in result]
+
+
+async def pet_verkaufen(campaign_id: str, haendler_id: str, critter_id: str, preis: int) -> bool:
+    """Hängt einen besitzerlosen Critter als Ware an den Laden.
+
+    Erlaubt bewusst auch einen Critter, der schon einem anderen Laden
+    gehört (MERGE auf dieselbe Kante dort wäre ein anderer Ort) — zwei Läden
+    könnten denselben Critter führen; das ist eine spätere SL-Entscheidung,
+    keine technische Sperre hier (siehe Notiz im Wiki).
+    """
+    driver = get_driver()
+    query = """
+        MATCH (o:Ort {id: $shop_id, campaignId: $campaign_id, istShop: true})
+        MATCH (c:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})
+        WHERE NOT coalesce(c.geloescht, false)
+        MERGE (o)-[r:VERKAUFT]->(c)
+        SET r.preis = $preis
+        RETURN o.id AS id
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, shop_id=haendler_id, critter_id=critter_id, preis=max(0, preis)
+        )
+        return await result.single() is not None
+
+
+async def pet_aus_sortiment_entfernen(campaign_id: str, haendler_id: str, critter_id: str) -> bool:
+    driver = get_driver()
+    query = """
+        MATCH (o:Ort {id: $shop_id, campaignId: $campaign_id, istShop: true})
+              -[r:VERKAUFT]->(c:Person {id: $critter_id})
+        DELETE r
+        RETURN count(r) AS geloescht
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, shop_id=haendler_id, critter_id=critter_id)
+        record = await result.single()
+        return bool(record and record["geloescht"])
+
+
+async def pet_regal_raeumen(campaign_id: str, critter_id: str) -> None:
+    """Nimmt den Critter aus jedem Laden-Angebot (nach dem Verkauf)."""
+    driver = get_driver()
+    query = """
+        MATCH (:Ort {campaignId: $campaign_id})-[r:VERKAUFT]->(c:Person {id: $critter_id, campaignId: $campaign_id})
+        DELETE r
+    """
+    async with driver.session() as session:
+        await session.run(query, campaign_id=campaign_id, critter_id=critter_id)
