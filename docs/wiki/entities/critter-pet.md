@@ -535,7 +535,7 @@ Mark hat das Bärbel-Duell abgenommen: meist entkommt die Fledermaus knapp, ab u
 - **Zutraulichkeit:** Das Tablet bekommt die Zutraulichkeit seines Spielers zum Pet. Je höher, desto öfter wird sie zum Vampir (12 % → 50 % der Entscheidungen) und desto länger bleibt sie es (15–30 s → bis dreimal so lang). **Annahme Neko:** volle Wirkung ab 40 Zutraulichkeit.
 - **Bärbel will sie fressen:** sieht Bärbel eine Fledermaus, klappt sie auf und jagt hinterher; die Fledermaus flieht (ein Vampir verwandelt sich vor Schreck zurück). Kommt Bärbel nah, schnappt sie zu — meist daneben, ab und zu (**Annahme: 35 %**) sitzt es: die Fledermaus ist im Buch, das Buch beult und wackelt 2,6 s, dann rülpst Bärbel (eine Seite fliegt raus) und spuckt sie zerzaust mit Kringelaugen aus; sie taumelt und fliegt weiter. Jagd höchstens alle 35–90 s, je 8 s.
 - Packen (3 s) und Werfen wie bei allen Pets; ein Vampir wird dabei sofort wieder zur Fledermaus. Feuer/Eis/Blitz anderer Pets lassen sie fliehen.
-- **Annahmen Neko:** Pausen, Dauern und Wahrscheinlichkeiten oben; Vampir-Laufen von vorn (Gehbewegung im Stand, der Rahmen wandert); Rauch dunkelviolett; Zylinder/Lüften nur beim erwachsenen Mann (der 18-Jährige ohne — Marks Frage dazu offen).
+- **Annahmen Neko:** Pausen, Dauern und Wahrscheinlichkeiten oben; Vampir-Laufen von vorn (Gehbewegung im Stand, der Rahmen wandert); Rauch dunkelviolett; Zylinder/Lüften und Gehstock nur beim erwachsenen Mann — **von Mark bestätigt 17.11.** („Den hat nur der Erwachsene!“).
 - Noch offen: Bärbel spuckt selbst Fledermäuse aus (Ideenliste); was der Vampir sonst noch tun könnte.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
