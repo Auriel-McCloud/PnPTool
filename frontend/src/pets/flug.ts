@@ -21,11 +21,16 @@
  * - Antippen = Freuen (Hüpfer, Herzen); 3 s halten = packen, sie flattert
  *   panisch am Finger; loslassen = Wurf mit Luftwiderstand, sie fängt sich
  *   wieder — oder fliegt links/rechts/oben raus zum nächsten Tablet.
+ * - Niest ab und zu 2–5 kleine Fledermäuse aus (Mark, 18.11.2026). Die bleiben
+ *   als Spur auf dem Tablet, flattern herum und hängen kopfüber unter Kanten
+ *   (flattermaus.ts). Bärbel jagt sie: hängt eine still, holt die Tentakel sie
+ *   zurück ins Buch; fliegt sie, jagt Bärbel hinterher und verkohlt sie mit dem
+ *   Blitz. Manchmal weicht die Maus im letzten Moment aus.
  */
 
 import { istDrache } from "./api";
 import { PACKEN_MS, type Darstellung, type Flaeche, type Masse, type Meldung, type Quelle, type Umgebung } from "./bewegung";
-import { beuteTiere } from "./treffen";
+import { beuteTiere, flattermaeuse } from "./treffen";
 
 /** Was die Komponente von einer Pet-Steuerung braucht (Laufen oder Fliegen). */
 export interface PetSteuerung {
@@ -102,6 +107,7 @@ type Zustand =
   | "wurf"
   | "jagen" // hinter der Fledermaus her (17.11.2026)
   | "verdauen" // Fledermaus im Buch
+  | "niesen" // Luft holen, Hatschi — Flattermäuse fliegen raus (18.11.2026)
   | "raus";
 
 const FLATTER_PX_S = 230;
@@ -113,6 +119,24 @@ const JAGD_PX_S = 330;
 const JAGD_MS = 8000;
 const SCHNAPP_TREFFER = 0.35;
 const VERDAUEN_MS = 2600;
+/** Fledermäuse ausniesen (Mark, 18.11.2026: „zufällig zwischen 2 und 5“).
+ *  Annahmen Neko: Luft holen, Hatschi-Rückstoß, frühestens/abstand, und ab so
+ *  vielen Flattermäusen im Bild niest sie nicht mehr. */
+const NIES_MAEUSE: [number, number] = [2, 5];
+const MAEUSE_MAX = 6;
+const SCHNUEFFEL_MS = 1100;
+const HATSCHI_MS = 700;
+const NIESEN_ERST_MS: [number, number] = [20_000, 60_000];
+const NIESEN_PAUSE_MS: [number, number] = [100_000, 220_000];
+/** Jagd auf die Flattermäuse (Annahmen Neko): Pause zwischen zwei Versuchen,
+ *  wie oft die Maus ausweicht, wie lange sie hinterherfliegt, ab welchem
+ *  Abstand sie den Blitz schleudert, Trefferradius des Blitzes (Sprite-Pixel). */
+const MAUSJAGD_PAUSE_MS: [number, number] = [7_000, 16_000];
+const MAUS_ENTKOMMT = 0.35;
+const MAUS_JAGD_MS = 6_000;
+const MAUS_SCHUSS_PX = 300;
+const MAUS_BLITZ_R = 20;
+const MAUS_GRIFF_R = 16;
 const SCHWEBE_PX_S = 30;
 const ZITTERN_MS = 600;
 const WURF_BREMSE = 1.6; // Luftwiderstand pro Sekunde
@@ -146,10 +170,13 @@ export class FlugBewegung implements PetSteuerung {
     rx: number;
     ry: number;
     dauer: number;
+    /** Gezielt auf eine Flattermaus: der erste Strahl folgt ihr beim Aufladen —
+     *  außer sie weicht aus (dann schlägt er dort ein, wo sie eben noch war). */
+    maus: { id: string; entkommt: boolean; ausweichUm: number; fertig: boolean } | null;
   } | null = null;
   /** Mark, 11.11.2026: „oder der Tentakel den Kot ins Buch ziehen“ — Häufchen,
    *  das gerade geholt wird, und die Spitzenbahn dafür. */
-  private beute: { id: string; x: number; y: number } | null = null;
+  private beute: { id: string; x: number; y: number; maus?: boolean; fluchtUm?: number } | null = null;
   private beuteGemeldet = false;
   private dort: ((jetzt: number) => void) | null = null;
   private naechstesMonster: number;
@@ -177,13 +204,21 @@ export class FlugBewegung implements PetSteuerung {
   private melden: (m: Meldung) => void;
 
   private naechsteJagd = 0;
-  private jagd: { id: string; bis: number; drohung: number } | null = null;
+  private jagd: { id: string; bis: number; drohung: number; maus?: boolean; entkommt?: boolean } | null = null;
+  private naechstesNiesen = 0;
+  private niesGemeldet = false;
+  private naechsteMausJagd = 0;
+  /** Hat die Tentakel/der Blitz gerade eine Flattermaus erwischt? Dann freut sie sich. */
+  private mausErwischt = false;
   private verdauBis = 0;
   private verdaut: string | null = null;
 
   constructor(masse: () => Masse, u: Umgebung, seite: "links" | "rechts", jetzt: number, melden: (m: Meldung) => void) {
     this.masse = masse;
     this.naechsteJagd = jetzt + 12_000 + u.zufall() * 20_000;
+    this.naechstesNiesen = jetzt + NIESEN_ERST_MS[0] + u.zufall() * (NIESEN_ERST_MS[1] - NIESEN_ERST_MS[0]);
+    // Liegen schon Flattermäuse herum, geht sie bald auf die Jagd.
+    this.naechsteMausJagd = jetzt + 4_000 + u.zufall() * 6_000;
     this.u = u;
     this.melden = melden;
     const { bw, bh } = masse();
@@ -303,18 +338,90 @@ export class FlugBewegung implements PetSteuerung {
   }
 
   /** Tentakelmonster will raus (Mark, 11.11.2026). Nur zugeklappt. */
-  private monster(jetzt: number, beute: string | null = null) {
+  private monster(jetzt: number, beute: string | null = null, entkommt = false) {
     if (this.offen) {
-      this.klappe(false, jetzt, () => this.monster(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs, beute));
+      this.klappe(false, jetzt, () => this.monster(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs, beute, entkommt));
       return;
     }
     this.zustand = "tentakel";
     this.effektStart = jetzt;
     this.schleimGemeldet = false;
     this.blinzelStart = null;
-    const s = beute ? this.u.spuren?.().find((x) => x.id === beute) : undefined;
-    this.beute = s ? { id: s.id, x: s.x, y: s.y } : null;
+    const lage = beute ? this.beuteLage(beute) : null;
+    const maus = !!beute && flattermaeuse.has(beute);
+    // Flattermaus, die es merkt: irgendwann während das Monster ausholt, haut sie ab.
+    const schlag = FLUG_TAKT.tentakelSchlagFrame * FLUG_TAKT.tentakelMs;
+    this.beute =
+      beute && lage
+        ? { id: beute, x: lage.x, y: lage.y, maus, fluchtUm: maus && entkommt ? 500 + this.u.zufall() * (schlag - 900) : undefined }
+        : null;
     this.beuteGemeldet = false;
+  }
+
+  /** Wo liegt/hängt die Beute gerade (Häufchen oder Flattermaus)? null = weg. */
+  private beuteLage(id: string): { x: number; y: number } | null {
+    const m = flattermaeuse.get(id);
+    if (m) return m.frei() ? m.mitte() : null;
+    const s = this.u.spuren?.().find((x) => x.id === id);
+    return s ? { x: s.x, y: s.y } : null;
+  }
+
+  /** Hatschi (Mark, 18.11.2026): zugeklappt Luft holen, dann fliegt der Deckel
+   *  auf und 2–5 Fledermäuse prusten heraus. */
+  private niesen(jetzt: number) {
+    if (this.offen) {
+      this.klappe(false, jetzt, () => this.niesen(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs));
+      return;
+    }
+    const z = this.u.zufall;
+    this.zustand = "niesen";
+    this.effektStart = jetzt;
+    this.niesGemeldet = false;
+    this.blinzelStart = null;
+    this.naechstesNiesen = jetzt + NIESEN_PAUSE_MS[0] + z() * (NIESEN_PAUSE_MS[1] - NIESEN_PAUSE_MS[0]);
+    // Erst flattern lassen, dann merkt sie, was sie angerichtet hat.
+    this.naechsteMausJagd = Math.max(this.naechsteMausJagd, jetzt + 12_000 + z() * 10_000);
+  }
+
+  /** Die Flattermäuse als Spuren melden — der Server legt sie auf dieses Tablet. */
+  private mausAusniesen() {
+    const { bw, bh } = this.masse();
+    const z = this.u.zufall;
+    const n = NIES_MAEUSE[0] + Math.floor(z() * (NIES_MAEUSE[1] - NIES_MAEUSE[0] + 1));
+    for (let i = 0; i < n; i++) {
+      const x = (this.x + bw / 2 + (z() - 0.5) * bw * 0.5) / this.u.breite;
+      const y = (this.y + bh * 0.4 + (z() - 0.5) * bh * 0.3) / this.u.hoehe;
+      this.melden({
+        typ: "haeufchen",
+        x: Math.min(0.97, Math.max(0.03, x)),
+        y: Math.min(0.95, Math.max(0.03, y)),
+        art: "flattermaus",
+      });
+    }
+  }
+
+  /** Flattermaus im Bild? Hängt sie still, holt die Tentakel sie; sonst
+   *  hinterher und Blitz. Manchmal (MAUS_ENTKOMMT) merkt sie es und weicht aus. */
+  private mausJagd(jetzt: number): boolean {
+    const z = this.u.zufall;
+    const frei = [...flattermaeuse.entries()].filter(([, m]) => m.frei());
+    if (!frei.length) return false;
+    const [id, m] = frei[Math.floor(z() * frei.length)];
+    this.naechsteMausJagd = jetzt + MAUSJAGD_PAUSE_MS[0] + z() * (MAUSJAGD_PAUSE_MS[1] - MAUSJAGD_PAUSE_MS[0]);
+    const entkommt = z() < MAUS_ENTKOMMT;
+    if (m.haengt() && z() < 0.6) {
+      const p = m.mitte();
+      this.flatternZu(this.greifPosition(p.x, p.y), jetzt, null, (j) => this.monster(j, id, entkommt));
+      return true;
+    }
+    const los = (j: number) => {
+      this.jagd = { id, bis: j + MAUS_JAGD_MS, drohung: 0, maus: true, entkommt };
+      this.zustand = "jagen";
+      this.setzeAnim(j);
+    };
+    if (!this.offen) this.klappe(true, jetzt, () => los(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs));
+    else los(jetzt);
+    return true;
   }
 
   /** Wo das Buch hin muss, damit die Tentakel beim Klatschen genau auf (hx, hy) trifft. */
@@ -339,11 +446,14 @@ export class FlugBewegung implements PetSteuerung {
    *  im Bild („was verbrennen“), sonst irgendeine Richtung (meist nach unten).
    *  Art: Einzelblitz, Gabelblitz (zwei Ziele zugleich) oder Kettenblitz (springt
    *  von Einschlag zu Einschlag). Jeder Einschlag hinterlässt einen Brandfleck. */
-  private zaubern(jetzt: number) {
+  private zaubern(jetzt: number, maus: { id: string; entkommt: boolean } | null = null) {
     if (!this.offen) {
-      this.klappe(true, jetzt, () => this.zaubern(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs));
+      this.klappe(true, jetzt, () => this.zaubern(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs, maus));
       return;
     }
+    // Auf Flattermäuse: der erste Strahl auf die gejagte, ein Gabelblitz nimmt
+    // eine zweite mit (wenn es eine gibt).
+    const mausZiele = maus ? [maus.id, ...[...flattermaeuse.keys()].filter((id) => id !== maus.id)] : [];
     const { bw, bh } = this.masse();
     const z = this.u.zufall;
     const x0 = this.x + bw / 2;
@@ -353,8 +463,12 @@ export class FlugBewegung implements PetSteuerung {
       return d > 140 && d < 650;
     });
     const ziel = (vonX: number, vonY: number, weg: { x: number; y: number }[]) => {
+      if (maus) {
+        const m = flattermaeuse.get(mausZiele[weg.length] ?? "");
+        if (m && m.frei()) return m.mitte();
+      }
       // Steht der Drache im Bild, zielt der erste Strahl meist auf ihn.
-      if (drache && weg.length === 0 && z() < 0.85) return { x: drache.x, y: drache.y };
+      if (drache && !maus && weg.length === 0 && z() < 0.85) return { x: drache.x, y: drache.y };
       if (flaechen.length && z() < 0.55) {
         const f = flaechen[Math.floor(z() * flaechen.length)];
         const zx = f.r.left + (f.r.right - f.r.left) * (0.2 + z() * 0.6);
@@ -372,7 +486,8 @@ export class FlugBewegung implements PetSteuerung {
       };
     };
     const drache = (this.u.nachbarn?.() ?? []).find((n) => istDrache(n.art));
-    const art = z();
+    // Auf eine Flattermaus: Einzelblitz oder Gabel, keine Kette.
+    const art = maus ? (z() < 0.7 ? 0 : 0.6) : z();
     const strahlen: NonNullable<FlugBewegung["blitz"]>["strahlen"] = [];
     const weg: { x: number; y: number }[] = [];
     if (art < 0.5) {
@@ -398,7 +513,13 @@ export class FlugBewegung implements PetSteuerung {
     const s0 = strahlen[0];
     const d = Math.max(1, Math.hypot(s0.x1 - x0, s0.y1 - y0));
     const dauer = Math.max(...strahlen.map((st) => st.ab)) + BLITZ_MS;
-    this.blitz = { strahlen, rx: -(s0.x1 - x0) / d, ry: -(s0.y1 - y0) / d, dauer };
+    this.blitz = {
+      strahlen,
+      rx: -(s0.x1 - x0) / d,
+      ry: -(s0.y1 - y0) / d,
+      dauer,
+      maus: maus ? { ...maus, ausweichUm: LADEN_MS - 250 - z() * 300, fertig: false } : null,
+    };
     this.zustand = "zaubern";
     this.effektStart = jetzt;
   }
@@ -488,7 +609,12 @@ export class FlugBewegung implements PetSteuerung {
       this.rausFliegen(jetzt);
       return;
     }
+    if (flattermaeuse.size && jetzt > this.naechsteMausJagd && z() < 0.75 && this.mausJagd(jetzt)) return;
     if (jetzt > this.naechsteJagd && z() < 0.6 && this.jagdStarten(jetzt)) return;
+    if (jetzt > this.naechstesNiesen && flattermaeuse.size < MAEUSE_MAX && z() < 0.35) {
+      this.niesen(jetzt);
+      return;
+    }
     const r = z();
     if (this.offen) {
       if (r < 0.45) this.flatternZu(this.zufallsZiel(), jetzt);
@@ -642,9 +768,14 @@ export class FlugBewegung implements PetSteuerung {
       case "tentakel": {
         const t = jetzt - this.effektStart;
         const schlag = FLUG_TAKT.tentakelSchlagFrame * FLUG_TAKT.tentakelMs;
+        if (this.beute?.fluchtUm !== undefined && t >= this.beute.fluchtUm) {
+          // Die Flattermaus hat das Monster bemerkt und haut ab.
+          this.beute.fluchtUm = undefined;
+          flattermaeuse.get(this.beute.id)?.bedroht(jetzt, this.x + bw / 2, this.y + bh / 2);
+        }
         if (this.beute && t < schlag) {
-          // Das Häufchen kann wandern (Scrollen) — Buch peilt nach.
-          const s = this.u.spuren?.().find((x) => x.id === this.beute!.id);
+          // Das Häufchen kann wandern (Scrollen), die Flattermaus wegfliegen — Buch peilt nach.
+          const s = this.beuteLage(this.beute.id);
           if (!s) this.beute = null;
           else {
             this.beute.x = s.x;
@@ -666,6 +797,14 @@ export class FlugBewegung implements PetSteuerung {
         if (!this.schleimGemeldet && t >= schlag) {
           this.schleimGemeldet = true;
           const spitze = this.spitze(jetzt);
+          if (this.beute?.maus) {
+            // Hängt sie noch da, wo die Tentakel klatscht? Sonst ins Leere (Schleim).
+            const m = flattermaeuse.get(this.beute.id);
+            const p = m?.mitte();
+            const r = MAUS_GRIFF_R * (bw / 76) + 10;
+            if (m && p && Math.hypot(p.x - spitze.x, p.y - spitze.y) < r && m.packen(jetzt)) this.mausErwischt = true;
+            else this.beute = null;
+          }
           this.angriff = { art: "schleim", x: spitze.x, y: spitze.y, r: 48 };
           if (!this.beute) this.schleimMelden(jetzt);
         }
@@ -677,17 +816,41 @@ export class FlugBewegung implements PetSteuerung {
           this.beute = null;
           this.naechstesBlinzeln = jetzt + 400;
           this.schwebenZu(this.zufallsZiel(), jetzt);
+          this.freuDich(jetzt);
         }
         break;
       }
       case "zaubern": {
         const t = jetzt - this.effektStart;
         const b = this.blitz;
+        const bm = b?.maus;
+        if (b && bm && !bm.fertig) {
+          const m = flattermaeuse.get(bm.id);
+          if (!m || !m.frei() || t >= LADEN_MS - 120) bm.fertig = true;
+          else if (bm.entkommt && t >= bm.ausweichUm) {
+            // Im letzten Moment bemerkt: weg da — der Blitz geht ins Leere.
+            bm.fertig = true;
+            m.bedroht(jetzt, b.strahlen[0].x0, b.strahlen[0].y0);
+          } else if (!bm.entkommt) {
+            const p = m.mitte();
+            b.strahlen[0].x1 = p.x;
+            b.strahlen[0].y1 = p.y;
+          }
+        }
         if (b) {
           for (const st of b.strahlen) {
             if (st.gemeldet || t < LADEN_MS + st.ab) continue;
             st.gemeldet = true;
             this.angriff = { art: "blitz", x: st.x1, y: st.y1, r: 42 };
+            // Flattermäuse am Einschlag verkohlen (auch eine, die zufällig dort hängt).
+            const rm = MAUS_BLITZ_R * (bw / 76);
+            for (const m of flattermaeuse.values()) {
+              const p = m.mitte();
+              if (m.frei() && Math.hypot(p.x - st.x1, p.y - st.y1) < rm) {
+                m.getroffen(jetzt);
+                this.mausErwischt = true;
+              }
+            }
             const x = st.x1 / u.breite;
             const y = st.y1 / u.hoehe;
             if (x > 0 && x < 1 && y > 0 && y < 1) this.melden({ typ: "haeufchen", x, y, art: "brand" });
@@ -702,6 +865,7 @@ export class FlugBewegung implements PetSteuerung {
         if (!b || t >= LADEN_MS + b.dauer + RUECKSTOSS_MS) {
           this.blitz = null;
           this.schwebenZu(this.zufallsZiel(), jetzt);
+          this.freuDich(jetzt);
         }
         break;
       }
@@ -746,6 +910,30 @@ export class FlugBewegung implements PetSteuerung {
         break;
       case "jagen": {
         const j = this.jagd;
+        if (j?.maus) {
+          // Hinter einer Flattermaus her; nah genug: Blitz.
+          const m = flattermaeuse.get(j.id);
+          if (!m || !m.frei() || jetzt > j.bis) {
+            this.jagd = null;
+            this.flatternZu(this.zufallsZiel(), jetzt);
+            break;
+          }
+          const p = m.mitte();
+          const dx = p.x - (this.x + bw / 2);
+          const dy = p.y - (this.y + bh * 0.42);
+          const d = Math.hypot(dx, dy);
+          zielKipp = Math.max(-18, Math.min(18, (dx / Math.max(d, 1)) * 18));
+          if (d < MAUS_SCHUSS_PX) {
+            this.jagd = null;
+            this.zaubern(jetzt, { id: j.id, entkommt: !!j.entkommt });
+            break;
+          }
+          // Nicht ganz hin — sie hält etwas Abstand und schießt.
+          const schritt = Math.min(JAGD_PX_S * dt, d - MAUS_SCHUSS_PX * 0.8);
+          this.x += (dx / Math.max(d, 1)) * Math.max(0, schritt);
+          this.y += (dy / Math.max(d, 1)) * Math.max(0, schritt);
+          break;
+        }
         const b = j ? beuteTiere.get(j.id) : undefined;
         if (!j || !b || jetzt > j.bis) {
           this.jagd = null;
@@ -773,6 +961,22 @@ export class FlugBewegung implements PetSteuerung {
         this.y += (dy / Math.max(d, 1)) * Math.min(schritt, d);
         break;
       }
+      case "niesen": {
+        const t = jetzt - this.effektStart;
+        if (!this.niesGemeldet && t >= SCHNUEFFEL_MS) {
+          // Hatschi! Der Deckel fliegt auf, die Fledermäuse prusten heraus.
+          this.niesGemeldet = true;
+          this.offen = true;
+          this.mausAusniesen();
+        }
+        if (t >= SCHNUEFFEL_MS && t < SCHNUEFFEL_MS + HATSCHI_MS) {
+          // Rückstoß: nach oben weg, auslaufend.
+          const k = 1 - (t - SCHNUEFFEL_MS) / HATSCHI_MS;
+          this.y = Math.max(-bh * 0.3, this.y - 110 * k * dt);
+        }
+        if (t >= SCHNUEFFEL_MS + HATSCHI_MS) this.flatternZu(this.zufallsZiel(), jetzt);
+        break;
+      }
       case "verdauen":
         if (jetzt > this.verdauBis) {
           // Rülpsen, aufklappen, ausspucken — zerzaust, aber heil.
@@ -791,6 +995,13 @@ export class FlugBewegung implements PetSteuerung {
     }
     // Neigung weich nachziehen.
     this.kipp += (zielKipp - this.kipp) * Math.min(1, dt * 6);
+  }
+
+  /** Flattermaus erwischt: ein kleiner Freudenhüpfer. */
+  private freuDich(jetzt: number) {
+    if (!this.mausErwischt) return;
+    this.mausErwischt = false;
+    this.freudeStart = jetzt;
   }
 
   private seiteVerlieren() {
@@ -1000,6 +1211,21 @@ export class FlugBewegung implements PetSteuerung {
       rot += Math.sin(jetzt / 60) * 6;
       zoom = 1 + Math.abs(Math.sin(jetzt / 140)) * 0.07;
     }
+    // Niesen: Luft holen (bläht sich, kippt nach hinten, zittert), dann Hatschi.
+    let puffKlein: Darstellung["puffKlein"] = null;
+    if (this.zustand === "niesen") {
+      const t = jetzt - this.effektStart;
+      if (t < SCHNUEFFEL_MS) {
+        const k = t / SCHNUEFFEL_MS;
+        rot += Math.sin(jetzt / 45) * (1 + 3 * k) - 9 * k * k;
+        zoom = 1 + 0.09 * k * k;
+      } else {
+        const k = Math.min(1, (t - SCHNUEFFEL_MS) / HATSCHI_MS);
+        rot += 18 * (1 - k) * Math.cos(k * Math.PI * 2.5);
+        zoom = 1 - 0.07 * (1 - k);
+        puffKlein = { start: this.effektStart + SCHNUEFFEL_MS, x: this.x + bw / 2, y: this.y + bh * 0.45 };
+      }
+    }
     let effekt: Darstellung["effekt"] = null;
     let greift: Darstellung["greift"] = null;
     if (this.zustand === "tentakel") {
@@ -1063,6 +1289,7 @@ export class FlugBewegung implements PetSteuerung {
       gestalt: g,
       zoom,
       puff: this.zustand === "verwandeln" ? this.puffStart : null,
+      puffKlein,
       effekt,
       blitze,
       leuchten,

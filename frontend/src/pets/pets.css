@@ -186,6 +186,39 @@
   to { transform: scale(1); }
 }
 
+/* Bärbels Flattermäuse (18.11.2026): die Baby-Fledermaus, kleiner und mit
+   violettem Zauberschein — man sieht, woher sie kommen.
+   Vom Blitz getroffen (--verkohlt 0..1) werden sie schwarz. */
+.pet-flattermaus {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  filter: saturate(1.3) hue-rotate(12deg) drop-shadow(0 0 2px rgba(200, 160, 255, 0.95))
+    drop-shadow(0 0 7px rgba(150, 95, 255, 0.65));
+}
+
+.pet-flattermaus[data-verkohlt="ja"] {
+  filter: brightness(calc(1 - 0.85 * var(--verkohlt, 0))) sepia(calc(0.5 * var(--verkohlt, 0)))
+    drop-shadow(0 0 3px rgba(255, 190, 120, calc(0.9 * (1 - var(--verkohlt, 0)))));
+}
+
+.pet-flattermaus.pet-haeufchen-weg {
+  animation: pet-flattermaus-weg 300ms ease-in forwards;
+}
+
+@keyframes pet-flattermaus-weg {
+  to { opacity: 0; }
+}
+
 @keyframes pet-wisch {
   to { transform: translateX(30px) rotate(25deg) scale(0.3); opacity: 0; }
 }

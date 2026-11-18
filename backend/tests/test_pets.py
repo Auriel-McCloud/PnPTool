@@ -295,6 +295,9 @@ def test_pet_arten_und_spuren():
     assert "baerbel" in logic.PET_ARTEN
     assert "seite" in logic.SPUR_ARTEN
     assert "schleim" in logic.SPUR_ARTEN  # Tentakelmonster
+    assert "flattermaus" in logic.SPUR_ARTEN  # Bärbel niest Fledermäuse (18.11.2026)
+    # Sie flattern selbst herum und fallen nicht wie Seiten zu Boden.
+    assert "flattermaus" not in logic.FALLENDE_SPUREN
     assert set(logic.FALLENDE_SPUREN) == {"haeufchen", "seite"}
 
 

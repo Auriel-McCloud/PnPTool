@@ -10,7 +10,8 @@ import { FLEDERMAUS_STUFEN, FLEDERMAUS_TAKT } from "./fledermausstufen";
 import { FledermausBewegung } from "./fledermaus";
 import { herein, schiesse } from "./feuerball";
 import { KiFigur } from "./KiFigur";
-import { alle, kitzelbar, makel, melde, treffe, vergiss } from "./treffen";
+import { alle, flattermaeuse, kitzelbar, makel, melde, treffe, vergiss } from "./treffen";
+import { FLATTERMAUS_PX, FLATTERMAUS_TAKT, FlattermausFlug } from "./flattermaus";
 import "./pets.css";
 
 /** Steuerungen der gerade sichtbaren Pets — Feuer trifft die andere Figur. */
@@ -567,6 +568,17 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
             />
           );
         }
+        if (h.art === "flattermaus") {
+          return (
+            <FlattermausSpur
+              key={h.id}
+              h={h}
+              frisch={bekannt.current !== null && !bekannt.current.has(h.id)}
+              weg={weg.has(h.id)}
+              onWeg={() => wegmachen(h.id)}
+            />
+          );
+        }
         if (h.art === "perle") {
           const ablage = `${h.id}:${h.erstellt}`;
           return (
@@ -660,6 +672,99 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
         ),
       )}
     </div>
+  );
+}
+
+/**
+ * Bärbels Flattermaus (Mark, 18.11.2026): eine ausgenieste Fledermaus, die als
+ * Spur auf diesem Tablet bleibt, herumflattert und kopfüber unter Kanten hängt
+ * (Logik: flattermaus.ts). Bärbel jagt sie — die Tentakel zieht sie über
+ * `gegriffen` ins Buch, der Blitz verkohlt sie (dann meldet sie sich selbst ab).
+ * Antippen scheucht sie auf, wegmachen kann man sie nicht.
+ */
+function FlattermausSpur({ h, frisch, weg, onWeg }: { h: Haeufchen; frisch: boolean; weg: boolean; onWeg: () => void }) {
+  const el = useRef<HTMLDivElement | null>(null);
+  const logik = useRef<FlattermausFlug | null>(null);
+  const wegRef = useRef(weg);
+  wegRef.current = weg;
+  const onWegRef = useRef(onWeg);
+  onWegRef.current = onWeg;
+
+  useEffect(() => {
+    const masseMaus = (): Masse => logik.current?.masse() ?? masse();
+    const f = new FlattermausFlug(
+      h.x * window.innerWidth,
+      h.y * window.innerHeight,
+      frisch,
+      performance.now(),
+      umgebung(masseMaus()),
+      skala,
+      () => onWegRef.current(),
+    );
+    logik.current = f;
+    flattermaeuse.set(h.id, {
+      mitte: () => f.mitte(),
+      haengt: () => f.haengt(),
+      frei: () => !wegRef.current && f.frei(),
+      bedroht: (j, x, y) => f.bedroht(j, x, y),
+      packen: (j) => !wegRef.current && f.packen(j),
+      getroffen: (j) => f.getroffen(j),
+    });
+    let letzte = performance.now();
+    let rahmen = 0;
+    let umgebungUm = 0;
+    const tick = (jetzt: number) => {
+      const dt = Math.min(0.1, (jetzt - letzte) / 1000);
+      letzte = jetzt;
+      const d = el.current;
+      if (d && !wegRef.current) {
+        // DOM-Flächen nur ab und zu neu abfragen — es können mehrere Mäuse sein.
+        if (jetzt > umgebungUm) {
+          f.setzeUmgebung(umgebung(f.masse()));
+          umgebungUm = jetzt + 400;
+        }
+        const halt = gegriffen.get(h.id) ?? null;
+        f.gehalten(jetzt, halt !== null);
+        f.tick(jetzt, dt);
+        const b = f.darstellung(jetzt, halt);
+        const takt = FLATTERMAUS_TAKT[b.animation];
+        d.style.left = `${b.left}px`;
+        d.style.top = `${b.top}px`;
+        d.style.width = `${b.breite}px`;
+        d.style.height = `${b.hoehe}px`;
+        d.style.backgroundImage = `url(/pets/fledermaus/s1/${b.animation}.png)`;
+        d.style.backgroundSize = `${takt.frames * b.breite}px ${b.hoehe}px`;
+        d.style.backgroundPosition = `${-b.frame * b.breite}px 0`;
+        d.style.transform = b.transform;
+        d.style.transformOrigin = b.ursprung;
+        d.style.opacity = String(b.deckkraft);
+        d.style.setProperty("--verkohlt", b.verkohlt.toFixed(3));
+        d.dataset.verkohlt = b.verkohlt > 0 ? "ja" : "nein";
+      }
+      rahmen = requestAnimationFrame(tick);
+    };
+    rahmen = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(rahmen);
+      flattermaeuse.delete(h.id);
+    };
+    // Eine Maus behält ihre Logik, solange es die Spur gibt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div
+      ref={el}
+      data-flattermaus={h.id}
+      className={`pet-flattermaus${weg ? " pet-haeufchen-weg" : ""}`}
+      style={{ width: FLATTERMAUS_PX.breite, height: FLATTERMAUS_PX.hoehe }}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        // Antippen scheucht sie auf — wegmachen kann sie nur Bärbel.
+        logik.current?.bedroht(performance.now(), e.clientX, e.clientY);
+      }}
+      onContextMenu={(e) => e.preventDefault()}
+    />
   );
 }
 
@@ -2037,6 +2142,23 @@ function PetFigur({
           } else pk.style.display = "none";
         }
       } else if (pu) {
+        const pk = puffKlein.current;
+        if (pk) {
+          if (d.puffKlein) {
+            // Hatschi (18.11.2026): kleine, schnelle Zauberwolke vor dem Buch.
+            const v = BAERBEL.verwandeln;
+            const s = skala();
+            const g = v.groesse * s * 0.6;
+            const bild = Math.min(v.frames - 1, Math.floor(((jetzt - d.puffKlein.start) / 900) * v.frames));
+            pk.style.display = bild >= v.frames - 1 ? "none" : "block";
+            pk.style.width = `${g}px`;
+            pk.style.height = `${g}px`;
+            pk.style.left = `${d.puffKlein.x - g / 2}px`;
+            pk.style.top = `${d.puffKlein.y - g / 2}px`;
+            pk.style.backgroundSize = `${v.frames * g}px ${g}px`;
+            pk.style.backgroundPosition = `${-bild * g}px 0`;
+          } else pk.style.display = "none";
+        }
         if (d.puff != null && pet.art === "baerbel") {
           const s = skala();
           const v = BAERBEL.verwandeln;
@@ -2255,6 +2377,7 @@ function PetFigur({
       {pet.art === "baerbel" && (
         <>
           <div ref={puff} className="pet-feuer" style={{ display: "none", backgroundImage: "url(/pets/baerbel/verwandeln.png)" }} />
+          <div ref={puffKlein} className="pet-feuer" style={{ display: "none", backgroundImage: "url(/pets/baerbel/verwandeln.png)" }} />
           <div ref={effekt} className="pet-feuer" style={{ display: "none" }} />
           <div ref={blitzLicht} className="pet-blitz-licht" style={{ display: "none" }} onAnimationEnd={(e) => (e.currentTarget.style.display = "none")} />
           <svg ref={blitzSvg} className="pet-blitz" style={{ display: "none" }}>

@@ -213,7 +213,7 @@ spricht — zugleich Zauberbuch. Pixel-Buch mit „BÄRBEL“ auf dem Titel.
 
 **Nachbesserung 12.11. (Vorlesen):** Abstand jetzt zufällig 15–45 Minuten (Mark nach dem Test). Mark hatte zweimal dasselbe Zitat: bei gleicher Lage wählte die KI denselben Vers (bzw. der Notfall-Vers war je Kampagne fest). Jetzt merkt sie sich die letzten Stellen, die KI bekommt ein zufälliges Leitbild und darf sie nicht wiederholen; eine Wiederholung wird durch einen anderen festen Vers ersetzt.
 
-**Noch offen (Ideen von Mark):** weitere Monster (Klauen, Fledermäuse), Feuerbälle.
+**Noch offen (Ideen von Mark):** weitere Monster (Klauen), Feuerbälle. Fledermäuse: gebaut 18.11., siehe Abschnitt „Bärbel niest Fledermäuse aus“.
 
 ## Wolkenlauf des Drachen (12.11.2026, gebaut)
 
@@ -536,7 +536,7 @@ Mark hat das Bärbel-Duell abgenommen: meist entkommt die Fledermaus knapp, ab u
 - **Bärbel will sie fressen:** sieht Bärbel eine Fledermaus, klappt sie auf und jagt hinterher; die Fledermaus flieht (ein Vampir verwandelt sich vor Schreck zurück). Kommt Bärbel nah, schnappt sie zu — meist daneben, ab und zu (**Annahme: 35 %**) sitzt es: die Fledermaus ist im Buch, das Buch beult und wackelt 2,6 s, dann rülpst Bärbel (eine Seite fliegt raus) und spuckt sie zerzaust mit Kringelaugen aus; sie taumelt und fliegt weiter. Jagd höchstens alle 35–90 s, je 8 s.
 - Packen (3 s) und Werfen wie bei allen Pets; ein Vampir wird dabei sofort wieder zur Fledermaus. Feuer/Eis/Blitz anderer Pets lassen sie fliehen.
 - **Annahmen Neko:** Pausen, Dauern und Wahrscheinlichkeiten oben; Vampir-Laufen von vorn (Gehbewegung im Stand, der Rahmen wandert); Rauch dunkelviolett; Zylinder/Lüften und Gehstock nur beim erwachsenen Mann — **von Mark bestätigt 17.11.** („Den hat nur der Erwachsene!“).
-- Noch offen: Bärbel spuckt selbst Fledermäuse aus (Ideenliste); was der Vampir sonst noch tun könnte.
+- Noch offen: was der Vampir sonst noch tun könnte. (Bärbel niest selbst Fledermäuse aus: gebaut 18.11., eigener Abschnitt.)
 
 ## KI-Reinigungslaser (18.11.2026, gebaut)
 
@@ -598,6 +598,18 @@ Vorschlag Neko (offen):
 - Nur Optik (`punkte.ts`: `punktAnbeissen`/`punktTrinken`/`punktNachfuellen`, Klasse `pet-punkt-getrunken`, Füllstand `--pet-pegel`). Jeder ausgetrunkene Punkt läuft in 10–15 Minuten langsam wieder voll; neu laden füllt sofort. Der Tummy-Acher frisst keine angetrunkenen Punkte.
 - Als Vampir wird sie bei Durst kurz wieder zur Fledermaus und trinkt dann (Abweichung vom Vorschlag „beugt sich über die Reihe“: dafür gäbe es keine Pose; Mark wollte ohnehin den Fruitbat-Biss).
 - **Annahmen Neko:** höchstens 6 Punkte je Besuch, ein Punkt dauert ~2 s (**Mark 18.11.: zu schnell → jetzt 5–6 s je Punkt**), Durst frühestens 5–17 s nach der Ankunft und nach dem Trinken 25–60 s Pause; Abbruch (gepackt, Bärbel, Feuer) lässt den Punkt ab seinem Stand nachlaufen.
+
+## Bärbel niest Fledermäuse aus (18.11.2026, gebaut)
+
+Mark: „kannst du bitte für Bärbel die Animation machen, bei der sie Fledermäuse ausniest, es wäre toll, wenn die Fledermäuse wie die Perle da bleiben würden und durch die Gegend flattern und sich kopfüber auf HTML-Items hängen, und Bärbel dann versucht, sie mit dem Tentakel wieder einzufangen oder mit Blitzen zu vernichten, und sie jagt … Andere Pets könnten sie eventuell auch jagen, das könnten wir später noch einführen; vielleicht erscheinen zufällig zwischen 2 und 5 Fledermäuse.“ (Erfüllt die alte Ideenliste „weitere Monster: Fledermäuse“.)
+
+- **Niesen:** Bärbel holt zugeklappt Luft (bläht sich, kippt nach hinten, zittert), dann Hatschi: der Deckel fliegt auf, kleine violette Wolke, Rückstoß nach oben, und **2–5 kleine Fledermäuse** prusten in alle Richtungen heraus.
+- **Die Flattermäuse** bleiben als Spur (`flattermaus`) auf dem Tablet, auf dem sie geniest hat — auch nach Neuladen, bis Bärbel sie erwischt. Sie flattern im Zickzack herum (ein paar Schlenker), hängen sich **kopfüber** unter Knöpfe, Textzeilen, Kacheln, Popups oder oben an den Bildschirmrand, pendeln dort 6–25 s und ziehen weiter. Verschwindet die Kante, flattern sie los. Aussehen: die Baby-Fledermaus, kleiner (×0,6) und mit violettem Zauberschein.
+- **Bärbel jagt sie:** hängt eine still, fliegt Bärbel hin und das Tentakelmonster packt sie und zieht sie zurück ins Buch. Fliegt sie, jagt Bärbel hinterher und schleudert aus etwa 300 px den Blitz (der Strahl folgt ihr beim Aufladen; ein Gabelblitz nimmt eine zweite Maus mit). Getroffen wird sie schwarz, trudelt runter und verpufft. Erwischt → kleiner Freudenhüpfer.
+- **Ausweichen:** in etwa einem Drittel der Versuche merkt die Maus es und haut im letzten Moment ab — Tentakel klatscht ins Leere (Schleim), Blitz schlägt daneben ein (Brandfleck).
+- **Antippen** scheucht eine Maus auf (sie fliegt weit weg); wegmachen kann sie nur Bärbel. SL „Alles sauber machen“ räumt sie mit weg.
+- **Annahmen Neko:** Niesen frühestens 20–60 s nach der Ankunft, danach 100–220 s Pause, nicht mehr ab 6 Mäusen im Bild; Jagdversuch alle 7–16 s, solange Mäuse da sind (nach dem Niesen erst 12–22 s flattern lassen); Ausweich-Chance 35 %; Tentakel bei hängender Maus 60 %, sonst Jagd mit Blitz; sie bleiben auf ihrem Tablet und wandern nicht mit (anders als die Perle); Feuer, Eis, Laser und die anderen Pets beachten sie noch nicht.
+- **Noch offen (Mark: „später“):** andere Pets jagen sie auch (z. B. Drache, Mongo, Vampir-Fledermaus).
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

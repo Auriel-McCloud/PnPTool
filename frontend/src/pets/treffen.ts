@@ -71,6 +71,28 @@ export interface Beute {
 
 export const beuteTiere = new Map<string, Beute>();
 
+/** Bärbels Flattermäuse (Mark, 18.11.2026): die Fledermäuse, die Bärbel ausniest.
+ *  Sie bleiben als Spur auf dem Tablet, flattern herum und hängen kopfüber unter
+ *  Kanten; Bärbel (flug.ts) jagt sie, holt sie mit der Tentakel zurück ins Buch
+ *  oder verkohlt sie mit dem Blitz. Bewusst NICHT in `koerper`: Feuer, Eis und
+ *  Laser der anderen Pets treffen sie (noch) nicht. Schlüssel = Spur-id. */
+export interface Flattermaus {
+  /** Körpermitte in Bildschirm-Pixeln. */
+  mitte(): { x: number; y: number };
+  /** Hängt sie still unter einer Kante (gutes Ziel für die Tentakel)? */
+  haengt(): boolean;
+  /** Weder gepackt noch getroffen — noch zu haben. */
+  frei(): boolean;
+  /** Bärbel kommt von (x, y): schnell weg, weit weg. */
+  bedroht(jetzt: number, x: number, y: number): void;
+  /** Tentakel greift zu. true = erwischt (folgt ab jetzt der Spitze ins Buch). */
+  packen(jetzt: number): boolean;
+  /** Vom Blitz getroffen: verkohlt, trudelt, verpufft. */
+  getroffen(jetzt: number): void;
+}
+
+export const flattermaeuse = new Map<string, Flattermaus>();
+
 /** KI-Laser (Mark, 18.11.2026): Tummy-Acher auf diesem Bildschirm. Die Entität
  *  kitzelt ihn mit dem Strahl; true = er hat gerülpst (Punkte fliegen zurück). */
 export const kitzelbar = new Map<string, () => boolean>();

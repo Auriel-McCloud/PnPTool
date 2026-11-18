@@ -59,7 +59,10 @@ STREICHEL_ABKLINGEN_S = 300
 # Der Eisdrache hinterlässt Raureif (`frost`), ebenfalls zum Wegwischen.
 # `krater`/`eiskrater` (13.11.2026): der große Fleck, wo ein Feuerball,
 # Kugelblitz oder Eisball einschlägt — wie Brandfleck und Raureif, nur größer.
-SPUR_ARTEN = ("haeufchen", "brand", "seite", "schleim", "frost", "krater", "eiskrater")
+# `flattermaus` (18.11.2026): eine Fledermaus, die Bärbel ausgeniest hat. Sie
+# bleibt auf dem Tablet und flattert dort herum (frontend/src/pets/flattermaus.ts),
+# bis Bärbel sie mit der Tentakel einfängt oder mit dem Blitz verkohlt.
+SPUR_ARTEN = ("haeufchen", "brand", "seite", "schleim", "frost", "krater", "eiskrater", "flattermaus")
 
 # Spuren, die vom Element herunterfallen können (neue Lage wird gemerkt).
 FALLENDE_SPUREN = ("haeufchen", "seite")

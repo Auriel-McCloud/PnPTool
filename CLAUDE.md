@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bärbel niest Fledermäuse aus (18.11.2026)
+
+Mark: Bärbel niest Fledermäuse aus, die „wie die Perle da bleiben“, herumflattern, sich kopfüber an HTML-Items hängen; Bärbel fängt sie mit der Tentakel wieder ein oder verkohlt sie mit dem Blitz und jagt sie. 2–5 je Niesen. Wiki: `entities/critter-pet.md` (Abschnitt Bärbel niest Fledermäuse).
+- **Spur-Art `flattermaus`** (`logic.py::SPUR_ARTEN`): je Maus eine `PetHaeufchen` auf dem Tablet, auf dem sie geniest hat; bleibt bis Bärbel sie erwischt (Tentakel/Blitz → `wegmachen`) oder SL „Alles sauber machen“. Server kennt nur den Niesort.
+- **Frontend** `frontend/src/pets/flattermaus.ts` (Logik: Ausstoß, Herumflattern mit Umwegen, Kopfüber-Hängen unter Flächen/Bildschirmrand, Flucht, gepackt, verkohlt → verpufft), `PetOverlay.tsx::FlattermausSpur` (Sprite = Baby-Fledermaus `fledermaus/s1`, ×0,6, violetter Schein in `pets.css .pet-flattermaus`; Antippen scheucht auf). Registry `treffen.ts::flattermaeuse` (bewusst nicht in `koerper` — andere Pets treffen sie noch nicht).
+- **Bärbel** (`flug.ts`): Zustand `niesen` (Luft holen 1,1 s, Hatschi mit Rückstoß + kleiner Wolke `puffKlein`), `mausJagd` → hängende Maus per Tentakel (`monster(…, id, entkommt)`, Griff über `gegriffen`), sonst `jagen` mit `maus: true` und Blitz (`zaubern(…, {id, entkommt})`, erster Strahl folgt der Maus beim Aufladen). `MAUS_ENTKOMMT = 0.35`, `MAEUSE_MAX = 6`.
+- Getestet: pytest (`test_pets.py`), Browser-Harness (Niesen, Hängen unter Knöpfen/Text/Rand, Tentakel-Fang, Blitz-Treffer + Verkohlen, Aufscheuchen + Ausweichen).
+
 ## Fledermäuse trinken Punkte (18.11.2026)
 
 Mark: statt Blut Fertigkeits-/Attributpunkte austrinken, „wie eine Fruitbat in die Kugel beißen“, langsam wieder voll in 10–15 Minuten. Wiki: `entities/critter-pet.md` (Abschnitt Fledermäuse trinken Punkte).

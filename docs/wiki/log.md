@@ -2117,3 +2117,7 @@ Drei Entwürfe (Datenwolke, Lichtkern, Glitch-Geist) mit je fünf Wachstumsstufe
 ## [2026-11-13] update | Drachenperle gebaut
 
 Der Ehrwürdige Drache holt ab und zu seine Perle hervor; man kann sie werfen, aus dem Bild geworfen landet sie auf einem anderen Tablet, er sucht sie und bringt sie zurück. Siehe [[entities/critter-pet]].
+
+## [2026-11-18] update | Bärbel niest Fledermäuse aus
+
+Bärbel niest 2–5 kleine Fledermäuse aus; sie bleiben als Spur auf dem Tablet, flattern herum und hängen kopfüber unter Knöpfen, Text und Kacheln. Bärbel holt sie mit der Tentakel zurück oder verkohlt sie mit dem Blitz, manchmal weichen sie aus. Siehe [[entities/critter-pet]].

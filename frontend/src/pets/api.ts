@@ -111,7 +111,7 @@ export interface Haeufchen {
    *  Raureif vom Eisdrachen (wegwischen),
    *  Bärbels verlorene Seite (antippen = aufheben) oder Schleim vom
    *  Tentakelmonster (wegwischen). Napf: Futternapf, bis ein Drache ihn leer frisst. */
-  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost" | "napf" | "perle" | "krater" | "eiskrater" | "datenpaket";
+  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost" | "napf" | "perle" | "krater" | "eiskrater" | "datenpaket" | "flattermaus";
   erstellt?: string;
   /** Perle: kam von einem anderen Tablet angeflogen (fliegt herein statt aufzuleuchten). */
   geworfen?: boolean;

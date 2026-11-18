@@ -317,7 +317,7 @@ export interface Darstellung {
 
 export type Meldung =
   | { typ: "raus"; seite: "links" | "rechts" }
-  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" | "schleim" | "frost" }
+  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" | "schleim" | "frost" | "flattermaus" }
   /** Spur gefressen/eingesaugt — verschwindet vom Bildschirm. */
   | { typ: "fressen"; id: string }
   /** Drachenperle herausholen/ablegen (x als Anteil der Breite). */
