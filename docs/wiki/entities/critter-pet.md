@@ -563,6 +563,12 @@ Vorschlag Neko dazu (offen):
 - Ab 10 Spuren ist sie wütend: drei blinkende **!** und das Anime-Zornader-Symbol (💢, rote gebogene Linien in Kreuzform).
 - Offen: anderes Pet im Fächer; Stufenzuordnung (Vorschlag oben) bestätigen.
 
+**Entschieden 18.11. (Mark), zweite Runde:**
+- Anderes Pet im Fächer wird verrußt und schüttelt sich ab.
+- Wütend (ab 10 Spuren) jagt sie nach dem Saubermachen einen **Schuldigen**: erst sauber machen, dann jagen. Die Wut (drei !, 💢) bleibt, bis sie einen gefunden hat, auch über die Tablet-Grenzen hinaus.
+- Vorschlag Neko (offen): Schuldig ist das Pet mit den meisten weggeputzten Spuren (`petId` an der Spur); ist es nicht da, fliegt sie zu dem Tablet, auf dem es gerade ist (wie die Perlen-Suche). Gefunden → Laser, verrußt, Wut weg. Ist es nirgends wach, nimmt sie den Nächstschuldigen.
+- Stufenzuordnung: Mark hat nicht widersprochen, gilt als Annahme.
+
 ## Fledermäuse trinken Punkte (Idee 18.11.2026, offen)
 
 Mark: „Die könnten die Fähigkeits- und Attributpunkte austrinken! So anstelle von Blut, und die füllen sich dann nur ganz langsam wieder auf, das könnte fast 10–15 Minuten dauern, bis die wieder ganz voll sind.“
