@@ -604,8 +604,11 @@ async def list_critter(campaign_id: str) -> list[dict]:
     Sprite/Geist/KI — nur von Person zu Person statt von Begleiter zu Person.
     """
     driver = get_driver()
+    # Gelöschte (Papierkorb, `geloescht`) gehören nicht in die Übersicht —
+    # Mark, 18.11.2026: gelöschter Critter „Ding“ blieb als tote Kachel stehen.
     query = """
         MATCH (n:Person {campaignId: $campaign_id, istCritter: true})
+        WHERE NOT coalesce(n.geloescht, false)
         OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
         RETURN n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
                p.id AS besitzerId, p.name AS besitzerName,
@@ -666,6 +669,7 @@ async def eigene_critter(campaign_id: str, person_id: str) -> list[dict]:
     query = """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
         MATCH (n:Person {campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(p)
+        WHERE NOT coalesce(n.geloescht, false)
         RETURN DISTINCT n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
                p.id AS besitzerId, p.name AS besitzerName,
                coalesce(n.istVorlage, false) AS istVorlage,
@@ -688,6 +692,7 @@ async def critter_von_besitzer(campaign_id: str, person_id: str) -> list[str]:
     driver = get_driver()
     query = """
         MATCH (n:Person {campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(p:Person {id: $person_id})
+        WHERE NOT coalesce(n.geloescht, false)
         RETURN n.id AS id
     """
     async with driver.session() as session:
@@ -705,7 +710,7 @@ async def list_drohnen(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = """
         MATCH (n:Person {campaignId: $campaign_id})
-        WHERE n.istDrohne = true OR n.istFahrzeug = true
+        WHERE (n.istDrohne = true OR n.istFahrzeug = true) AND NOT coalesce(n.geloescht, false)
         OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
         RETURN n.id AS id, n.name AS name, n.bildUrl AS bildUrl,
                n.istDrohne AS istDrohne, n.istFahrzeug AS istFahrzeug,
@@ -841,7 +846,7 @@ async def freisetzbare_begleiter(campaign_id: str, person_id: str) -> list[dict]
         """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
         MATCH (n:Person {campaignId: $campaign_id})-[:BEGLEITET]->(p)
-        WHERE n.istCritter = true OR n.istKI = true
+        WHERE (n.istCritter = true OR n.istKI = true) AND NOT coalesce(n.geloescht, false)
         RETURN n.id AS id, CASE WHEN coalesce(n.alias, '') <> '' THEN n.alias ELSE n.name END AS name, n.bildUrl AS bildUrl,
                CASE WHEN n.istKI = true THEN 'ki' ELSE 'critter' END AS art
         """,
@@ -849,6 +854,7 @@ async def freisetzbare_begleiter(campaign_id: str, person_id: str) -> list[dict]
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand {campaignId: $campaign_id})
         WHERE coalesce(g.kiPersonId, '') <> '' AND NOT coalesce(g.weggeworfen, false)
         MATCH (n:Person {id: g.kiPersonId, campaignId: $campaign_id, istKI: true})
+        WHERE NOT coalesce(n.geloescht, false)
         RETURN n.id AS id, CASE WHEN coalesce(n.alias, '') <> '' THEN n.alias ELSE n.name END AS name, n.bildUrl AS bildUrl, 'ki' AS art
         """,
         """
@@ -876,6 +882,7 @@ async def aktive_drohnen_zahl(campaign_id: str, rigger_person_id: str) -> int:
     query = """
         MATCH (n:Person {campaignId: $campaign_id})-[:BEGLEITET]->(p:Person {id: $rigger_id, campaignId: $campaign_id})
         WHERE (n.istDrohne = true OR n.istFahrzeug = true) AND n.riggerAktiv = true
+          AND NOT coalesce(n.geloescht, false)
         RETURN count(n) AS anzahl
     """
     async with driver.session() as session:
@@ -897,6 +904,7 @@ async def list_ki(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = """
         MATCH (n:Person {campaignId: $campaign_id, istKI: true})
+        WHERE NOT coalesce(n.geloescht, false)
         OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
         RETURN n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
                p.id AS besitzerId, p.name AS besitzerName,

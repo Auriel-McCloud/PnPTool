@@ -50,6 +50,7 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
     query = """
         MATCH (c:Person {campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(b:Person {personType: 'PC'})
         WHERE c.petArt IS NOT NULL AND c.petArt <> ''
+          AND NOT coalesce(c.geloescht, false)  // gelöschter Critter läuft nicht mehr herum
         OPTIONAL MATCH (b)-[:MITGLIED_VON]->(:Party)<-[:MITGLIED_VON]-(m:Person {personType: 'PC'})
         // Leerer Alias ('') ist kein Name — sonst hieß das Pet „“.
         RETURN c.id AS id, CASE WHEN coalesce(c.alias, '') <> '' THEN c.alias ELSE c.name END AS name, c.petArt AS art,
@@ -94,6 +95,7 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
                 AND NOT coalesce(kiste.aufgeschlossen, false)
           }
         MATCH (c:Person {id: g.kiPersonId, campaignId: $campaign_id, istKI: true})
+        WHERE NOT coalesce(c.geloescht, false)
         WITH c, b ORDER BY b.id
         WITH c, head(collect(b)) AS b
         OPTIONAL MATCH (b)-[:MITGLIED_VON]->(:Party)<-[:MITGLIED_VON]-(m:Person {personType: 'PC'})

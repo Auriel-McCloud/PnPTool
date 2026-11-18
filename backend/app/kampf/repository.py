@@ -169,7 +169,8 @@ async def hole(campaign_id: str) -> dict | None:
         result = await session.run(
             """
             MATCH (d:Person {campaignId: $campaign_id})
-            WHERE d.istDrohne = true OR d.istFahrzeug = true OR d.istCritter = true OR d.istKI = true
+            WHERE (d.istDrohne = true OR d.istFahrzeug = true OR d.istCritter = true OR d.istKI = true)
+              AND NOT coalesce(d.geloescht, false)
             OPTIONAL MATCH (d)-[:BEGLEITET]->(p1:Person)
             OPTIONAL MATCH (p2:Person {campaignId: $campaign_id})-[:BESITZT]->
                 (:Gegenstand {campaignId: $campaign_id, beschworenerCritterId: d.id})

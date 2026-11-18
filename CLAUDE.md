@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Gelöschte Critter verschwinden aus den Übersichten (18.11.2026)
+
+Mark: gelöschter Critter „Ding“ blieb als Kachel stehen, ließ sich aber nicht öffnen. Ursache: Löschen setzt nur `geloescht` (Papierkorb), die schlanken Listen fragten das nicht ab. Jetzt `NOT coalesce(n.geloescht, false)` in `entities/repository.py` (`list_critter`, `eigene_critter`, `critter_von_besitzer`, `list_ki`, `list_drohnen`, `aktive_drohnen_zahl`, `freisetzbare_begleiter`), `pets/repository.py::pets_der_kampagne` (kein Pet mehr von gelöschtem Critter/KI), `kampf/repository.py` (Besitzer-Map), `achievements/repository.py::erster_critter_traeger`. Geprüft per Wegwerf-Kampagne gegen die lokale Neo4j.
+
 ## Bärbel niest Fledermäuse aus (18.11.2026)
 
 Mark: Bärbel niest Fledermäuse aus, die „wie die Perle da bleiben“, herumflattern, sich kopfüber an HTML-Items hängen; Bärbel fängt sie mit der Tentakel wieder ein oder verkohlt sie mit dem Blitz und jagt sie. 2–5 je Niesen. Wiki: `entities/critter-pet.md` (Abschnitt Bärbel niest Fledermäuse).

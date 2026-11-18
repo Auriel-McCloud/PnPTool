@@ -299,6 +299,7 @@ async def erster_critter_traeger(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = """
         MATCH (critter:Person {campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(p:Person)
+        WHERE NOT coalesce(critter.geloescht, false)
         RETURN DISTINCT p.id AS personId, p.name AS personName
     """
     async with driver.session() as session:
