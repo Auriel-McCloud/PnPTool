@@ -597,7 +597,7 @@ Vorschlag Neko (offen):
 - Die Fledermaus (alle Stufen) schwebt flatternd seitlich an einem gefüllten Punkt im Charakterbogen, schräg zur Kugel geneigt, beißt hinein (Kugel zuckt) und trinkt sie aus: die Füllung sinkt von oben, der Ring bleibt, Tropfen in der Punktfarbe fliegen ins Maul. Die Kugel liegt dabei vor ihrem Maul (über der Pet-Ebene). Danach trinkt sie oft den Nachbarn in derselben Reihe, sonst fliegt sie satt mit einer Freudenrolle weg.
 - Nur Optik (`punkte.ts`: `punktAnbeissen`/`punktTrinken`/`punktNachfuellen`, Klasse `pet-punkt-getrunken`, Füllstand `--pet-pegel`). Jeder ausgetrunkene Punkt läuft in 10–15 Minuten langsam wieder voll; neu laden füllt sofort. Der Tummy-Acher frisst keine angetrunkenen Punkte.
 - Als Vampir wird sie bei Durst kurz wieder zur Fledermaus und trinkt dann (Abweichung vom Vorschlag „beugt sich über die Reihe“: dafür gäbe es keine Pose; Mark wollte ohnehin den Fruitbat-Biss).
-- **Annahmen Neko:** höchstens 6 Punkte je Besuch, ein Punkt dauert ~2 s, Durst frühestens 5–17 s nach der Ankunft und nach dem Trinken 25–60 s Pause; Abbruch (gepackt, Bärbel, Feuer) lässt den Punkt ab seinem Stand nachlaufen.
+- **Annahmen Neko:** höchstens 6 Punkte je Besuch, ein Punkt dauert ~2 s (**Mark 18.11.: zu schnell → jetzt 5–6 s je Punkt**), Durst frühestens 5–17 s nach der Ankunft und nach dem Trinken 25–60 s Pause; Abbruch (gepackt, Bärbel, Feuer) lässt den Punkt ab seinem Stand nachlaufen.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

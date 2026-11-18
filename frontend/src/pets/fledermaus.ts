@@ -91,7 +91,8 @@ const VOLL_ZUTRAULICH = 40;
 const NOTAUSGANG_MS = 8000;
 /** Punkte trinken (18.11.2026, Annahmen Neko): Biss, Austrinken, höchstens so viele je Besuch. */
 const BISS_MS = 320;
-const AUSTRINKEN_MS = 1900;
+/** Austrinken je Punkt (Mark, 18.11.2026: „eher so 5–6 Sekunden, 2 Sekunden ist sehr schnell“). */
+const AUSTRINKEN_MS: [number, number] = [5000, 6000];
 const TRINK_MAX = 6;
 
 export class FledermausBewegung implements PetSteuerung {
@@ -127,7 +128,7 @@ export class FledermausBewegung implements PetSteuerung {
   private rausGemeldet = false;
   private rausSeite: "links" | "rechts" | "oben" = "rechts";
   private verschlucktSeit = 0;
-  private trink: { id: string; t0: number } | null = null;
+  private trink: { id: string; t0: number; dauer: number } | null = null;
   /** Von welcher Seite sie in die Kugel beißt (−1 links, 1 rechts). */
   private trinkSeite = 1;
   private getrunken = 0;
@@ -483,7 +484,7 @@ export class FledermausBewegung implements PetSteuerung {
         this.entscheiden(j);
         return;
       }
-      this.trink = { id, t0: j };
+      this.trink = { id, t0: j, dauer: AUSTRINKEN_MS[0] + this.u.zufall() * (AUSTRINKEN_MS[1] - AUSTRINKEN_MS[0]) };
       this.zustand = "trinken";
       this.setzeAnim(j);
     });
@@ -767,10 +768,10 @@ export class FledermausBewegung implements PetSteuerung {
         }
         this.x = platz.x;
         this.y = platz.y;
-        const k = (jetzt - t.t0 - BISS_MS) / AUSTRINKEN_MS;
+        const k = (jetzt - t.t0 - BISS_MS) / t.dauer;
         if (k > 0) {
           punktTrinken(t.id, 1 - k);
-          if (u.zufall() < dt * 14) {
+          if (u.zufall() < dt * 7) {
             const s = this.s();
             tropfen(t.id, this.x + (this.o.stufe.breite / 2) * s, this.y + this.o.stufe.hoehe * 0.55 * s);
           }

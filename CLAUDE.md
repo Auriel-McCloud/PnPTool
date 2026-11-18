@@ -6,7 +6,7 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Mark: statt Blut Fertigkeits-/Attributpunkte austrinken, „wie eine Fruitbat in die Kugel beißen“, langsam wieder voll in 10–15 Minuten. Wiki: `entities/critter-pet.md` (Abschnitt Fledermäuse trinken Punkte).
 - `punkte.ts`: `punktAnbeissen`/`punktTrinken`/`punktNachfuellen`/`nachbarPunkt`/`tropfen`, Klasse `pet-punkt-getrunken` mit `--pet-pegel`/`--pet-farbe` (pets.css), Nachlauf-Uhr alle 3 s. Nur Optik, kein Server. `sichtbarePunkte` lässt angetrunkene Punkte aus (Tummy).
-- `fledermaus.ts`: Zustand `trinken` (schwebt seitlich, geneigt, Maul bei 52 % der Streifenhöhe), `TRINK_MAX = 6` je Besuch, Vampir wird dafür zur Fledermaus. Abbruch über `flatternZu`/Packen/Verschlucken → Punkt läuft ab Stand nach.
+- `fledermaus.ts`: Zustand `trinken` (schwebt seitlich, geneigt, Maul bei 52 % der Streifenhöhe), `TRINK_MAX = 6` je Besuch, `AUSTRINKEN_MS` 5–6 s je Punkt (Mark: 2 s war zu schnell), Vampir wird dafür zur Fledermaus. Abbruch über `flatternZu`/Packen/Verschlucken → Punkt läuft ab Stand nach.
 - Getestet: Browser-Harness (Biss, Austrinken, Reihe entlang, Nachlaufen).
 
 ## KI-Reinigungslaser (18.11.2026)
