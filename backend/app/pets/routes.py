@@ -191,6 +191,10 @@ async def live(websocket: WebSocket, campaign_id: str):
                     await motor.feuerball(campaign_id, person_id, str(n.get("petId")), str(n.get("seite")))
                 elif typ == "perleGefunden":
                     await motor.perle_gefunden(campaign_id, person_id, str(n.get("petId")), str(n.get("id")))
+                elif typ == "jagd":
+                    ziele = n.get("ziele")
+                    await motor.jagd(campaign_id, person_id, str(n.get("petId")),
+                                     ziele if isinstance(ziele, list) else [])
             except (TypeError, ValueError):
                 continue
     except WebSocketDisconnect:

@@ -506,6 +506,13 @@ export class KiWesen {
     return `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])},${this.schlaf ? 0.4 : 0.85})`;
   }
 
+  /** Farben des Reinigungslasers (18.11.2026) — in ihrer aktuellen Farbe. */
+  laserFarben(jetzt: number): { kern: string; hell: string; mittel: string } {
+    const pal = this.palette(jetzt);
+    const css = (c: RGB) => `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
+    return { kern: css(pal.kern), hell: css(pal.hell), mittel: css(pal.mittel) };
+  }
+
   /** Wo ein Teilchen gerade hingehört (relativ zur Mitte). */
   private platz(p: Teilchen, t: number): [number, number] {
     if (p.stirbt) return [0, 0];

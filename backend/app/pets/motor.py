@@ -71,6 +71,11 @@ class Pet:
     feuerball_zuletzt: float = -1e9
     # Zutraulichkeit je Spieler (17.11.2026, für die Vampir-Fledermaus).
     zutraulich: dict[str, int] = field(default_factory=dict)
+    # Reinigungslaser der KI (Mark, 18.11.2026): wütend nach einem sehr
+    # verschmutzten Bildschirm — wen sie als Schuldigen jagt (Pet-IDs, der
+    # Hauptschuldige zuerst). Bleibt, bis sie einen erwischt hat, auch über
+    # Tablets hinweg; leer = keine Jagd.
+    jagd: list[str] = field(default_factory=list)
 
     def perle_modus(self) -> str | None:
         """Was das Tablet über die Perle wissen muss — nie, WO sie liegt."""
@@ -562,7 +567,38 @@ def _petmotor_als_dict(self, campaign_id: str, pet: Pet) -> dict:
             d["lesung"] = st.text
         else:
             d["heim"] = True
+    if pet.jagd:
+        # Das Tablet erfährt nur, WEN sie jagt und ob einer davon gerade auf
+        # einem anderen Tablet der Party ist — dann fliegt sie bald los.
+        d["jagd"] = list(pet.jagd)
+        d["jagdDa"] = self._jagd_ziel(campaign_id, pet, pet.wirt) is not None
     return d
+
+
+def _petmotor_jagd_ziel(self, campaign_id: str, pet: Pet, von: str | None) -> str | None:
+    """Tablet, auf dem gerade einer ihrer Schuldigen ist (der Hauptschuldige
+    zuerst) — nur Tablets ihres Kreises, nicht das, von dem sie kommt."""
+    if not pet.jagd:
+        return None
+    pets = self._pets.get(campaign_id, {})
+    kreis = logic.online_mitglieder(pet.mitglieder, self.online(campaign_id))
+    for pid in pet.jagd:
+        t = pets.get(pid)
+        if t and t.wirt and t.wirt != von and t.wirt in kreis:
+            return t.wirt
+    return None
+
+
+async def _petmotor_jagd(self, campaign_id: str, person_id: str, pet_id: str, ziele: list) -> None:
+    """KI meldet ihre Jagd (Liste der Schuldigen) oder deren Ende (leer)."""
+    pet = self._pets.get(campaign_id, {}).get(pet_id)
+    if pet is None or pet.wirt != person_id or not logic.ist_ki(pet.art):
+        return
+    sauber = [str(z) for z in ziele if z and str(z) != pet_id][:8]
+    if sauber == pet.jagd:
+        return
+    pet.jagd = sauber
+    await self._pets_senden(campaign_id, person_id)
 
 
 def _petmotor_ziel(self, campaign_id: str, pet: Pet, kandidaten: list[str], von: str | None) -> str | None:
@@ -577,6 +613,10 @@ def _petmotor_ziel(self, campaign_id: str, pet: Pet, kandidaten: list[str], von:
             pet.bringt_zu = pet.besitzer_id if pet.besitzer_id in kandidaten else None
         if pet.bringt_zu:
             return pet.bringt_zu
+    # Wütende KI (18.11.2026): direkt zum Tablet ihres Schuldigen.
+    jagd = self._jagd_ziel(campaign_id, pet, von)
+    if jagd in kandidaten:
+        return jagd
     if pet.perle_ort is not None:
         if von:
             pet.gesucht.add(von)
@@ -633,6 +673,8 @@ PetMotor._als_dict = _petmotor_als_dict
 PetMotor._ziel = _petmotor_ziel
 PetMotor.lesen_takt = _petmotor_lesen_takt
 PetMotor.gelesen = _petmotor_gelesen
+PetMotor._jagd_ziel = _petmotor_jagd_ziel
+PetMotor.jagd = _petmotor_jagd
 
 
 motor = PetMotor()

@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-18] gebaut | KI-Reinigungslaser
+
+Ab Geist brennt die KI Spuren weg (Punktstrahl → Fächer, je Stufe mehr Spur-Arten). Ab 3 Spuren rotes !, ab 10 wütend (drei !, Zornader, rot), jagt danach den Schuldigen über alle Tablets. Pets im Strahl verrußen; die Entität kitzelt dem Tummy-Acher die Punkte heraus. Siehe [[entities/critter-pet]].
+
+## [2026-11-18] idee | Fledermäuse trinken Punkte
+
+Statt Blut Fertigkeits-/Attributpunkte, füllen sich in 10–15 Minuten wieder auf. Offen. Siehe [[entities/critter-pet]].
+
 ## [2026-11-17] gebaut | Geldzeile nennt wofür
 
 `Mira: Handel (120¥ · Klinge)`. Alte Käufe über handelId. Siehe [[entities/ereignisprotokoll]].

@@ -1,7 +1,7 @@
 ---
 title: Critter-Pet (Tamagotchi)
 created: 2026-11-11
-updated: 2026-11-17
+updated: 2026-11-18
 type: entität
 tags: [ui, frontend, backend, datenmodell]
 sources: [../../ENTWICKLUNGSHISTORIE.md, gespräch 2026-11-11]
@@ -538,7 +538,7 @@ Mark hat das Bärbel-Duell abgenommen: meist entkommt die Fledermaus knapp, ab u
 - **Annahmen Neko:** Pausen, Dauern und Wahrscheinlichkeiten oben; Vampir-Laufen von vorn (Gehbewegung im Stand, der Rahmen wandert); Rauch dunkelviolett; Zylinder/Lüften und Gehstock nur beim erwachsenen Mann — **von Mark bestätigt 17.11.** („Den hat nur der Erwachsene!“).
 - Noch offen: Bärbel spuckt selbst Fledermäuse aus (Ideenliste); was der Vampir sonst noch tun könnte.
 
-## KI-Reinigungslaser (Idee 18.11.2026, offen)
+## KI-Reinigungslaser (18.11.2026, gebaut)
 
 Mark: „ein Reinigungslaser! Ein Strahl, der an einem Punkt beginnt und dann immer schneller wird, bis er wie ein Fächer aussieht, der dann allen Schmutz der anderen Pets wegbrennen kann.“
 
@@ -568,6 +568,16 @@ Vorschlag Neko dazu (offen):
 - Wütend (ab 10 Spuren) jagt sie nach dem Saubermachen einen **Schuldigen**: erst sauber machen, dann jagen. Die Wut (drei !, 💢) bleibt, bis sie einen gefunden hat, auch über die Tablet-Grenzen hinaus.
 - Vorschlag Neko (offen): Schuldig ist das Pet mit den meisten weggeputzten Spuren (`petId` an der Spur); ist es nicht da, fliegt sie zu dem Tablet, auf dem es gerade ist (wie die Perlen-Suche). Gefunden → Laser, verrußt, Wut weg. Ist es nirgends wach, nimmt sie den Nächstschuldigen.
 - Stufenzuordnung: Mark hat nicht widersprochen, gilt als Annahme.
+
+### Gebaut 18.11.2026 (Mark: „bau“)
+
+- **Was sie kann (Stufe):** Geist: dünner Punktstrahl, der nur zittert — Häufchen, Seiten · Wesen: Strahl pendelt — dazu Schleim, Raureif · Entität: voller Fächer — dazu Brandflecken, Krater (`laser.ts::LASER_ARTEN`).
+- **Putzmodus:** ab 3 Spuren auf dem Schirm (und mindestens einer, die sie schon kann) rotes **!** über dem Kopf. Sie fliegt über die nächste Spur, lädt den Kern auf, Strahl auf den Punkt, pendelt immer schneller, bis er als Fächer steht. Alles im Strahl verdampft (Lichtblitz, Funken, Rauch) und verschwindet wie weggewischt. Danach die nächste, bis keine Spur mehr übrig ist, die sie kann.
+- **Wütend:** ab 10 Spuren drei blinkende **!**, pochende Zornader (💢, vier gebogene Stücke) und sie wird rot. Erst sauber machen, dann jagen: Schuldiger ist, wessen Spuren am meisten lagen (`petId` an der Spur). Ist er auf dem Schirm, fliegt sie hinterher und schießt; ist er auf einem anderen Tablet, schaut sie sich kurz um und fliegt los — der Server schickt sie direkt dorthin (`Pet.jagd`, `_jagd_ziel`, Meldung `jagd`). Die Wut bleibt über Tablets hinweg, bis sie einen Schuldigen erwischt hat; dann wird sie wieder ihre Farbe und zeigt kurz ein Smiley. Ist keiner online, bleibt sie wütend und zieht normal weiter.
+- **Pets im Strahl** verrußen wie nach Bärbels Blitz (Drache, Mongo, Tummy schütteln sich ab; Bärbel und die Fledermaus erschrecken, eine andere KI bekommt eine Bildstörung).
+- **Tummy-Acher kitzeln (Entität):** hat er Punkte im Bauch, fliegt sie hin und kitzelt ihn mit einem dünnen Strahl; er rülpst, die Punkte fliegen zurück (wie Streicheln, ohne Zutraulichkeit). Höchstens alle 8–14 s.
+- Angetippt oder gepackt bricht der Schuss ab; danach macht sie mit dem Putzen weiter.
+- **Annahmen Neko:** Schusslänge ~3 s (Jagd kürzer), Abstand über der Spur, Fächerbreite je Stufe, höchstens 40 Schüsse je Putzrunde, Zeichen wachsen mit ihr; Schuldige ohne Spur-Verursacher (Datenpaket, Napf) zählen nicht; sie putzt keine Spuren, die ihre Stufe noch nicht kann, auch wenn sie wütend ist.
 
 ## Fledermäuse trinken Punkte (Idee 18.11.2026, offen)
 

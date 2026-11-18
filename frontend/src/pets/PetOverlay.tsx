@@ -10,7 +10,7 @@ import { FLEDERMAUS_STUFEN, FLEDERMAUS_TAKT } from "./fledermausstufen";
 import { FledermausBewegung } from "./fledermaus";
 import { herein, schiesse } from "./feuerball";
 import { KiFigur } from "./KiFigur";
-import { alle, makel, melde, treffe, vergiss } from "./treffen";
+import { alle, kitzelbar, makel, melde, treffe, vergiss } from "./treffen";
 import "./pets.css";
 
 /** Steuerungen der gerade sichtbaren Pets — Feuer trifft die andere Figur. */
@@ -594,6 +594,8 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
             <Brandfleck
               key={h.id}
               id={h.id}
+              spurArt={h.art}
+              petId={h.petId}
               art={h.art === "krater" ? "brand" : h.art === "eiskrater" ? "frost" : h.art}
               gross={gross}
               stil={stil}
@@ -631,7 +633,13 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
             }}
           />
         ) : p.art === "ki" ? (
-          <KiFigur key={`${p.id}:${p.ankunft}`} pet={p} senden={senden} wegmachen={wegmachen} />
+          <KiFigur
+            key={`${p.id}:${p.ankunft}`}
+            pet={p}
+            senden={senden}
+            wegmachen={wegmachen}
+            onTreffer={(t) => trefferWirken(t, performance.now())}
+          />
         ) : (
         <PetFigur
           key={`${p.id}:${p.ankunft}:${p.stufe ?? "jung"}`}
@@ -1137,6 +1145,8 @@ function HaeufchenAmElement({
       role="button"
       data-id={h.id}
       data-art={art}
+      data-schmutz={art}
+      data-pet={h.petId}
       className={`pet-haeufchen${weg ? " pet-haeufchen-weg" : ""}`}
       title={istSeite ? "Aufheben" : "Wegmachen"}
       style={{ width: bw, height: bh, backgroundImage: liegtBild }}
@@ -1496,6 +1506,8 @@ function schleimBild(id: string) {
  */
 function Brandfleck({
   id,
+  spurArt,
+  petId,
   art,
   gross = false,
   stil,
@@ -1503,6 +1515,9 @@ function Brandfleck({
   onSauber,
 }: {
   id: string;
+  /** Echte Spur-Art und Verursacher — der KI-Laser (18.11.2026) liest beides am DOM. */
+  spurArt: string;
+  petId: string;
   /** Einschlag eines Feuerballs: größer, braucht mehr Wischen. */
   gross?: boolean;
   /** `schleim`: feuchter Schmierfleck vom Tentakelmonster, `frost`: Raureif
@@ -1537,6 +1552,9 @@ function Brandfleck({
     <div
       ref={el}
       role="button"
+      data-id={id}
+      data-schmutz={spurArt}
+      data-pet={petId}
       className={`pet-brand${art === "schleim" ? " pet-schleim" : art === "frost" ? " pet-frost" : ""}${weg ? " pet-haeufchen-weg" : ""}`}
       title="Sauberwischen"
       style={{
@@ -1773,6 +1791,17 @@ function PetFigur({
         });
     bewegung.current = b;
     steuerungen.set(pet.id, b);
+    // KI-Laser (18.11.2026): die Entität kitzelt den Tummy-Acher, bis er rülpst
+    // und die gefressenen Punkte zurückfliegen — wie beim Streicheln.
+    if (tierFamilie(pet.art) === "tummy") {
+      kitzelbar.set(pet.id, () => {
+        const j = performance.now();
+        if (!b.streicheln(j)) return false;
+        const d = b.darstellung(j);
+        ausspucken(pet.id, d.kopfX, d.kopfY + 10);
+        return true;
+      });
+    }
 
     let letzte = performance.now();
     let rahmen = 0;
@@ -2076,6 +2105,7 @@ function PetFigur({
       if (gehalten.current && istPunkt(gehalten.current)) punktLoslassen(gehalten.current);
       else if (gehalten.current) gegriffen.delete(gehalten.current);
       steuerungen.delete(pet.id);
+      kitzelbar.delete(pet.id);
       vergiss(pet.id);
       b.aufraeumen();
     };

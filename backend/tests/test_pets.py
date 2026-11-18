@@ -948,3 +948,42 @@ def test_fledermaus_kennt_die_zutraulichkeit_des_wirts(welt, monkeypatch):
         m._takt.cancel()
 
     laufen(ablauf())
+
+
+def test_wuetende_ki_fliegt_zum_tablet_ihres_schuldigen(welt):
+    """Reinigungslaser (Mark, 18.11.2026): nach einem sehr verschmutzten
+    Bildschirm jagt die KI den Schuldigen — auch über die Tablet-Grenzen."""
+    m, stand = welt
+    stand["pets"].append({
+        "id": "ki", "name": "Funke", "art": "ki", "besitzerId": "anna", "besitzerName": "Anna",
+        "mitglieder": ["anna", "ben", "cleo"], "stufe": "entitaet",
+    })
+
+    async def ablauf():
+        anna, ben, cleo = Socket(), Socket(), Socket()
+        for wer, s in (("anna", anna), ("ben", ben), ("cleo", cleo)):
+            await m.anmelden("k", wer, s)
+        m._pets["k"]["drache"].wirt = "cleo"
+        m._pets["k"]["ki"].wirt = "anna"
+        # Nur der Wirt darf die Jagd melden, und nur für eine KI.
+        await m.jagd("k", "ben", "ki", ["drache"])
+        await m.jagd("k", "cleo", "drache", ["ki"])
+        assert m._pets["k"]["ki"].jagd == [] and m._pets["k"]["drache"].jagd == []
+        await m.jagd("k", "anna", "ki", ["ki", "drache"])
+        ki = next(p for p in anna.letzte_pets() if p["id"] == "ki")
+        assert ki["jagd"] == ["drache"] and ki["jagdDa"] is True
+        # Raus: nicht zu Ben, sondern direkt zu Cleo, wo der Drache ist.
+        for _ in range(5):
+            await m.raus("k", "anna", "ki", "rechts")
+            await asyncio.sleep(0.01)
+            assert m._pets["k"]["ki"].wirt == "cleo"
+            ki = next(p for p in cleo.letzte_pets() if p["id"] == "ki")
+            assert ki["jagd"] == ["drache"] and ki["jagdDa"] is False  # er ist ja hier
+            m._pets["k"]["ki"].wirt = "anna"
+        m._pets["k"]["ki"].wirt = "cleo"
+        await m.jagd("k", "cleo", "ki", [])
+        ki = next(p for p in cleo.letzte_pets() if p["id"] == "ki")
+        assert "jagd" not in ki
+        m._takt.cancel()
+
+    laufen(ablauf())

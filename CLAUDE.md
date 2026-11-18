@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## KI-Reinigungslaser (18.11.2026)
+
+Mark: „ein Strahl, der an einem Punkt beginnt und immer schneller wird, bis er wie ein Fächer aussieht, der allen Schmutz der anderen Pets wegbrennt“. Wiki: `entities/critter-pet.md` (Abschnitt KI-Reinigungslaser).
+- **Frontend** `frontend/src/pets/laser.ts` (Schuss-Ablauf laden → Punkt → Pendeln → Fächer, Funken/Rauch, „!“, Zornader, `LASER_ARTEN` je Stufe, `PUTZ_AB = 3`, `WUT_AB = 10`), eingebaut in `KiFigur.tsx` (Zustand `laser`, Putzmodus, Wut, Verfolgen, eigene Vollbild-Leinwand `.pet-ki-laser`). Spuren tragen dafür `data-schmutz`/`data-pet` (Häufchen, Seite, Brandfleck-Familie).
+- **Treffer:** Pets im Strahl über `treffe({art: "blitz"})` + `trefferWirken` (Prop `onTreffer`). Tummy-Acher kitzeln über Registry `treffen.ts::kitzelbar` (PetFigur meldet ihn an, ruft `streicheln` + `ausspucken`).
+- **Backend** `motor.py`: `Pet.jagd` (Schuldige), WS-Meldung `jagd` (nur Wirt, nur KI), `_jagd_ziel` lenkt ihr nächstes Tablet zum Schuldigen, Pet-Dict bekommt `jagd`/`jagdDa`. Test `test_wuetende_ki_fliegt_zum_tablet_ihres_schuldigen`.
+- Getestet: pytest (`test_pets.py`), Browser-Harness (Putzen, Wut, Jagd bis Erwischen, Losfliegen bei `jagdDa`).
+
 ## Geldzeile nennt, wofür (17.11.2026)
 
 Mark: im Geld-Filter stand nur der Betrag. Zeile `Mira: Handel (120¥ · Klinge)`. Alte Käufe holen den Gegenstand über `handelId`. Digitale Bestellung und Reparatur schreiben den Namen ab jetzt mit. Drohnen-Umbau und Credstick stehen nicht in diesem Filter.

@@ -88,6 +88,11 @@ export interface PetAufSchirm {
   /** Zutraulichkeit des Spielers dieses Tablets zum Pet (unsichtbar; die
    *  Vampir-Fledermaus verwandelt sich bei hohem Wert öfter und länger). */
   zutraulich?: number;
+  /** KI-Reinigungslaser (Mark, 18.11.2026): wütend — diese Pets jagt sie als
+   *  Schuldige (Hauptschuldiger zuerst), bis sie einen erwischt hat. */
+  jagd?: string[];
+  /** Einer davon ist gerade auf einem anderen Tablet der Party. */
+  jagdDa?: boolean;
 }
 
 export interface Lesung {

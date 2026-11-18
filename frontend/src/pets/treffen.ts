@@ -71,6 +71,10 @@ export interface Beute {
 
 export const beuteTiere = new Map<string, Beute>();
 
+/** KI-Laser (Mark, 18.11.2026): Tummy-Acher auf diesem Bildschirm. Die Entität
+ *  kitzelt ihn mit dem Strahl; true = er hat gerülpst (Punkte fliegen zurück). */
+export const kitzelbar = new Map<string, () => boolean>();
+
 export function makel(id: string, jetzt: number): Angriff["art"] | null {
   const t = makelBis.get(id);
   if (!t || t.bis < jetzt) return null;
