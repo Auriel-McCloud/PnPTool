@@ -362,7 +362,7 @@ export function KiFigur({
     // Was sie gerade holt: greifen (Teilchen strömen hin) → heben → tragen.
     let traktor: {
       id: string; phase: "greifen" | "heben" | "tragen"; t0: number;
-      x0: number; y0: number; ix: number; iy: number; ivx: number; ivy: number; h: number; nachRechts: boolean;
+      x0: number; y0: number; ix: number; iy: number; ivx: number; ivy: number; w: number; h: number; nachRechts: boolean;
     } | null = null;
     // Geworfen oder fallen gelassen: fliegt, bis es aus dem Bildschirm ist.
     let fliegend: { id: string; x: number; y: number; vx: number; vy: number; dreh: number; vdreh: number }[] = [];
@@ -372,12 +372,15 @@ export function KiFigur({
     };
     // Das Ding hängt ein Stück unter ihr, damit man den Strahl dazwischen sieht.
     const haengePunkt = () => ({ x, y: y + wesen.radius() * p + 46 + (traktor?.h ?? 16) / 2 });
-    /** Abgebrochen (angetippt, gepackt): was schon in der Luft hängt, fällt hinunter und ist weg. */
+    /** Abgebrochen (angetippt, gepackt): was schon in der Luft hängt, fällt
+     *  hinunter und bleibt liegen, wo es landet (Mark, 19.11.2026). */
     const traktorAbbrechen = () => {
       const t = traktor;
       traktor = null;
       strahl.an = false;
-      if (t && t.phase !== "greifen") fliegend.push({ id: t.id, x: t.ix, y: t.iy, vx: t.ivx, vy: Math.max(0, t.ivy), dreh: 0, vdreh: zw(-200, 200) });
+      if (!t) return;
+      if (t.phase !== "greifen") gegriffen.set(t.id, { x: t.ix, y: t.iy, skala: 1, los: true });
+      naechsterTraktor = performance.now() + zw(TRAKTOR_PAUSE_MS[0], TRAKTOR_PAUSE_MS[1]);
     };
     const traktorPruefen = (jetzt: number) => {
       if (stufe() > TRAKTOR_BIS_STUFE || wut || putz || jetzt < naechsterTraktor) return false;
@@ -396,7 +399,7 @@ export function KiFigur({
         const j = performance.now();
         const cx = (r.left + r.right) / 2;
         const cy = (r.top + r.bottom) / 2;
-        traktor = { id: z.id, phase: "greifen", t0: j, x0: cx, y0: cy, ix: cx, iy: cy, ivx: 0, ivy: 0, h: r.height, nachRechts: x > breite() / 2 };
+        traktor = { id: z.id, phase: "greifen", t0: j, x0: cx, y0: cy, ix: cx, iy: cy, ivx: 0, ivy: 0, w: r.width, h: r.height, nachRechts: x > breite() / 2 };
         strahl.einschalten(j);
         zustand = "traktor";
       });
@@ -783,7 +786,7 @@ export function KiFigur({
         if (!strahl.leer) {
           const t = traktor;
           const unten = { x, y: y + wippen + wesen.radius() * p * 0.6 };
-          strahl.zeichne(lctx, jetzt, dt, zustand !== "weg" ? unten : null, t ? { x: t.ix, y: t.iy } : null, p, t ? t.h : 16);
+          strahl.zeichne(lctx, jetzt, dt, zustand !== "weg" ? unten : null, t ? { x: t.ix, y: t.iy } : null, p, t ? Math.max(t.w, t.h) : 16);
         }
         if (herzen.length) herzen = zeichneHerzen(lctx, herzen, jetzt, p);
         if (zustand !== "weg" && zustand !== "gezogen") {
@@ -876,8 +879,8 @@ export function KiFigur({
     return () => {
       cancelAnimationFrame(rahmen);
       saugenAbbrechen();
-      // Was gerade in der Luft hängt oder fliegt, ist weg (sonst springt es zurück).
-      if (traktor && traktor.phase !== "greifen") fliegend.push({ id: traktor.id, x: 0, y: 0, vx: 0, vy: 0, dreh: 0, vdreh: 0 });
+      // Was in der Luft hängt, fällt hinunter und bleibt; was schon geworfen ist, ist weg.
+      traktorAbbrechen();
       for (const f of fliegend) {
         wegmachenRef.current(f.id);
         window.setTimeout(() => gegriffen.delete(f.id), 4000);

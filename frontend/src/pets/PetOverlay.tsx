@@ -1152,6 +1152,22 @@ function HaeufchenAmElement({
     let rahmen = 0;
     const takt = (jetzt: number) => {
       const griff = gegriffen.get(h.id);
+      if (griff?.los) {
+        // Losgelassen (Traktorstrahl unterbrochen, Mark 19.11.2026): fällt von
+        // hier hinunter bzw. segelt als Seite und bleibt liegen, wo es landet.
+        gegriffen.delete(h.id);
+        x = griff.x;
+        y = griff.y + bh / 2;
+        anker = null;
+        boden = false;
+        div.style.transform = "";
+        if (istSeite) losSegeln(jetzt, true);
+        else fall = { t0: jetzt, y0: y, x0: x };
+        div.classList.add("pet-haeufchen-faellt");
+        zeichnen();
+        rahmen = requestAnimationFrame(takt);
+        return;
+      }
       if (griff) {
         // Gepackt: folgt Maul/Tentakel, wird kleiner, bis es weg ist.
         x = griff.x;

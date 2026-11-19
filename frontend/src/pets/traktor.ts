@@ -50,6 +50,7 @@ export class TraktorStrahl {
   /** Letzte Enden — Teilchen fliegen auch nach dem Abschalten noch hin. */
   private von: Punkt = { x: 0, y: 0 };
   private bis: Punkt = { x: 0, y: 0 };
+  private ding: Punkt = { x: 0, y: 0 };
 
   get leer() {
     return !this.an && this.teile.length === 0;
@@ -60,11 +61,21 @@ export class TraktorStrahl {
     this.an = true;
   }
 
-  zeichne(ctx: CanvasRenderingContext2D, jetzt: number, dt: number, von: Punkt | null, bis: Punkt | null, p: number, breite = 16) {
+  /** `ding` = Mitte des getragenen Dings. Der Strahl reicht ein Stück darüber
+   *  hinaus, damit es mitten im Kegel hängt (Mark, 19.11.2026). */
+  zeichne(ctx: CanvasRenderingContext2D, jetzt: number, dt: number, von: Punkt | null, ding: Punkt | null, p: number, breite = 16) {
     if (von) this.von = von;
-    if (bis) this.bis = bis;
+    if (ding) {
+      this.ding = ding;
+      const ddx = ding.x - this.von.x;
+      const ddy = ding.y - this.von.y;
+      const l = Math.hypot(ddx, ddy) || 1;
+      const mehr = breite * 0.6 + 4 * p;
+      this.bis = { x: ding.x + (ddx / l) * mehr, y: ding.y + (ddy / l) * mehr };
+    }
     const a = this.von;
     const b = this.bis;
+    const d = this.ding;
     if (this.an) {
       this.nachschub += dt * 46;
       while (this.nachschub >= 1) {
@@ -95,7 +106,7 @@ export class TraktorStrahl {
       // Leiser Lichtkegel, flimmert und blendet beim Einschalten auf.
       const auf = Math.min(1, (jetzt - this.an0) / 350);
       const halbOben = 2 * p;
-      const halbUnten = breite * 0.5 + 4 * p;
+      const halbUnten = breite * 0.7 + 5 * p;
       const verlauf = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
       verlauf.addColorStop(0, "rgba(120,195,255,0.05)");
       verlauf.addColorStop(1, "rgba(80,160,255,0.22)");
@@ -143,7 +154,7 @@ export class TraktorStrahl {
         const w = jetzt / 260 + (i * Math.PI) / 3;
         const r = breite * 0.55 + 3 * p + Math.sin(jetzt / 120 + i) * p;
         ctx.globalAlpha = 0.5 + 0.5 * Math.sin(jetzt / 90 + i * 2);
-        ctx.fillRect(raster(b.x + Math.cos(w) * r), raster(b.y + Math.sin(w) * r * 0.6), p, p);
+        ctx.fillRect(raster(d.x + Math.cos(w) * r), raster(d.y + Math.sin(w) * r * 0.6), p, p);
       }
     }
     ctx.restore();

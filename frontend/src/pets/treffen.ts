@@ -100,8 +100,9 @@ export const kitzelbar = new Map<string, () => boolean>();
 /** Spuren, die ein Pet gerade gepackt hat (Drache schnappt eine Seite, Bärbels
  *  Tentakel holt ein Häufchen, der Traktorstrahl der KI trägt es weg) — Mitte
  *  in Bildschirm-Pixeln, `dreh` in Grad (Wurf). Die Spur folgt dann diesem
- *  Punkt statt ihrem Element. */
-export const gegriffen = new Map<string, { x: number; y: number; skala: number; dreh?: number }>();
+ *  Punkt statt ihrem Element. `los` = losgelassen: sie fällt von dort hinunter
+ *  und bleibt liegen, wo sie landet (Traktorstrahl unterbrochen). */
+export const gegriffen = new Map<string, { x: number; y: number; skala: number; dreh?: number; los?: boolean }>();
 
 export function makel(id: string, jetzt: number): Angriff["art"] | null {
   const t = makelBis.get(id);
