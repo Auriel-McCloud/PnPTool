@@ -8,6 +8,7 @@ import { useNachladen } from "../shell/nachladen";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
 import { HERRENLOS_SENTINEL, itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
 import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "./aufbewahrung";
+import { istTastaturSchrumpfung } from "./kachelraster";
 import { KategorienAuswahl, vorhandeneTypenSortiert } from "./KategorienAuswahl";
 import { Muelleimer } from "./Muelleimer";
 import { TypKachelAuswahl } from "./TypKachelAuswahl";
@@ -28,12 +29,16 @@ const ABSTAND = 10;
  */
 function useProSeite(ref: React.RefObject<HTMLDivElement | null>, bereit: boolean) {
   const [proSeite, setProSeite] = useState(12);
+  // Letzte echte Messung — siehe istTastaturSchrumpfung (Handy-Tastatur).
+  const gemessen = useRef<{ breite: number; hoehe: number } | null>(null);
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     const messen = () => {
       const { width, height } = el.getBoundingClientRect();
+      if (istTastaturSchrumpfung(gemessen.current, width, height)) return;
+      gemessen.current = { breite: width, hoehe: height };
       const spalten = Math.max(1, Math.floor((width + ABSTAND) / (KACHEL_BREITE + ABSTAND)));
       const zeilen = Math.max(1, Math.floor((height + ABSTAND) / (KACHEL_HOEHE + ABSTAND)));
       setProSeite(spalten * zeilen);
