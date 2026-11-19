@@ -2133,3 +2133,7 @@ Bärbel niest 2–5 kleine Fledermäuse aus; sie bleiben als Spur auf dem Tablet
 ## [2026-11-19] update | Bärbel am Critter wählbar
 
 Die Pet-Art Bärbel lässt sich jetzt auch am Critter setzen, nicht nur am Gegenstand. Siehe [[entities/critter-pet]].
+
+## [2026-11-19] update | KI-Traktorstrahl und Pixelherz
+
+Funke und Keim tragen Häufchen und Seiten mit einem blauen Traktorstrahl zum Rand und werfen sie aus dem Bildschirm; Antippen lässt ein Pixelherz aufsteigen. Siehe [[entities/critter-pet]].

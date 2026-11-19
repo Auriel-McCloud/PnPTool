@@ -97,6 +97,12 @@ export const flattermaeuse = new Map<string, Flattermaus>();
  *  kitzelt ihn mit dem Strahl; true = er hat gerülpst (Punkte fliegen zurück). */
 export const kitzelbar = new Map<string, () => boolean>();
 
+/** Spuren, die ein Pet gerade gepackt hat (Drache schnappt eine Seite, Bärbels
+ *  Tentakel holt ein Häufchen, der Traktorstrahl der KI trägt es weg) — Mitte
+ *  in Bildschirm-Pixeln, `dreh` in Grad (Wurf). Die Spur folgt dann diesem
+ *  Punkt statt ihrem Element. */
+export const gegriffen = new Map<string, { x: number; y: number; skala: number; dreh?: number }>();
+
 export function makel(id: string, jetzt: number): Angriff["art"] | null {
   const t = makelBis.get(id);
   if (!t || t.bis < jetzt) return null;

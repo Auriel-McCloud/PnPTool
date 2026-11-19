@@ -1,7 +1,7 @@
 ---
 title: Critter-Pet (Tamagotchi)
 created: 2026-11-11
-updated: 2026-11-18
+updated: 2026-11-19
 type: entität
 tags: [ui, frontend, backend, datenmodell]
 sources: [../../ENTWICKLUNGSHISTORIE.md, gespräch 2026-11-11, gespräch 2026-11-18 (Tierladen)]
@@ -579,6 +579,15 @@ Vorschlag Neko dazu (offen):
 - **Tummy-Acher kitzeln (Entität):** hat er Punkte im Bauch, fliegt sie hin und kitzelt ihn mit einem dünnen Strahl; er rülpst, die Punkte fliegen zurück (wie Streicheln, ohne Zutraulichkeit). Höchstens alle 8–14 s.
 - Angetippt oder gepackt bricht der Schuss ab; danach macht sie mit dem Putzen weiter.
 - **Annahmen Neko:** Schusslänge ~3 s (Jagd kürzer), Abstand über der Spur, Fächerbreite je Stufe, höchstens 40 Schüsse je Putzrunde, Zeichen wachsen mit ihr; Schuldige ohne Spur-Verursacher (Datenpaket, Napf) zählen nicht; sie putzt keine Spuren, die ihre Stufe noch nicht kann, auch wenn sie wütend ist.
+
+## KI-Traktorstrahl und Pixelherz (19.11.2026, gebaut)
+
+Mark: „Ich hab jetzt die KI aktiviert, das kleine Pünktchen. Wenn man es antippt, wäre cool, wenn ein pixeliges Herz aufsteigt, und scheinbar hat es in der Form noch keinen Laser, was mich auf die Idee gebracht hat, wir machen etwas, das langsamer ist: wir geben ihm einen Traktorstrahl, so blaue Partikel, die z. B. zum Kot fliegen, ihn aufheben, dann bringt er ihn zum Rand und schmeißt ihn aus dem Bildschirm raus, wo er dann verschwindet.“
+
+- **Ablauf:** Liegt ein Häufchen oder eine Seite herum, schwebt sie ein Stück darüber. Ein blauer Lichtkegel mit wandernden Ringen geht an, blaue Pixel-Teilchen schlängeln hinüber und flirren um das Ding. Nach ~1,4 s hebt es ab und hängt unter ihr; sie trägt es langsam zum näheren Seitenrand und steigt dabei etwas, das Ding pendelt am Strahl. Am Rand ein Schwung — es fliegt kreiselnd aus dem Bildschirm und ist weg (Server `wegmachen`). Danach freut sie sich.
+- **Herz:** Antippen lässt bei jeder Stufe ein pinkes Pixelherz über ihr aufsteigen (zusätzlich zur Herz-Gestalt ab Keim).
+- **Abbruch:** Antippen oder Ziehen beendet den Strahl. Hängt das Ding schon in der Luft, fällt es nach unten aus dem Bild und ist auch weg. Nimmt jemand anderes es vorher (weggewischt, verbrannt, gefressen), lässt sie es.
+- **Annahmen Neko:** nur Funke und Keim (ab Geist übernimmt der Laser); nur Häufchen und Seiten; schon ab einer Spur, kein Putzmodus-„!“; 4–9 s Pause zwischen zwei Würfen; Tragetempo 70 % ihres Flugtempos; Herz bei allen Stufen; Teilchen immer blau, unabhängig von ihrer Farbe. Konstanten in `frontend/src/pets/traktor.ts`.
 
 ## Fledermäuse trinken Punkte (18.11.2026, gebaut)
 

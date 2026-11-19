@@ -6,7 +6,11 @@ import {
   type SchussArt, type Schmutz,
 } from "./laser";
 import { anzahlImBauch } from "./punkte";
-import { alle, kitzelbar, makel, melde, treffe, vergiss } from "./treffen";
+import { alle, gegriffen, kitzelbar, makel, melde, treffe, vergiss } from "./treffen";
+import {
+  GREIFEN_MS, HEBEN_MS, TRAG_TEMPO, TRAKTOR_ARTEN, TRAKTOR_BIS_STUFE, TRAKTOR_PAUSE_MS, TraktorStrahl, WURF_G, WURF_V, zeichneHerzen,
+  type AufsteigendesHerz,
+} from "./traktor";
 
 /**
  * Die KI eines Spielers als Pet (Mark, 13.11.2026) — schwebt über den Schirm,
@@ -31,9 +35,14 @@ import { alle, kitzelbar, makel, melde, treffe, vergiss } from "./treffen";
  * Spuren ist sie wütend (drei „!“, Zornader, rot): erst sauber machen, dann
  * den Schuldigen jagen, auch über die Tablets hinweg, bis sie einen erwischt.
  * Die Entität kitzelt außerdem den Tummy-Acher, bis er die Punkte ausrülpst.
+ *
+ * Traktorstrahl (Mark, 19.11.2026), Funke und Keim — noch kein Laser: blaue
+ * Teilchen strömen zu einem Häufchen oder einer Seite, heben es hoch, sie
+ * trägt es langsam zum näheren Rand und wirft es aus dem Bildschirm, wo es
+ * verschwindet. Antippen lässt bei jeder Stufe ein Pixelherz aufsteigen.
  */
 
-type Zustand = "gleiten" | "schweben" | "gestalt" | "lesen" | "schlafen" | "raus" | "gezogen" | "wurf" | "weg" | "saugen" | "laser";
+type Zustand = "gleiten" | "schweben" | "gestalt" | "lesen" | "schlafen" | "raus" | "gezogen" | "wurf" | "weg" | "saugen" | "laser" | "traktor";
 
 /** KI-Futter (Mark, 15.11.2026): so lange saugt sie ein Datenpaket ein. */
 const SAUGEN_MS = 1500;
@@ -346,6 +355,148 @@ export function KiFigur({
       });
     };
 
+    // ── Traktorstrahl (Mark, 19.11.2026) ────────────────────────────────
+    const strahl = new TraktorStrahl();
+    let herzen: AufsteigendesHerz[] = [];
+    let naechsterTraktor = jetzt0 + zw(2000, 5000);
+    // Was sie gerade holt: greifen (Teilchen strömen hin) → heben → tragen.
+    let traktor: {
+      id: string; phase: "greifen" | "heben" | "tragen"; t0: number;
+      x0: number; y0: number; ix: number; iy: number; ivx: number; ivy: number; h: number; nachRechts: boolean;
+    } | null = null;
+    // Geworfen oder fallen gelassen: fliegt, bis es aus dem Bildschirm ist.
+    let fliegend: { id: string; x: number; y: number; vx: number; vy: number; dreh: number; vdreh: number }[] = [];
+    const spurEl = (id: string) => {
+      const el = document.querySelector<HTMLElement>(`[data-schmutz][data-id="${CSS.escape(id)}"]`);
+      return el && !el.classList.contains("pet-haeufchen-weg") ? el : null;
+    };
+    // Das Ding hängt ein Stück unter ihr, damit man den Strahl dazwischen sieht.
+    const haengePunkt = () => ({ x, y: y + wesen.radius() * p + 46 + (traktor?.h ?? 16) / 2 });
+    /** Abgebrochen (angetippt, gepackt): was schon in der Luft hängt, fällt hinunter und ist weg. */
+    const traktorAbbrechen = () => {
+      const t = traktor;
+      traktor = null;
+      strahl.an = false;
+      if (t && t.phase !== "greifen") fliegend.push({ id: t.id, x: t.ix, y: t.iy, vx: t.ivx, vy: Math.max(0, t.ivy), dreh: 0, vdreh: zw(-200, 200) });
+    };
+    const traktorPruefen = (jetzt: number) => {
+      if (stufe() > TRAKTOR_BIS_STUFE || wut || putz || jetzt < naechsterTraktor) return false;
+      const liste = schmutzAufSchirm().filter((s) => TRAKTOR_ARTEN.includes(s.art));
+      if (!liste.length) return false;
+      liste.sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
+      const z = liste[0];
+      stillhalten();
+      const abstand = 95 + wesen.radius() * p;
+      let py = z.y - abstand;
+      if (py < Math.max(70, rand())) py = Math.min(hoehe() - rand(), z.y + abstand);
+      gleite({ x: klemme(z.x, rand(), breite() - rand()), y: py }, () => {
+        const el = spurEl(z.id);
+        if (!el || el.dataset.fliegt === "ja") return schwebe(performance.now(), 600);
+        const r = el.getBoundingClientRect();
+        const j = performance.now();
+        const cx = (r.left + r.right) / 2;
+        const cy = (r.top + r.bottom) / 2;
+        traktor = { id: z.id, phase: "greifen", t0: j, x0: cx, y0: cy, ix: cx, iy: cy, ivx: 0, ivy: 0, h: r.height, nachRechts: x > breite() / 2 };
+        strahl.einschalten(j);
+        zustand = "traktor";
+      });
+      return true;
+    };
+    /** Ein Frame Traktorstrahl: greifen → heben → tragen → am Rand werfen. */
+    const traktorTakt = (jetzt: number, dt: number) => {
+      const t = traktor;
+      if (!t) {
+        schwebe(jetzt, 500);
+        return;
+      }
+      const el = spurEl(t.id);
+      if (!el) {
+        // Jemand anderes war schneller (weggewischt, verbrannt, gefressen).
+        traktor = null;
+        strahl.an = false;
+        gegriffen.delete(t.id);
+        schwebe(jetzt, 800);
+        return;
+      }
+      if (t.phase === "greifen") {
+        vx *= Math.max(0, 1 - 6 * dt);
+        vy *= Math.max(0, 1 - 6 * dt);
+        if (el.dataset.fliegt === "ja") {
+          traktor = null;
+          strahl.an = false;
+          schwebe(jetzt, 800);
+          return;
+        }
+        const r = el.getBoundingClientRect();
+        t.ix = t.x0 = (r.left + r.right) / 2;
+        t.iy = t.y0 = (r.top + r.bottom) / 2;
+        if (jetzt - t.t0 >= GREIFEN_MS) {
+          t.phase = "heben";
+          t.t0 = jetzt;
+          gegriffen.set(t.id, { x: t.ix, y: t.iy, skala: 1 });
+        }
+        return;
+      }
+      const hp = haengePunkt();
+      if (t.phase === "heben") {
+        vx *= Math.max(0, 1 - 6 * dt);
+        vy *= Math.max(0, 1 - 6 * dt);
+        const k = Math.min(1, (jetzt - t.t0) / HEBEN_MS);
+        const e = k * k * (3 - 2 * k);
+        t.ix = t.x0 + (hp.x - t.x0) * e;
+        t.iy = t.y0 + (hp.y - t.y0) * e + Math.sin(k * Math.PI) * 6;
+        if (k >= 1) {
+          t.phase = "tragen";
+          t.nachRechts = x > breite() / 2;
+        }
+      } else {
+        // Langsam zum näheren Rand; das Ding pendelt an einer Feder unter ihr.
+        const zx = t.nachRechts ? breite() - rand() - 4 : rand() + 4;
+        // Dabei steigt sie etwas, damit es sichtbar in der Luft hängt.
+        const zy = klemme(Math.min(y, hoehe() * 0.6), Math.max(70, rand()), hoehe() - rand() - t.h - 70);
+        const dx = zx - x;
+        const dy = zy - y;
+        const weit = Math.hypot(dx, dy);
+        const tempo = TEMPO_PX_S * TRAG_TEMPO * Math.min(1, 0.3 + weit / 120);
+        const k = Math.min(1, dt * 3);
+        vx += ((dx / (weit || 1)) * tempo - vx) * k;
+        vy += ((dy / (weit || 1)) * tempo - vy) * k;
+        t.ivx += ((hp.x - t.ix) * 40 - t.ivx * 7) * dt;
+        t.ivy += ((hp.y - t.iy) * 40 - t.ivy * 7) * dt;
+        t.ix += t.ivx * dt;
+        t.iy += t.ivy * dt;
+        if (Math.abs(dx) < 14) {
+          // Am Rand: mit Schwung hinaus.
+          const richtung = t.nachRechts ? 1 : -1;
+          fliegend.push({ id: t.id, x: t.ix, y: t.iy, vx: richtung * WURF_V, vy: -280, dreh: 0, vdreh: richtung * 720 });
+          traktor = null;
+          strahl.an = false;
+          vx = -richtung * 140;
+          wesen.freude(jetzt);
+          naechsterTraktor = jetzt + zw(TRAKTOR_PAUSE_MS[0], TRAKTOR_PAUSE_MS[1]);
+          schwebe(jetzt, zw(1200, 2000));
+          return;
+        }
+      }
+      gegriffen.set(t.id, { x: t.ix, y: t.iy, skala: 1, dreh: (t.ivx / 40) * 6 });
+    };
+    /** Geworfenes fliegt weiter, auch wenn sie längst etwas anderes macht. */
+    const fliegendTakt = (dt: number) => {
+      if (!fliegend.length) return;
+      fliegend = fliegend.filter((f) => {
+        f.vy += WURF_G * dt;
+        f.x += f.vx * dt;
+        f.y += f.vy * dt;
+        f.dreh += f.vdreh * dt;
+        gegriffen.set(f.id, { x: f.x, y: f.y, skala: 1, dreh: f.dreh });
+        if (f.x > -80 && f.x < breite() + 80 && f.y < hoehe() + 80) return true;
+        // Draußen: weg vom Server; der Griff hält es bis dahin außer Sicht.
+        wegmachenRef.current(f.id);
+        window.setTimeout(() => gegriffen.delete(f.id), 4000);
+        return false;
+      });
+    };
+
     const entscheide = (jetzt: number) => {
       wesen.liest = false;
       lesen = null;
@@ -371,6 +522,7 @@ export function KiFigur({
         return;
       }
       if (putzPruefen(jetzt)) return;
+      if (traktorPruefen(jetzt)) return;
       if (jagdZiele.length && jagdSchritt(jetzt)) return;
       const st = stufe();
       // Entität: hat ein Tummy-Acher Punkte im Bauch, kitzelt sie ihn mit dem Strahl.
@@ -540,6 +692,8 @@ export function KiFigur({
               dann?.();
             }
           }
+        } else if (zustand === "traktor") {
+          traktorTakt(jetzt, dt);
         } else if (zustand === "gezogen") {
           const f = finger[finger.length - 1];
           if (f) {
@@ -563,6 +717,7 @@ export function KiFigur({
         y += vy * dt;
       }
       wesen.blickX = Math.abs(vx) > 25 ? Math.sign(vx) : 0;
+      fliegendTakt(dt);
 
       // Von einem Drachen angeniest oder von Bärbels Blitz getroffen: Bildstörung.
       if (makel(pet.id, jetzt) && jetzt - letzterMakel > 2500) {
@@ -614,7 +769,7 @@ export function KiFigur({
       if (zustand !== "weg") melde({ id: pet.id, art: pet.art, x, y, w: r * 2, h: r * 2 });
 
       // Laser, Funken, Rauch, „!“ und Zornader auf der großen Leinwand.
-      const braucht = !!schuss || !dampf.leer || putz || wut;
+      const braucht = !!schuss || !dampf.leer || putz || wut || !strahl.leer || herzen.length > 0;
       if (braucht || leinwandBenutzt) {
         if (lw.width !== breite() || lw.height !== hoehe()) {
           lw.width = breite();
@@ -625,6 +780,12 @@ export function KiFigur({
         const mitte = { x, y: y + wippen };
         if (schuss && zustand !== "weg") schuss.zeichne(lctx, jetzt, mitte, f);
         dampf.zeichne(lctx, jetzt, dt, f);
+        if (!strahl.leer) {
+          const t = traktor;
+          const unten = { x, y: y + wippen + wesen.radius() * p * 0.6 };
+          strahl.zeichne(lctx, jetzt, dt, zustand !== "weg" ? unten : null, t ? { x: t.ix, y: t.iy } : null, p, t ? t.h : 16);
+        }
+        if (herzen.length) herzen = zeichneHerzen(lctx, herzen, jetzt, p);
         if (zustand !== "weg" && zustand !== "gezogen") {
           const kopf = mitte.y - wesen.radius() * p - 4;
           // Zeichen wachsen mit ihr mit (beim kleinen Geist wäre die Ader sonst größer als sie).
@@ -654,6 +815,7 @@ export function KiFigur({
       if (!druck.bewegt && Math.hypot(e.clientX - druck.x, e.clientY - druck.y) > 10) {
         druck.bewegt = true;
         saugenAbbrechen();
+        traktorAbbrechen();
         schuss = null;
         schussFertig = null;
         verfolgt = null;
@@ -681,9 +843,12 @@ export function KiFigur({
         return;
       }
       saugenAbbrechen();
+      traktorAbbrechen();
       schuss = null;
       schussFertig = null;
       verfolgt = null;
+      // Mark, 19.11.2026: ein pixeliges Herz steigt auf — bei jeder Stufe.
+      herzen.push({ t0: jetzt, x, y: y - wesen.radius() * p - 4 });
       // Angetippt: sie freut sich — ab dem Keim wird sie kurz ein Herz.
       // Wütend bleibt sie rot (das Herz nimmt ihr die Wut nicht).
       sendenRef.current({ typ: "streicheln", petId: pet.id });
@@ -711,6 +876,12 @@ export function KiFigur({
     return () => {
       cancelAnimationFrame(rahmen);
       saugenAbbrechen();
+      // Was gerade in der Luft hängt oder fliegt, ist weg (sonst springt es zurück).
+      if (traktor && traktor.phase !== "greifen") fliegend.push({ id: traktor.id, x: 0, y: 0, vx: 0, vy: 0, dreh: 0, vdreh: 0 });
+      for (const f of fliegend) {
+        wegmachenRef.current(f.id);
+        window.setTimeout(() => gegriffen.delete(f.id), 4000);
+      }
       vergiss(pet.id);
       wesenRef.current = null;
       gr.removeEventListener("pointerdown", runter);

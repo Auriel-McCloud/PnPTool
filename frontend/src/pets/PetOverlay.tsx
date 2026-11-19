@@ -10,7 +10,7 @@ import { FLEDERMAUS_STUFEN, FLEDERMAUS_TAKT } from "./fledermausstufen";
 import { FledermausBewegung } from "./fledermaus";
 import { herein, schiesse } from "./feuerball";
 import { KiFigur } from "./KiFigur";
-import { alle, flattermaeuse, kitzelbar, makel, melde, treffe, vergiss } from "./treffen";
+import { alle, flattermaeuse, gegriffen, kitzelbar, makel, melde, treffe, vergiss } from "./treffen";
 import { FLATTERMAUS_PX, FLATTERMAUS_TAKT, FlattermausFlug } from "./flattermaus";
 import "./pets.css";
 
@@ -171,11 +171,6 @@ function schlafAnker(art: string, stufe?: string): readonly [number, number] | n
   if (stufe === "baby") return SCHLAF_Z.baby;
   return grosseStufe(art, stufe)?.schlafZ ?? SCHLAF_Z.jung;
 }
-
-/** Spuren, die ein Pet gerade gepackt hat (Drache schnappt eine Seite, Bärbels
- *  Tentakel holt ein Häufchen) — Mitte in Bildschirm-Pixeln. Die Spur folgt
- *  dann diesem Punkt statt ihrem Element. */
-const gegriffen = new Map<string, { x: number; y: number; skala: number }>();
 
 /** Wie oft Bärbels Seite auf einer Wort-/Kastenkante liegen bleibt, die sie überquert. */
 const LANDE_CHANCE = 0.7;
@@ -1161,7 +1156,7 @@ function HaeufchenAmElement({
         // Gepackt: folgt Maul/Tentakel, wird kleiner, bis es weg ist.
         x = griff.x;
         y = griff.y + bh / 2;
-        div.style.transform = `scale(${griff.skala.toFixed(2)})`;
+        div.style.transform = `${griff.dreh ? `rotate(${griff.dreh.toFixed(0)}deg) ` : ""}scale(${griff.skala.toFixed(2)})`;
         div.dataset.fliegt = "ja";
         zeichnen();
         rahmen = requestAnimationFrame(takt);

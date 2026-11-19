@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## KI: Traktorstrahl für Funke/Keim, Pixelherz beim Antippen (19.11.2026)
+
+Mark: das kleine KI-Pünktchen hat noch keinen Laser — „wir geben ihm einen Traktorstrahl, so blaue Partikel, die z. B. zum Kot fliegen, ihn aufheben, dann bringt er ihn zum Rand und schmeißt ihn aus dem Bildschirm raus, wo er dann verschwindet“, dazu „wenn man es antippt, steigt ein pixeliges Herz auf“. Neues Modul `frontend/src/pets/traktor.ts` (`TraktorStrahl`: Lichtkegel, wandernde Ringe, blaue Pixel-Teilchen; `zeichneHerzen`; Konstanten `TRAKTOR_ARTEN`, `TRAKTOR_BIS_STUFE = 1`, `TRAKTOR_PAUSE_MS`, `GREIFEN_MS`, `HEBEN_MS`, `TRAG_TEMPO`, `WURF_V`). `KiFigur.tsx`: Zustand `traktor` (greifen → heben → tragen → am näheren Rand werfen), Geworfenes fliegt mit Schwerkraft raus und meldet dann `wegmachen`. Die Spur folgt dabei über `gegriffen` (jetzt in `treffen.ts` exportiert, neu mit `dreh`). Nur Funke und Keim, nur Häufchen und Seiten; ab Geist bleibt der Laser. Antippen/Ziehen bricht ab, was schon hängt, fällt nach unten raus. Herz bei jeder Stufe. Nur Frontend; Browser-Harness: Greifen, Tragen, Wurf, Abbruch, Herz. Siehe `docs/wiki/entities/critter-pet.md`.
+
 ## Bärbel auch am Critter wählbar (19.11.2026)
 
 Mark überlegt, Bärbel zum Critter zu machen, fand sie aber nicht in der Pet-Auswahl am Critter. Das Backend kannte `baerbel` am Critter schon (`pets_der_kampagne`: Besitzer = `BEGLEITET`-PC), nur `PET_ARTEN` im Frontend bot sie ausschließlich am Gegenstand an. Jetzt `fuer: "beide"` in `frontend/src/pets/api.ts`, `PetArtWahl.tsx` filtert `beide` mit. Als Critter wächst sie nicht (kein Wachstum für `baerbel`), alles andere wie am Gegenstand. Siehe `docs/wiki/entities/critter-pet.md`.
