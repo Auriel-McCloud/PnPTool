@@ -20,6 +20,14 @@ export const GREIFEN_MS = 1400;
 export const HEBEN_MS = 800;
 /** Tragetempo als Anteil ihres normalen Flugtempos — langsamer als der Laser. */
 export const TRAG_TEMPO = 0.7;
+/** Ausholen vor dem Wurf (Mark, 19.11.2026: „einmal nach hinten schwingen und
+ *  dann weg schleudern“): zurückschwingen, kurz oben halten, nach vorn schleudern.
+ *  Winkel des Dings um sie herum, 0 = senkrecht unter ihr. */
+export const AUSHOL_MS = 650;
+export const AUSHOL_HALT_MS = 140;
+export const SCHLEUDER_MS = 210;
+export const AUSHOL_WINKEL = (75 * Math.PI) / 180;
+export const LOSLASS_WINKEL = (40 * Math.PI) / 180;
 /** Wurf über den Rand (px/s) und Schwerkraft danach. */
 export const WURF_V = 950;
 export const WURF_G = 1100;

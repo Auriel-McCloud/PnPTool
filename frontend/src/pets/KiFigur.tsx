@@ -8,7 +8,7 @@ import {
 import { anzahlImBauch } from "./punkte";
 import { alle, gegriffen, kitzelbar, makel, melde, treffe, vergiss } from "./treffen";
 import {
-  GREIFEN_MS, HEBEN_MS, TRAG_TEMPO, TRAKTOR_ARTEN, TRAKTOR_BIS_STUFE, TRAKTOR_PAUSE_MS, TraktorStrahl, WURF_G, WURF_V, zeichneHerzen,
+  AUSHOL_HALT_MS, AUSHOL_MS, AUSHOL_WINKEL, GREIFEN_MS, HEBEN_MS, LOSLASS_WINKEL, SCHLEUDER_MS, TRAG_TEMPO, TRAKTOR_ARTEN, TRAKTOR_BIS_STUFE, TRAKTOR_PAUSE_MS, TraktorStrahl, WURF_G, WURF_V, zeichneHerzen,
   type AufsteigendesHerz,
 } from "./traktor";
 
@@ -361,7 +361,7 @@ export function KiFigur({
     let naechsterTraktor = jetzt0 + zw(2000, 5000);
     // Was sie gerade holt: greifen (Teilchen strömen hin) → heben → tragen.
     let traktor: {
-      id: string; phase: "greifen" | "heben" | "tragen"; t0: number;
+      id: string; phase: "greifen" | "heben" | "tragen" | "ausholen"; t0: number; a0: number;
       x0: number; y0: number; ix: number; iy: number; ivx: number; ivy: number; w: number; h: number; nachRechts: boolean;
     } | null = null;
     // Geworfen oder fallen gelassen: fliegt, bis es aus dem Bildschirm ist.
@@ -399,7 +399,7 @@ export function KiFigur({
         const j = performance.now();
         const cx = (r.left + r.right) / 2;
         const cy = (r.top + r.bottom) / 2;
-        traktor = { id: z.id, phase: "greifen", t0: j, x0: cx, y0: cy, ix: cx, iy: cy, ivx: 0, ivy: 0, w: r.width, h: r.height, nachRechts: x > breite() / 2 };
+        traktor = { id: z.id, phase: "greifen", t0: j, a0: 0, x0: cx, y0: cy, ix: cx, iy: cy, ivx: 0, ivy: 0, w: r.width, h: r.height, nachRechts: x > breite() / 2 };
         strahl.einschalten(j);
         zustand = "traktor";
       });
@@ -452,6 +452,45 @@ export function KiFigur({
           t.phase = "tragen";
           t.nachRechts = x > breite() / 2;
         }
+      } else if (t.phase === "ausholen") {
+        // Am Rand: einmal nach hinten schwingen, kurz halten, dann nach vorn schleudern.
+        vx *= Math.max(0, 1 - 6 * dt);
+        vy *= Math.max(0, 1 - 6 * dt);
+        const richtung = t.nachRechts ? 1 : -1;
+        const laenge = hp.y - y;
+        const zurueck = -richtung * AUSHOL_WINKEL;
+        const vor = richtung * LOSLASS_WINKEL;
+        const tt = jetzt - t.t0;
+        let a: number;
+        if (tt < AUSHOL_MS) {
+          const k = tt / AUSHOL_MS;
+          a = t.a0 + (zurueck - t.a0) * (1 - (1 - k) * (1 - k));
+        } else if (tt < AUSHOL_MS + AUSHOL_HALT_MS) a = zurueck;
+        else {
+          const k = Math.min(1, (tt - AUSHOL_MS - AUSHOL_HALT_MS) / SCHLEUDER_MS);
+          a = zurueck + (vor - zurueck) * k * k;
+          if (k >= 1) {
+            // Loslassen: fliegt tangential weiter, schräg nach oben hinaus.
+            t.ix = x + Math.sin(a) * laenge;
+            t.iy = y + Math.cos(a) * laenge;
+            fliegend.push({
+              id: t.id, x: t.ix, y: t.iy,
+              vx: richtung * Math.cos(a) * WURF_V, vy: -richtung * Math.sin(a) * WURF_V,
+              dreh: (-a * 180) / Math.PI, vdreh: richtung * 900,
+            });
+            traktor = null;
+            strahl.an = false;
+            vx = -richtung * 140;
+            wesen.freude(jetzt);
+            naechsterTraktor = jetzt + zw(TRAKTOR_PAUSE_MS[0], TRAKTOR_PAUSE_MS[1]);
+            schwebe(jetzt, zw(1200, 2000));
+            return;
+          }
+        }
+        t.ix = x + Math.sin(a) * laenge;
+        t.iy = y + Math.cos(a) * laenge;
+        gegriffen.set(t.id, { x: t.ix, y: t.iy, skala: 1, dreh: (-a * 180) / Math.PI });
+        return;
       } else {
         // Langsam zum näheren Rand; das Ding pendelt an einer Feder unter ihr.
         const zx = t.nachRechts ? breite() - rand() - 4 : rand() + 4;
@@ -469,16 +508,10 @@ export function KiFigur({
         t.ix += t.ivx * dt;
         t.iy += t.ivy * dt;
         if (Math.abs(dx) < 14) {
-          // Am Rand: mit Schwung hinaus.
-          const richtung = t.nachRechts ? 1 : -1;
-          fliegend.push({ id: t.id, x: t.ix, y: t.iy, vx: richtung * WURF_V, vy: -280, dreh: 0, vdreh: richtung * 720 });
-          traktor = null;
-          strahl.an = false;
-          vx = -richtung * 140;
-          wesen.freude(jetzt);
-          naechsterTraktor = jetzt + zw(TRAKTOR_PAUSE_MS[0], TRAKTOR_PAUSE_MS[1]);
-          schwebe(jetzt, zw(1200, 2000));
-          return;
+          // Am Rand: ausholen, dann schleudern.
+          t.phase = "ausholen";
+          t.t0 = jetzt;
+          t.a0 = Math.atan2(t.ix - x, Math.max(1, t.iy - y));
         }
       }
       gegriffen.set(t.id, { x: t.ix, y: t.iy, skala: 1, dreh: (t.ivx / 40) * 6 });

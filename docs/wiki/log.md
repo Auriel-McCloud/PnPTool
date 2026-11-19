@@ -2141,3 +2141,7 @@ Funke und Keim tragen Häufchen und Seiten mit einem blauen Traktorstrahl zum Ra
 ## [2026-11-19] update | KI-Traktorstrahl: Ding im Strahl, bleibt beim Abbruch liegen
 
 Strahl reicht über das getragene Ding hinaus; unterbrochen fällt es hinunter und bleibt liegen. Siehe [[entities/critter-pet]].
+
+## [2026-11-19] update | KI-Traktorstrahl holt vor dem Wurf aus
+
+Am Rand schwingt sie das Ding nach hinten und schleudert es dann hinaus. Siehe [[entities/critter-pet]].
