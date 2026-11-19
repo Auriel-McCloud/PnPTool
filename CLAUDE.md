@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bärbel auch am Critter wählbar (19.11.2026)
+
+Mark überlegt, Bärbel zum Critter zu machen, fand sie aber nicht in der Pet-Auswahl am Critter. Das Backend kannte `baerbel` am Critter schon (`pets_der_kampagne`: Besitzer = `BEGLEITET`-PC), nur `PET_ARTEN` im Frontend bot sie ausschließlich am Gegenstand an. Jetzt `fuer: "beide"` in `frontend/src/pets/api.ts`, `PetArtWahl.tsx` filtert `beide` mit. Als Critter wächst sie nicht (kein Wachstum für `baerbel`), alles andere wie am Gegenstand. Siehe `docs/wiki/entities/critter-pet.md`.
+
 ## Tierladen: Pets im Shop kaufen (18.11.2026)
 
 Mark: Spieler sollen fertig gebaute Critter in einem Laden kaufen können (Laden verkauft "Tiere und Tiernahrung"). SL baut den Critter komplett fertig (Begleiter-Verwaltung, voller Bogen) OHNE Besitzer und hängt ihn über denselben `VERKAUFT`-Kantentyp wie ein Unikat-Gegenstand an den Laden-`Ort` (`haendler/repository.py::pets_sortiment`/`pet_verkaufen`/`pet_aus_sortiment_entfernen`/`pet_regal_raeumen`). Kauf (`POST .../haendler/{id}/pets/kaufen`) erzeugt statt `BESITZT` eine `BEGLEITET`-Kante (`haendler/uebergabe.py::critter_uebergeben` → `entities_repository.critter_besitzer_setzen`), zieht Kapital ab (gleiche Tutorial-Buchung wie beim Item-Kauf). **1-Begleiter-Limit nur beim Kauf:** hat der Käufer schon irgendeinen `BEGLEITET`-Critter (SL-zugewiesen oder gekauft), 409 — die SL bleibt über die Begleiter-Verwaltung unbegrenzt. Frontend: eigener Reiter „Pets“ in `ShopSeite.tsx` (`ShopPet.tsx`), nur sichtbar wenn Pets im Angebot UND der Käufer noch keinen Begleiter hat (`entitiesApi.meineCritter`); SL-Seite in `HaendlerBearbeiten.tsx` + `PetAnbietenPopup.tsx` (Picker aus besitzerlosen Crittern, Preis setzen). Nur im normalen Shop, nicht im Tutorial-Shop. Siehe `docs/wiki/entities/critter-pet.md`.

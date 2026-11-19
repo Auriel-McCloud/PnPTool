@@ -316,6 +316,7 @@ Noch offen:
 ### Weitere Ideen Mark 12.11.2026 (Abend)
 
 - **Bärbel als Critter?** Bärbel ist ein Gegenstand und bekommt keine EP. Mark fragt seine Spieler und bereitet einen Bärbel-Critter vor — wird spontan entschieden.
+  - **19.11.2026 gebaut:** Mark konnte Bärbel am Critter nicht auswählen. Jetzt steht „Bärbel (fliegendes Buch)“ in der Pet-Auswahl am Critter UND am Gegenstand. Am Critter ist der Besitzer der begleitete Spielercharakter; sie wächst dort nicht (keine Bärbel-Stufen), verhält sich sonst gleich. Ob die Gegenstands-Bärbel danach abgeschaltet wird, entscheidet Mark (sonst fliegen zwei Bärbels).
 - **Nachrichten an Vertraute:** Hat ein anderer Spieler als der Besitzer **50 Zutraulichkeit** zu Bärbel, bekommt er manchmal auch Nachrichten von ihr (eher keine Bibelverse; was genau, später).
 - **Drachen lernen mit dem Wachstum** (Fähigkeiten statt alles von Anfang an):
   - **Phase 1 — Ei:** schlüpft nach **5–10 Mal Antippen**.

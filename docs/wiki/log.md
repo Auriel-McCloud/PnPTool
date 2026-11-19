@@ -2129,3 +2129,7 @@ Der Ehrwürdige Drache holt ab und zu seine Perle hervor; man kann sie werfen, a
 ## [2026-11-18] update | Bärbel niest Fledermäuse aus
 
 Bärbel niest 2–5 kleine Fledermäuse aus; sie bleiben als Spur auf dem Tablet, flattern herum und hängen kopfüber unter Knöpfen, Text und Kacheln. Bärbel holt sie mit der Tentakel zurück oder verkohlt sie mit dem Blitz, manchmal weichen sie aus. Siehe [[entities/critter-pet]].
+
+## [2026-11-19] update | Bärbel am Critter wählbar
+
+Die Pet-Art Bärbel lässt sich jetzt auch am Critter setzen, nicht nur am Gegenstand. Siehe [[entities/critter-pet]].

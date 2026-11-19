@@ -26,7 +26,7 @@ export function PetArtWahl({
   if (stand === undefined) return null;
   const art = stand?.art ?? null;
   // Eine schon gesetzte Art bleibt wählbar, auch wenn sie eigentlich zur anderen Sorte gehört.
-  const arten = PET_ARTEN.filter((a) => a.fuer === fuer || a.wert === art);
+  const arten = PET_ARTEN.filter((a) => a.fuer === fuer || a.fuer === "beide" || a.wert === art);
   const leise = { fontSize: 11, color: "var(--text-leise)" };
   const ki = istKi(art);
   const tier = istTier(art ?? "") || istFledermaus(art);

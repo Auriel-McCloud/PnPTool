@@ -2,14 +2,15 @@ import { api } from "../api/client";
 
 /** Welche Sprites es gibt — gleiche Liste wie `PET_ARTEN` in backend/app/pets/logic.py.
  *  `fuer`: wo die SL sie zur Auswahl bekommt — Tiere am Critter, Bärbel (die
- *  fliegende Bibel, 11.11.2026) an einem Gegenstand. */
+ *  fliegende Bibel, 11.11.2026) an einem Gegenstand. Bärbel gibt es auch am
+ *  Critter (Mark, 19.11.2026: „ob ich Bärbel zu einem Critter mache“) — `beide`. */
 export const PET_ARTEN = [
   { wert: "drache", name: "Kleiner Drache", fuer: "critter" },
   // Mark, 12.11.2026 (Critter „Wolke Salamander“): derselbe Babydrache,
   // umgefärbt — blau mit silbernem Bauch spuckt Eis, silbern mit blauer Mähne Blitze.
   { wert: "eisdrache", name: "Kleiner Eisdrache", fuer: "critter" },
   { wert: "blitzdrache", name: "Kleiner Blitzdrache", fuer: "critter" },
-  { wert: "baerbel", name: "Bärbel (fliegendes Buch)", fuer: "gegenstand" },
+  { wert: "baerbel", name: "Bärbel (fliegendes Buch)", fuer: "beide" },
   // Mark, 13.11.2026: die eigene KI eines Spielers — Datenwolke und Lichtkern,
   // wechselt zwischen beiden, nimmt Farben und Gestalten an, wächst mit den EP.
   { wert: "ki", name: "KI (Datenwolke / Lichtkern)", fuer: "critter" },
