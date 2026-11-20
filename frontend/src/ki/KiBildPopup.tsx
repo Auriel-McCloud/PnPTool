@@ -37,7 +37,7 @@ export function KiBildPopup({
   /** Liefert den Prompt-Vorschlag (Schritt 1). */
   onPromptVorschlagen: () => Promise<string>;
   /** Generiert das Bild (Schritt 2) — liefert den Blob zur Vorschau. */
-  onGenerieren: (provider: "lokal" | "cloud", prompt: string) => Promise<Blob>;
+  onGenerieren: (provider: "lokal" | "cloud", prompt: string) => Promise<Blob | { blob: Blob; referenz?: string | null }>;
   /** Übernimmt den Blob als Datei über die bestehende Upload-Route. */
   onUebernehmen: (blob: Blob) => Promise<void>;
 }) {
@@ -49,6 +49,7 @@ export function KiBildPopup({
   const [fehler, setFehler] = useState<string | null>(null);
   const [vorschauUrl, setVorschauUrl] = useState<string | null>(null);
   const [vorschauBlob, setVorschauBlob] = useState<Blob | null>(null);
+  const [referenzHinweis, setReferenzHinweis] = useState<string | null>(null);
 
   // Beim Öffnen automatisch einen Prompt vorschlagen (Marks Wunsch: "schlägt
   // die KI ... automatisch einen Bild-Prompt vor"). Nur einmal pro Öffnen,
@@ -81,6 +82,7 @@ export function KiBildPopup({
     if (vorschauUrl) URL.revokeObjectURL(vorschauUrl);
     setVorschauUrl(null);
     setVorschauBlob(null);
+    setReferenzHinweis(null);
   }
 
   function schliessenUndZuruecksetzen() {
@@ -93,10 +95,13 @@ export function KiBildPopup({
     setGeneriert(false);
     setFehler(null);
     try {
-      const blob = await onGenerieren(provider, prompt.trim());
+      const roh = await onGenerieren(provider, prompt.trim());
+      const blob = roh instanceof Blob ? roh : roh.blob;
+      const referenz = roh instanceof Blob ? null : roh.referenz ?? null;
       if (vorschauUrl) URL.revokeObjectURL(vorschauUrl);
       setVorschauBlob(blob);
       setVorschauUrl(URL.createObjectURL(blob));
+      setReferenzHinweis(referenz ? `Referenz: ${referenz}` : null);
       setGeneriert(true);
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Generieren fehlgeschlagen");
@@ -182,6 +187,7 @@ export function KiBildPopup({
         {generiert && vorschauUrl && (
           <>
             <p className="ki-vorschau-hinweis">Vorschau — erst „Übernehmen" speichert das Bild:</p>
+            {referenzHinweis && <p className="ki-vorschau-hinweis">{referenzHinweis}</p>}
             <img src={vorschauUrl} alt="" className="ki-bild-vorschau" />
 
             {fehler && <p className="ki-fehler">{fehler}</p>}
@@ -199,6 +205,7 @@ export function KiBildPopup({
                   if (vorschauUrl) URL.revokeObjectURL(vorschauUrl);
                   setVorschauUrl(null);
                   setVorschauBlob(null);
+                  setReferenzHinweis(null);
                 }}
               >
                 ↺ Neu versuchen

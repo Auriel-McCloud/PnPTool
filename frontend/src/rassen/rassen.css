@@ -314,6 +314,38 @@
   border-radius: var(--radius);
 }
 
+.ra-referenzen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ra-referenz {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 72px;
+}
+
+.ra-referenz img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.ra-referenz button,
+.ra-referenz-neu {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ra-referenz-neu input {
+  display: none;
+}
+
 .ra-aktionen {
   display: flex;
   align-items: center;

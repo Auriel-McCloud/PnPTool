@@ -38,7 +38,9 @@ FELDER = """
     coalesce(r.featureHinweis, '') AS featureHinweis,
     coalesce(r.kannKredithai, false) AS kannKredithai,
     coalesce(r.istGross, false) AS istGross,
-    coalesce(r.rundumsicht, false) AS rundumsicht
+    coalesce(r.rundumsicht, false) AS rundumsicht,
+    coalesce(r.referenzAktiv, false) AS referenzAktiv,
+    coalesce(r.referenzbilder, []) AS referenzbilder
 """
 
 
@@ -66,6 +68,8 @@ def _decode(record: dict) -> dict:
     daten["kannKredithai"] = bool(daten.get("kannKredithai"))
     daten["istGross"] = bool(daten.get("istGross"))
     daten["rundumsicht"] = bool(daten.get("rundumsicht"))
+    daten["referenzAktiv"] = bool(daten.get("referenzAktiv"))
+    daten["referenzbilder"] = [str(u) for u in (daten.get("referenzbilder") or []) if u]
     return daten
 
 
@@ -144,7 +148,8 @@ async def anlegen(daten: dict) -> dict:
                 gratisZusatzfertigkeitId: $gratisZusatzfertigkeitId,
                 gratisFertigkeitName: $gratisFertigkeitName, gratisFertigkeitBonus: $gratisFertigkeitBonus,
                 featureHinweis: $featureHinweis, kannKredithai: $kannKredithai,
-                istGross: $istGross, rundumsicht: $rundumsicht
+                istGross: $istGross, rundumsicht: $rundumsicht,
+                referenzAktiv: $referenzAktiv, referenzbilder: []
             }})
             RETURN {FELDER}
             """,
@@ -165,6 +170,7 @@ async def anlegen(daten: dict) -> dict:
             kannKredithai=bool(daten.get("kannKredithai")),
             istGross=bool(daten.get("istGross")),
             rundumsicht=bool(daten.get("rundumsicht")),
+            referenzAktiv=bool(daten.get("referenzAktiv")),
         )
         return _decode(dict(await result.single()))
 
@@ -274,6 +280,61 @@ async def setze_bild(rasse_id: str, bild_url: str) -> dict | None:
         return _decode(dict(record)) if record else None
 
 
+async def hole_nach_name(name: str) -> dict | None:
+    """Rasse am Namen, unabhängig von der Kampagne. Der Pool ist global."""
+    gesucht = (name or "").strip()
+    if not gesucht:
+        return None
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            f"""
+            MATCH (r:Rasse {{ruleset: $ruleset}})
+            WHERE NOT coalesce(r.geloescht, false) AND toLower(r.name) = toLower($name)
+            RETURN {FELDER}
+            LIMIT 1
+            """,
+            ruleset=RULESET,
+            name=gesucht,
+        )
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
+async def referenz_anhaengen(rasse_id: str, url: str) -> dict | None:
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            f"""
+            MATCH (r:Rasse {{id: $id}})
+            WHERE NOT coalesce(r.geloescht, false)
+            SET r.referenzbilder = coalesce(r.referenzbilder, []) + $url
+            RETURN {FELDER}
+            """,
+            id=rasse_id,
+            url=[url],
+        )
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
+async def referenz_entfernen(rasse_id: str, url: str) -> dict | None:
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            f"""
+            MATCH (r:Rasse {{id: $id}})
+            WHERE NOT coalesce(r.geloescht, false)
+            SET r.referenzbilder = [u IN coalesce(r.referenzbilder, []) WHERE u <> $url]
+            RETURN {FELDER}
+            """,
+            id=rasse_id,
+            url=url,
+        )
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
 async def seed_rassen() -> None:
     """Übernimmt die fünf eingebauten Rassen einmalig in die Datenbank.
 
@@ -325,6 +386,7 @@ async def seed_rassen() -> None:
 
     await _rassenmaxima_nachtragen()
     await _rassen_fairness_nachtragen()
+    await _referenz_start_nachtragen()
 
 
 # Freie Punkte VOR Marks Fairness-Fix (05.10.2026, siehe app/rassen/balance.py
@@ -422,3 +484,25 @@ async def _rassenmaxima_nachtragen() -> int:
     if gesamt:
         print(f"[seed] Rassenmaxima nachgetragen: {gesamt} Attribut(e)")
     return gesamt
+
+
+async def _referenz_start_nachtragen() -> None:
+    """Schaltet den Referenzpool nur an, wo das Feld noch fehlt.
+
+    Ein späteres Aus im Baukasten bleibt aus — `referenzAktiv IS NULL`,
+    nicht `false`. Die Namen sind der einmalige Startwunsch, kein
+    Laufzeit-Check.
+    """
+    from app.rassen.referenz import START_NAMEN
+
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (r:Rasse {ruleset: $ruleset})
+            WHERE r.referenzAktiv IS NULL AND toLower(r.name) IN $namen
+            SET r.referenzAktiv = true
+            """,
+            ruleset=RULESET,
+            namen=sorted(START_NAMEN),
+        )

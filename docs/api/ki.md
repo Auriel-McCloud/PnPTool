@@ -155,6 +155,14 @@ manueller Upload, kein zweiter Ablage-Mechanismus).
 z.B. per Sicherheitsfilter) mit einer für den jeweiligen Provider
 verständlichen Fehlermeldung; `422` wenn `prompt` leer ist.
 
+Optional `personId`: bei einer Person mit Rasse, deren Schalter
+`referenzAktiv` an ist und deren Pool nicht leer ist, hängt der Server
+zufällig eine Bildvorlage an (Gemini als Bild, Fooocus als ImagePrompt).
+Antwort-Header `X-Rassen-Referenz` (URL-kodierter Rassenname). Die Vorschau
+selbst wird weiterhin nicht gespeichert. In den Pool kommt das Bild erst,
+wenn es als Portrait übernommen wird (`POST .../rassen/uebernommen` bzw.
+`POST /api/spieler/mein-bild-rassenpool`).
+
 **Provider ist pro Aufruf wählbar** (Dropdown im Popup), anders als der
 Text-Provider `KI_PROVIDER` in `.env`, der global für alle Text-Endpunkte
 oben gilt.

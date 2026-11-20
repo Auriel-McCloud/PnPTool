@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-20] gebaut | Rassen-Referenzbilder
+
+Schalter und Bildpool an der Rasse. Zufällige Vorlage bei der Portrait-Generierung, in den Pool nur übernommene KI-Portraits plus eigene Uploads. Start an für Dug'Rah, Sephari, Quill. Siehe [[entities/rassen-referenzbilder]].
+
+## [2026-11-20] idee | Rassen-Referenzbilder
+
+Mark will pro Rasse einstellbare Bildvorlagen für die PC-/NPC-Generierung, Pool wächst mit generierten Bildern, zufällige Vorlage, Galerie zum Aussortieren. Formular ohne Antwort. Offen, nicht gebaut. Siehe [[entities/rassen-referenzbilder]].
+
 ## [2026-11-18] gebaut | Tierladen: Pet kaufen
 
 Spieler kaufen vorgefertigte Critter im Shop (eigener Reiter „Pets“, nur sichtbar wenn Angebot da und noch kein eigener Begleiter). SL baut den Critter fertig, bietet ihn ohne Besitzer über die VERKAUFT-Kante an; Kauf erzeugt BEGLEITET statt BESITZT. Limit 1 Begleiter pro Spieler nur beim Kauf, SL-Zuweisung bleibt unbegrenzt. Siehe [[entities/critter-pet]].

@@ -242,6 +242,11 @@ export function CharakterportraitAnsicht({
           const datei = new File([blob], "portrait-ki.png", { type: blob.type || "image/png" });
           const frisch = await playersApi.meinBildHochladen(datei);
           onGeaendert(frisch);
+          try {
+            await playersApi.meinBildInPool(blob);
+          } catch (e) {
+            setFehler(e instanceof Error ? e.message : "Rassen-Pool nicht aktualisiert");
+          }
         }}
       />
     </div>

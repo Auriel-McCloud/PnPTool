@@ -38,6 +38,9 @@ OHNE_GM_ERLAUBT = {
     "/api/spieler/mein-bild-anzeige",
     "/api/spieler/mein-bild-ki-prompt",
     "/api/spieler/mein-bild-ki",
+    # Übernommenes KI-Portrait in den Rassen-Pool. require_spieler, nur
+    # der eigene Charakter, und nur wenn der Schalter an der Rasse an ist.
+    "/api/spieler/mein-bild-rassenpool",
     # Eigene private Notizen. require_spieler prüft die Sitzung, die
     # Repository-Abfrage hängt jede Notiz an genau diesen Zugang — fremde
     # IDs sind 404, die Spielleitung sieht sie nicht.

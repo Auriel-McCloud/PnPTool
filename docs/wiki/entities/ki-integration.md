@@ -1,7 +1,7 @@
 ---
 title: KI-Integration
 created: 2026-09-18
-updated: 2026-10-10
+updated: 2026-11-20
 type: entität
 tags: [ki-integration, backend, geplant]
 sources: [../../../CLAUDE.md, ../../api/ki.md, ../../../backend/app/ki/routes.py]
@@ -208,7 +208,10 @@ Zweistufiges Popup, wie schon bei der Wiki-Prüfung/Auto-Verknüpfung erst
 zur Kontrolle anzeigen statt sofort zu speichern: `POST .../ki/bild-prompt`
 schlägt einen editierbaren Bild-Prompt aus Name+Beschreibung+Notizen vor (Text-KI,
 dieselbe `sammle_kontext()`-Infrastruktur), `POST .../ki/bild-generieren`
-liefert die rohen Bild-Bytes als Vorschau — **speichert nichts**. Erst
+liefert die rohen Bild-Bytes als Vorschau — **speichert nichts**. Seit
+20.11.2026 kann eine Personen-Generierung eine Rassen-Vorlage mitbekommen;
+in den Pool kommt das Bild erst beim Übernehmen, siehe
+[[rassen-referenzbilder]]. Erst
 "✓ Übernehmen" im Frontend-Popup (`frontend/src/ki/KiBildPopup.tsx`) schickt
 das Bild über die jeweils bestehende Datei-Upload-Route der Entität, kein
 zweiter Ablage-Mechanismus (ein erster Versuch mit eigenen

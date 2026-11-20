@@ -100,7 +100,7 @@ export const playersApi = {
   },
   /** Schritt 2: generiert eine Bildvorschau — speichert NICHTS, siehe
    * KiBildPopup.tsx. Übernehmen läuft über meinBildHochladen oben. */
-  meinBildKiGenerieren: async (provider: "lokal" | "cloud", prompt: string): Promise<Blob> => {
+  meinBildKiGenerieren: async (provider: "lokal" | "cloud", prompt: string): Promise<{ blob: Blob; referenz: string | null }> => {
     const antwort = await fetch("/api/spieler/mein-bild-ki", {
       method: "POST",
       credentials: "include",
@@ -111,7 +111,21 @@ export const playersApi = {
       const f = await antwort.json().catch(() => ({ detail: antwort.statusText }));
       throw new Error(f.detail ?? "Bildgenerierung fehlgeschlagen");
     }
-    return antwort.blob();
+    const roh = antwort.headers.get("X-Rassen-Referenz");
+    return { blob: await antwort.blob(), referenz: roh ? decodeURIComponent(roh) : null };
+  },
+  meinBildInPool: async (blob: Blob) => {
+    const formData = new FormData();
+    formData.append("file", new File([blob], "portrait-ki.png", { type: blob.type || "image/png" }));
+    const antwort = await fetch("/api/spieler/mein-bild-rassenpool", {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    if (!antwort.ok) {
+      const f = await antwort.json().catch(() => ({ detail: antwort.statusText }));
+      throw new Error(f.detail ?? "Rassen-Pool nicht aktualisiert");
+    }
   },
 
   // Verwaltung durch die Spielleitung

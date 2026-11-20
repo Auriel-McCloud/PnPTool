@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Rassen-Referenzbilder für die Portrait-Generierung (20.11.2026)
+
+Mark: bestimmte Rassen (Dug'Rah, Sephari, Quill) sollen beim KI-Portrait immer wie diese Rasse aussehen, mit Varietät aus einem Pool, und er will die Bilder sehen und aussortieren. Schalter `referenzAktiv` und Liste `referenzbilder` an der Rasse (`backend/app/rassen/referenz.py`), nicht am Namen. Galerie im Baukasten. Generierung zieht zufällig eine vorhandene Datei (Gemini als Bild, Fooocus als ImagePrompt). In den Pool nur übernommene KI-Portraits plus eigene Uploads, nicht verworfene Vorschauen und nicht der normale Datei-Upload. Leerer Pool: ohne Vorlage. Start an nur wo `referenzAktiv` noch fehlt. Fooocus-Wrapper `C:/DEV/Fooocus/pnptool_server.py` muss neu gestartet werden. Siehe `docs/wiki/entities/rassen-referenzbilder.md`.
+
 ## Handy-Tastatur schließt keine Kachel-Fenster mehr (19.11.2026)
 
 Mark: am Handy schloss sich das KI-Bild-Fenster, sobald man in den Prompt tippte. Ursache: die Tastatur verkleinert die Seite (`interactive-widget=resizes-content`), `useProSeite` misst neu, weniger Kacheln passen auf die Seite und die Kachel des offenen Gegenstands fällt heraus — ihr Fenster samt KI-Bild-Popup hängt an der Kachel und verschwindet mit. Fix: `istTastaturSchrumpfung` in `items/kachelraster.ts` — gleiche Breite, weniger Höhe und Fokus in einem Eingabefeld → Kachelzahl bleibt stehen. Gilt für alle Kachellisten (`useProSeite` in kachelraster.ts und die eigene Kopie in `GegenstaendeUebersicht`), also auch Name/Notizen-Felder in diesen Fenstern. Drehen und normales Verkleinern messen weiter sofort.
@@ -3932,4 +3936,5 @@ dort weitergepflegt, hier nicht mehr).
 | 25 | Critter und NPCs kopieren, für 0815-Mobs | **offen**, Notiz — Umfang der Kopie nicht entschieden | [[neo4j-datenmodell]] |
 | 26 | Battlemap (Hex-Grid, Tokens aus der Initiative, Live-Zeichnen) | **teilweise umgesetzt** (06.11.2026) — gebaut, Spieltisch-Klicktest offen | [[battlemap]] |
 | 27 | Sphären umbenennen: Korrespondenz→Raum, Zeit→Chronurgie, Entropie→Schicksal. Götter bleiben. Kräfte, Leben, Materie bleiben. | ✅ gebaut (09.11.). Gedanken weiter offen | [[magie-hexkraft]] |
+| 28 | Rassen-Referenzbilder: pro Rasse optionale Bildvorlagen für die PC-/NPC-Generierung, Pool wächst mit übernommenen Portraits, zufällige Vorlage, Galerie zum Aussortieren | ✅ gebaut (20.11.2026) — nur bei Übernehmen, Start-Pool leer, Dug'Rah/Sephari/Quill an | [[rassen-referenzbilder]] |
 

@@ -59,6 +59,9 @@ class RasseCreate(BaseModel):
     istGross: bool = False
     # Battlemap: Hören/Ultraschall, kein Hinterkopf. Kein Rassenname im Code.
     rundumsicht: bool = False
+    # Bildgenerierung: zufällige Vorlage aus dem Pool. Die Liste selbst kommt
+    # über eigene Endpunkte, nicht über dieses Formular.
+    referenzAktiv: bool = False
 
 
 class RasseUpdate(BaseModel):
@@ -77,8 +80,9 @@ class RasseUpdate(BaseModel):
     kannKredithai: bool | None = None
     istGross: bool | None = None
     rundumsicht: bool | None = None
-    # bildUrl bewusst nicht hier: das Bild kommt über den Upload-Endpunkt,
-    # wie bei Gegenständen und Personen auch.
+    referenzAktiv: bool | None = None
+    # bildUrl und referenzbilder bewusst nicht hier: Bilder kommen über
+    # Upload-Endpunkte, wie bei Gegenständen und Personen auch.
 
 
 class Bilanz(BaseModel):
@@ -113,6 +117,8 @@ class RasseResponse(BaseModel):
     kannKredithai: bool = False
     istGross: bool = False
     rundumsicht: bool = False
+    referenzAktiv: bool = False
+    referenzbilder: list[str] = []
     # Kommt vom Server mit, damit Übersicht und Editor dieselbe Bewertung
     # zeigen wie die Prüfung beim Speichern.
     bilanz: Bilanz

@@ -236,6 +236,8 @@ function RasseEditor({
   const [kannKredithai, setKannKredithai] = useState(rasse.kannKredithai ?? false);
   const [istGross, setIstGross] = useState(rasse.istGross ?? false);
   const [rundumsicht, setRundumsicht] = useState(rasse.rundumsicht ?? false);
+  const [referenzAktiv, setReferenzAktiv] = useState(rasse.referenzAktiv ?? false);
+  const [referenzWeg, setReferenzWeg] = useState<string | null>(null);
   const [vorlagen, setVorlagen] = useState<GegenstandMitBesitzer[]>([]);
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<Zusatzfertigkeit[]>([]);
   const [fertigkeitenKatalog, setFertigkeitenKatalog] = useState<TraitDef[]>([]);
@@ -256,6 +258,7 @@ function RasseEditor({
     setKannKredithai(rasse.kannKredithai ?? false);
     setIstGross(rasse.istGross ?? false);
     setRundumsicht(rasse.rundumsicht ?? false);
+    setReferenzAktiv(rasse.referenzAktiv ?? false);
   }, [rasse.id]);
 
   // Vorlagen-Gegenstände für die Dug'Rah-Gratis-Rüstung-Auswahl — nur
@@ -320,6 +323,7 @@ function RasseEditor({
         kannKredithai,
         istGross,
         rundumsicht,
+        referenzAktiv,
       });
       await onGeaendert();
     } finally {
@@ -604,6 +608,48 @@ function RasseEditor({
             <p className="ra-hinweis">Kein Hinterkopf auf der Battlemap, wenn Fog of War an ist. Dug'rah hier setzen, nicht über den Namen.</p>
 
             <label className="ra-feld" style={{ marginTop: 10 }}>
+              <input
+                type="checkbox"
+                checked={referenzAktiv}
+                onChange={(e) => setReferenzAktiv(e.target.checked)}
+              />{" "}
+              Bilder als Referenz für die Generierung
+            </label>
+            <p className="ra-hinweis">
+              Beim KI-Portrait einer Person dieser Rasse wird zufällig eines der Bilder mitgegeben.
+              Nur übernommene Portraits kommen dazu, verworfene Vorschauen nicht. Speichern nicht vergessen.
+            </p>
+            <div className="ra-referenzen">
+              {(rasse.referenzbilder ?? []).map((url) => (
+                <div key={url} className="ra-referenz">
+                  <img src={vorschau(url)} alt="" />
+                  <button type="button" onClick={() => setReferenzWeg(url)}>
+                    raus
+                  </button>
+                </div>
+              ))}
+              <label className="ra-referenz ra-referenz-neu">
+                + Vorlage
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={async (e) => {
+                    const datei = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!datei) return;
+                    setLaedtBild(true);
+                    try {
+                      await rassenApi.referenzHochladen(campaignId, rasse.id, datei);
+                      await onGeaendert();
+                    } finally {
+                      setLaedtBild(false);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+
+            <label className="ra-feld" style={{ marginTop: 10 }}>
               Hinweistext (Charakterblatt/Infobox)
               <textarea
                 value={featureHinweis}
@@ -632,6 +678,20 @@ function RasseEditor({
           jaText="Entfernen"
           onJa={loeschen}
           onNein={() => setLoeschenOffen(false)}
+        />
+      )}
+      {referenzWeg && (
+        <Bestaetigung
+          titel="Vorlage aussortieren?"
+          text="Das Bild wird nur aus dem Rassen-Pool genommen. Das Portrait der Figur bleibt."
+          jaText="Aussortieren"
+          onJa={async () => {
+            const url = referenzWeg;
+            setReferenzWeg(null);
+            await rassenApi.referenzEntfernen(campaignId, rasse.id, url);
+            await onGeaendert();
+          }}
+          onNein={() => setReferenzWeg(null)}
         />
       )}
     </>

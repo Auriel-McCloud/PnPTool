@@ -1,7 +1,7 @@
 ---
 title: Rassen — Baukasten und Balance
 created: 2026-09-18
-updated: 2026-10-24
+updated: 2026-11-20
 type: konzept
 tags: [rassen, attribute, versionsgeschichte, widerspruch]
 sources: [../../api/rassen.md, ../../reference/Neotopia_Charaktererschaffung.md, ../../../CLAUDE.md]
@@ -100,9 +100,14 @@ eigentlichen Attribute. Erkannt am Rassennamen
 (`frontend/src/traits/rassenBegriffe.ts`) — **Annahme:** kein Schalter im
 Baukasten; wird eine der Rassen umbenannt, die Liste dort mitziehen.
 
+## Gebaut: Referenzbilder (20.11.2026)
+
+Schalter und Bildpool an der Rasse. Zufällige Vorlage bei der Portrait-Generierung, in den Pool nur übernommene KI-Portraits. Siehe [[../entities/rassen-referenzbilder]].
+
 ## Siehe auch
 
 - [[../entities/rassen-baukasten-feature]] — die UI/Backend-Umsetzung im Detail
+- [[../entities/rassen-referenzbilder]] — offene Skizze, Referenzpool für die Bildgenerierung
 - [[attribute-und-fertigkeiten]] — worauf sich die Modifikatoren auswirken
 - [[charaktererschaffung]] — wo die Rassenwahl einsortiert ist
 - [[../entities/battlemap]] — Größe: Rasse Vorlage, Checkbox an der Person

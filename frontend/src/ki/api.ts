@@ -62,18 +62,20 @@ export async function kiBildGenerieren(
   campaignId: string,
   provider: "lokal" | "cloud",
   prompt: string,
-): Promise<Blob> {
+  personId?: string,
+): Promise<{ blob: Blob; referenz: string | null }> {
   const antwort = await fetch(`/api/campaigns/${campaignId}/ki/bild-generieren`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider, prompt }),
+    body: JSON.stringify({ provider, prompt, personId: personId || null }),
   });
   if (!antwort.ok) {
     const f = await antwort.json().catch(() => ({ detail: antwort.statusText }));
     throw new Error(f.detail ?? "Bildgenerierung fehlgeschlagen");
   }
-  return antwort.blob();
+  const roh = antwort.headers.get("X-Rassen-Referenz");
+  return { blob: await antwort.blob(), referenz: roh ? decodeURIComponent(roh) : null };
 }
 
 /** Auto-Verknüpfung für einen freien Text ohne Wiki-Seitenbezug (Ideenschmiede-

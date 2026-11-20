@@ -11,7 +11,7 @@ import mimetypes
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from app.auth.dependencies import require_campaign_gm, require_campaign_zugang
 from app.rassen import repository
@@ -123,3 +123,56 @@ async def bild_hochladen(campaign_id: str, rasse_id: str, file: UploadFile = Fil
     if rasse is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Rasse nicht gefunden")
     return _mit_bilanz(rasse)
+
+
+@router.post("/{rasse_id}/referenzen", response_model=RasseResponse, dependencies=[Depends(require_campaign_gm)])
+async def referenz_hochladen(campaign_id: str, rasse_id: str, file: UploadFile = File(...)):
+    """Vorlage in den Pool der Rasse. **Nur Spielleitung.** Unabhängig vom Schalter."""
+    from app.rassen import referenz as referenz_pool
+
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Bilddateien (PNG/JPEG/WEBP/GIF) erlaubt")
+    inhalt = await file.read()
+    if len(inhalt) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 8 MB)")
+    if await repository.hole(rasse_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Rasse nicht gefunden")
+    url = referenz_pool.speichere_kopie(rasse_id, inhalt, file.content_type or "image/png")
+    rasse = await repository.referenz_anhaengen(rasse_id, url)
+    if rasse is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Rasse nicht gefunden")
+    return _mit_bilanz(rasse)
+
+
+@router.delete("/{rasse_id}/referenzen", response_model=RasseResponse, dependencies=[Depends(require_campaign_gm)])
+async def referenz_entfernen(campaign_id: str, rasse_id: str, url: str):
+    """Wirft eine Vorlage aus dem Pool. **Nur Spielleitung.** Das Portrait der Figur bleibt."""
+    from app.rassen import referenz as referenz_pool
+
+    if not referenz_pool.ist_eigene_url(rasse_id, url):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Das ist keine Referenz dieser Rasse")
+    rasse = await repository.referenz_entfernen(rasse_id, url)
+    if rasse is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Rasse nicht gefunden")
+    referenz_pool.loesche_datei(rasse_id, url)
+    return _mit_bilanz(rasse)
+
+
+@router.post("/uebernommen", dependencies=[Depends(require_campaign_gm)])
+async def uebernommenes_portrait(
+    campaign_id: str,
+    personId: str = Form(...),
+    file: UploadFile = File(...),
+):
+    """KI-Portrait wurde übernommen — Kopie in den Pool, wenn der Schalter an ist."""
+    from app.rassen import referenz as referenz_pool
+
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Bilddateien (PNG/JPEG/WEBP/GIF) erlaubt")
+    inhalt = await file.read()
+    if len(inhalt) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 8 MB)")
+    abgelegt = await referenz_pool.lege_uebernommenes_ab(
+        campaign_id, personId, inhalt, file.content_type or "image/png"
+    )
+    return {"abgelegt": abgelegt}

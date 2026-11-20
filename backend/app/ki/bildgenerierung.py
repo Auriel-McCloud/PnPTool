@@ -36,19 +36,24 @@ class BildgenerierungFehler(Exception):
     """Lesbare Fehlermeldung, unabhängig vom Provider dahinter."""
 
 
-async def generiere_bild(provider: str, prompt: str) -> tuple[bytes, str]:
+async def generiere_bild(
+    provider: str,
+    prompt: str,
+    referenz: tuple[bytes, str] | None = None,
+) -> tuple[bytes, str]:
     """Generiert ein Bild aus einem Prompt. Gibt (bytes, content_type) zurück.
 
     provider: "lokal" (Fooocus) oder "cloud" (Gemini).
+    referenz: optionale Vorlage (bytes, mime) — Rassenmerkmale, kein Abbild.
     """
     if provider == "lokal":
-        return await _generiere_fooocus(prompt)
+        return await _generiere_fooocus(prompt, referenz)
     if provider == "cloud":
-        return await _generiere_gemini(prompt)
+        return await _generiere_gemini(prompt, referenz)
     raise BildgenerierungFehler(f"Unbekannter Bild-Provider '{provider}' (erwartet: lokal, cloud)")
 
 
-async def _generiere_fooocus(prompt: str) -> tuple[bytes, str]:
+async def _generiere_fooocus(prompt: str, referenz: tuple[bytes, str] | None = None) -> tuple[bytes, str]:
     """Spricht den Fooocus-Wrapper (`pnptool_server.py`) an — muss als eigener
     Prozess laufen (siehe Modul-Docstring). Liefert einen Dateipfad zurück,
     den wir hier einlesen (der Wrapper läuft auf demselben Rechner wie das
@@ -64,6 +69,14 @@ async def _generiere_fooocus(prompt: str) -> tuple[bytes, str]:
                     "breite": settings.fooocus_breite,
                     "hoehe": settings.fooocus_hoehe,
                     "performance": settings.fooocus_performance,
+                    **(
+                        {
+                            "referenz_b64": base64.b64encode(referenz[0]).decode("ascii"),
+                            "referenz_mime": referenz[1],
+                        }
+                        if referenz
+                        else {}
+                    ),
                 },
             )
     except httpx.ConnectError as e:
@@ -89,6 +102,10 @@ async def _generiere_fooocus(prompt: str) -> tuple[bytes, str]:
     pfad = resp.json().get("pfad")
     if not pfad:
         raise BildgenerierungFehler("Fooocus lieferte keinen Bildpfad")
+    if referenz and not resp.json().get("referenz"):
+        raise BildgenerierungFehler(
+            "Fooocus-Wrapper kennt noch keine Bildreferenz — pnptool_server.py neu starten."
+        )
 
     try:
         with open(pfad, "rb") as f:
@@ -100,16 +117,18 @@ async def _generiere_fooocus(prompt: str) -> tuple[bytes, str]:
     return daten, content_type
 
 
-async def _generiere_gemini(prompt: str) -> tuple[bytes, str]:
+async def _generiere_gemini(prompt: str, referenz: tuple[bytes, str] | None = None) -> tuple[bytes, str]:
     """Google Gemini Bildgenerierung — derselbe REST-Stil wie gemini.py,
     aber mit `responseModalities: ["IMAGE"]` statt JSON-Schema-Output.
     """
     if not settings.gemini_api_key:
         raise BildgenerierungFehler("Kein Gemini-API-Key konfiguriert (backend/.env)")
 
+    from app.rassen.referenz import gemini_parts
+
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.gemini_image_model}:generateContent"
     body = {
-        "contents": [{"parts": [{"text": prompt}]}],
+        "contents": [{"parts": gemini_parts(prompt, referenz)}],
         "generationConfig": {"responseModalities": ["IMAGE"]},
     }
 

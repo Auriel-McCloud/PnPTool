@@ -3,6 +3,7 @@ import { BildBlitz } from "../mitteilungen/BildBlitz";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
+import { rassenApi } from "../rassen/api";
 import { extrahiereReinenText } from "../richtext/content";
 import { ZeichenblockPopup } from "../players/ZeichenblockPopup";
 import { bildHoererSetzen, oeffneZeichentisch } from "../bilder/zeichentisch";
@@ -328,8 +329,18 @@ export function BildGalerie({
             notizen: notizen ? extrahiereReinenText(notizen) : "",
           })
         }
-        onGenerieren={(provider, prompt) => kiBildGenerieren(campaignId, provider, prompt)}
-        onUebernehmen={(blob) => hochladenBytes(blob, "ki-bild.png")}
+        onGenerieren={(provider, prompt) =>
+          kiBildGenerieren(campaignId, provider, prompt, art === "personen" ? id : undefined)
+        }
+        onUebernehmen={async (blob) => {
+          await hochladenBytes(blob, "ki-bild.png");
+          if (art !== "personen") return;
+          try {
+            await rassenApi.uebernommenesPortrait(campaignId, id, blob);
+          } catch (e) {
+            setFehler(e instanceof Error ? e.message : "Rassen-Pool nicht aktualisiert");
+          }
+        }}
       />
       <ZeichenblockPopup
         offen={zeichnenOffen}

@@ -45,6 +45,8 @@ export interface Rasse {
   kannKredithai: boolean;
   istGross: boolean;
   rundumsicht: boolean;
+  referenzAktiv: boolean;
+  referenzbilder: string[];
 }
 
 export interface RasseEingabe {
@@ -63,6 +65,7 @@ export interface RasseEingabe {
   kannKredithai?: boolean;
   istGross?: boolean;
   rundumsicht?: boolean;
+  referenzAktiv?: boolean;
 }
 
 function basis(cid: string) {
@@ -92,5 +95,37 @@ export const rassenApi = {
       throw new ApiError(antwort.status, koerper.detail ?? "Upload fehlgeschlagen");
     }
     return (await antwort.json()) as Rasse;
+  },
+  referenzHochladen: async (cid: string, id: string, datei: File) => {
+    const formData = new FormData();
+    formData.append("file", datei);
+    const antwort = await fetch(`${basis(cid)}/${id}/referenzen`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    if (!antwort.ok) {
+      const koerper = await antwort.json().catch(() => ({ detail: antwort.statusText }));
+      throw new ApiError(antwort.status, koerper.detail ?? "Upload fehlgeschlagen");
+    }
+    return (await antwort.json()) as Rasse;
+  },
+  referenzEntfernen: (cid: string, id: string, url: string) =>
+    api.delete<Rasse>(`${basis(cid)}/${id}/referenzen?url=${encodeURIComponent(url)}`),
+  /** Übernommenes KI-Portrait in den Pool, wenn der Schalter an ist. */
+  uebernommenesPortrait: async (cid: string, personId: string, blob: Blob) => {
+    const formData = new FormData();
+    formData.append("personId", personId);
+    formData.append("file", new File([blob], "ki-bild.png", { type: blob.type || "image/png" }));
+    const antwort = await fetch(`${basis(cid)}/uebernommen`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    if (!antwort.ok) {
+      const koerper = await antwort.json().catch(() => ({ detail: antwort.statusText }));
+      throw new ApiError(antwort.status, koerper.detail ?? "Pool nicht aktualisiert");
+    }
+    return (await antwort.json()) as { abgelegt: boolean };
   },
 };

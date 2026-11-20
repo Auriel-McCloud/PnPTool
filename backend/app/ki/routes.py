@@ -539,6 +539,9 @@ class BildGenerierenInput(BaseModel):
 
     provider: Literal["lokal", "cloud"]
     prompt: str
+    # Nur bei Personen: dann zieht der Server eine Rassen-Vorlage, falls der
+    # Schalter an ist. Orte und Gegenstände lassen das leer.
+    personId: str | None = None
 
 
 def _text_zu_dokument(text: str) -> str:
@@ -2022,8 +2025,20 @@ async def ki_bild_generieren(campaign_id: str, body: BildGenerierenInput):
     if not prompt:
         raise HTTPException(status_code=422, detail="Der Prompt darf nicht leer sein.")
 
+    from urllib.parse import quote
+
+    from app.rassen.referenz import ziehe_fuer_person
+
+    referenz = None
+    rassen_name = ""
+    if body.personId:
+        gezogen = await ziehe_fuer_person(campaign_id, body.personId)
+        if gezogen:
+            daten, mime, rassen_name = gezogen
+            referenz = (daten, mime)
+
     try:
-        inhalt, content_type = await generiere_bild(body.provider, prompt)
+        inhalt, content_type = await generiere_bild(body.provider, prompt, referenz)
     except BildgenerierungFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
 
@@ -2031,4 +2046,7 @@ async def ki_bild_generieren(campaign_id: str, body: BildGenerierenInput):
         campaign_id, anlass="bild-generieren", prompt=prompt,
         antwort_text=f"{body.provider}: {len(inhalt)} Bytes", uebernommen=False,
     )
-    return Response(content=inhalt, media_type=content_type)
+    antwort = Response(content=inhalt, media_type=content_type)
+    if rassen_name:
+        antwort.headers["X-Rassen-Referenz"] = quote(rassen_name)
+    return antwort

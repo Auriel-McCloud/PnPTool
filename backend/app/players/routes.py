@@ -376,12 +376,48 @@ async def eigenes_charakterportrait_ki_generieren(
     if not prompt:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Der Prompt darf nicht leer sein.")
 
+    from urllib.parse import quote
+
+    from app.rassen.referenz import ziehe_fuer_person
+
+    campaign_id = spieler["campaignId"]
+    person_id = spieler["personId"]
+    gezogen = await ziehe_fuer_person(campaign_id, person_id)
+    referenz = None
+    rassen_name = ""
+    if gezogen:
+        daten, mime, rassen_name = gezogen
+        referenz = (daten, mime)
+
     try:
-        inhalt, content_type = await generiere_bild(body.provider, prompt)
+        inhalt, content_type = await generiere_bild(body.provider, prompt, referenz)
     except BildgenerierungFehler as e:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(e))
 
-    return Response(content=inhalt, media_type=content_type)
+    antwort = Response(content=inhalt, media_type=content_type)
+    if rassen_name:
+        antwort.headers["X-Rassen-Referenz"] = quote(rassen_name)
+    return antwort
+
+
+@login_router.post("/mein-bild-rassenpool")
+async def eigenes_portrait_in_rassenpool(
+    file: UploadFile = File(...), spieler: dict = Depends(require_spieler)
+):
+    """Übernommenes KI-Portrait in den Rassen-Pool, wenn der Schalter an ist."""
+    from app.rassen.referenz import lege_uebernommenes_ab
+
+    if not spieler.get("personId"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Bilddateien (PNG/JPEG/WEBP/GIF) erlaubt")
+    inhalt = await file.read()
+    if len(inhalt) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 8 MB)")
+    abgelegt = await lege_uebernommenes_ab(
+        spieler["campaignId"], spieler["personId"], inhalt, file.content_type or "image/png"
+    )
+    return {"abgelegt": abgelegt}
 
 
 @login_router.post("/abmelden")

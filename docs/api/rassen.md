@@ -118,6 +118,9 @@ Rechteprüfung, nicht der Zuordnung.
 | DELETE | `/{id}` | nur SL | Aus dem Regelwerk entfernen |
 | PUT | `/freigabe` | nur SL | Vollständige Auswahl für diese Kampagne setzen |
 | POST | `/{id}/bild` | nur SL | Bild für die Infobox |
+| POST | `/{id}/referenzen` | nur SL | Vorlage in den Referenzpool |
+| DELETE | `/{id}/referenzen?url=` | nur SL | Vorlage aus dem Pool, Portrait der Figur bleibt |
+| POST | `/uebernommen` | nur SL | Übernommenes KI-Portrait in den Pool, wenn der Schalter an ist |
 
 Der Katalog ist bewusst SL-only: dass es neben den spielbaren Völkern noch
 andere gibt (oder welche gerade gebaut werden), ist Sache der Spielleitung.
@@ -136,6 +139,8 @@ Formel im Frontend nachzubauen.
   name: "Troll",
   beschreibung: "Wuchtig und schwer umzuwerfen…",
   bildUrl: "/uploads/…",
+  referenzAktiv: false,
+  referenzbilder: [],
   modifikatoren: '{"Körperkraft": 2, …}',  // JSON-Text, Neo4j kann keine Maps
   freiePunkte: [5, 6, 3],                  // Zahlenlisten kann es dagegen
   sortOrder: 5
