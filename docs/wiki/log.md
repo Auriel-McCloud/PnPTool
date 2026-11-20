@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-20] gebaut | Wege je Rasse sperren, Erstellung Rasse vor Weg
+
+Mark (offener Punkt seit 10.10.): Rassen sollen Wege sperren oder genau einen vorgeben können. Gebaut: `Rasse.erlaubteWege` (leer = alle), vier Häkchen im Baukasten, Erstellungsschritte Rasse → Weg, gesperrte Weg-Karten ausgegraut, ein einziger erlaubter Weg wird automatisch gewählt. Server-Prüfung beim Anlegen, KI-Erstellung weicht auf den ersten erlaubten Weg aus. Annahme: nur Erstellung, SL ändert den Weg danach weiter frei. Siehe [[concepts/rassen]].
+
 ## [2026-11-20] gebaut | Rassen-Beschreibung + Ausrüstung im Bild-Prompt, Rassen in sammle_kontext
 
 Mark: Bild-Prompt für PC/NPC soll Rassen-Beschreibung UND sichtbare Ausrüstung berücksichtigen; alle anderen KI-Generierungen sollen auch auf Beschreibungen und Verknüpfungen achten. Gebaut: `_person_visueller_kontext` (Rasse.beschreibung + ausgerüstete Gegenstände) fließt in den Bild-Prompt-Vorschlag (SL- und Spieler-Weg, neues `personId`-Feld). `sammle_kontext()` zieht jetzt zusätzlich alle freigegebenen Rassen mit Beschreibung — wirkt automatisch auf jede Text-Generierung (NPC/Story/Ideenschmiede). Offen: Verknüpfungs-/Beziehungsgraph-Kontext pro Entität — bräuchte Entitäts-IDs an vielen KI-Text-Helfern, die sie aktuell nicht entgegennehmen. Siehe [[entities/rassen-referenzbilder]].

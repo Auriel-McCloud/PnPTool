@@ -141,6 +141,7 @@ Formel im Frontend nachzubauen.
   bildUrl: "/uploads/…",
   referenzAktiv: false,
   referenzbilder: [],
+  erlaubteWege: ["MAGIER"],         // leer = alle Wege; KEINER/MAGIER/HAERETIKER/NEUROWEAVER (20.11.2026)
   modifikatoren: '{"Körperkraft": 2, …}',  // JSON-Text, Neo4j kann keine Maps
   freiePunkte: [5, 6, 3],                  // Zahlenlisten kann es dagegen
   sortOrder: 5

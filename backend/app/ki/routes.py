@@ -685,6 +685,7 @@ def _rassen_fuer_ki(liste: list[dict]) -> dict[str, dict]:
             "gratisFertigkeitName": r.get("gratisFertigkeitName") or "",
             "gratisFertigkeitBonus": r.get("gratisFertigkeitBonus") or 0,
             "kannKredithai": r.get("kannKredithai") or False,
+            "erlaubteWege": r.get("erlaubteWege") or [],
         }
         for r in liste
     }
@@ -1034,7 +1035,10 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: 
         # Nebenfigur: die Rasse steht schon fest, die KI darf sie nicht tauschen.
         if nebenfigur and (nebenfigur.get("rasse") or "") in rassen:
             rasse_name = nebenfigur["rasse"]
-        weg, magie_flavor = erstellung.normalisiere_weg(konzept.get("weg") or "KEINER")
+        # Weg-Sperre der Rasse (20.11.2026): passt der KI-Weg nicht, nimmt
+        # der Server den ersten erlaubten statt die Erstellung platzen zu lassen.
+        weg_roh = erstellung.weg_fuer_rasse(konzept.get("weg") or "KEINER", rassen.get(rasse_name))
+        weg, magie_flavor = erstellung.normalisiere_weg(weg_roh)
         if weg not in ("KEINER", "MAGIER", "NEUROWEAVER"):
             weg = "KEINER"
             magie_flavor = "MAGIER"

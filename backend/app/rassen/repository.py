@@ -40,7 +40,8 @@ FELDER = """
     coalesce(r.istGross, false) AS istGross,
     coalesce(r.rundumsicht, false) AS rundumsicht,
     coalesce(r.referenzAktiv, false) AS referenzAktiv,
-    coalesce(r.referenzbilder, []) AS referenzbilder
+    coalesce(r.referenzbilder, []) AS referenzbilder,
+    coalesce(r.erlaubteWege, []) AS erlaubteWege
 """
 
 
@@ -70,6 +71,8 @@ def _decode(record: dict) -> dict:
     daten["rundumsicht"] = bool(daten.get("rundumsicht"))
     daten["referenzAktiv"] = bool(daten.get("referenzAktiv"))
     daten["referenzbilder"] = [str(u) for u in (daten.get("referenzbilder") or []) if u]
+    # Leer = alle Wege (siehe schemas.py::RasseCreate.erlaubteWege).
+    daten["erlaubteWege"] = [str(w) for w in (daten.get("erlaubteWege") or []) if w]
     return daten
 
 
@@ -149,7 +152,8 @@ async def anlegen(daten: dict) -> dict:
                 gratisFertigkeitName: $gratisFertigkeitName, gratisFertigkeitBonus: $gratisFertigkeitBonus,
                 featureHinweis: $featureHinweis, kannKredithai: $kannKredithai,
                 istGross: $istGross, rundumsicht: $rundumsicht,
-                referenzAktiv: $referenzAktiv, referenzbilder: []
+                referenzAktiv: $referenzAktiv, referenzbilder: [],
+                erlaubteWege: $erlaubteWege
             }})
             RETURN {FELDER}
             """,
@@ -171,6 +175,7 @@ async def anlegen(daten: dict) -> dict:
             istGross=bool(daten.get("istGross")),
             rundumsicht=bool(daten.get("rundumsicht")),
             referenzAktiv=bool(daten.get("referenzAktiv")),
+            erlaubteWege=list(daten.get("erlaubteWege") or []),
         )
         return _decode(dict(await result.single()))
 

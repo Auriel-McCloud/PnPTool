@@ -180,6 +180,19 @@
   color: inherit;
 }
 
+.er-karte-gesperrt {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.er-karte-sperre {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--warn);
+}
+
 .er-karte-aktiv,
 .er-karte-aktiv:hover:not(:disabled) {
   border-color: var(--neon);

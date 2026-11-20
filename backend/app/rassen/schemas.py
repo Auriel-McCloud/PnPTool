@@ -1,4 +1,10 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+# Die vier Weg-Kennungen aus traits/erstellung.py::WEGE (Häretiker zählt
+# hier als eigener Weg, obwohl er mechanisch Magier ist).
+WegId = Literal["KEINER", "MAGIER", "HAERETIKER", "NEUROWEAVER"]
 
 
 class RasseCreate(BaseModel):
@@ -62,6 +68,10 @@ class RasseCreate(BaseModel):
     # Bildgenerierung: zufällige Vorlage aus dem Pool. Die Liste selbst kommt
     # über eigene Endpunkte, nicht über dieses Formular.
     referenzAktiv: bool = False
+    # Erlaubte Wege bei der Erstellung (20.11.2026, Mark): vier Häkchen an der
+    # Rasse. Leer = alle — Bestandsrassen bleiben ohne Migration offen. Ist
+    # nur einer gesetzt, wählt die Erstellung ihn von selbst.
+    erlaubteWege: list[WegId] = []
 
 
 class RasseUpdate(BaseModel):
@@ -81,6 +91,7 @@ class RasseUpdate(BaseModel):
     istGross: bool | None = None
     rundumsicht: bool | None = None
     referenzAktiv: bool | None = None
+    erlaubteWege: list[WegId] | None = None
     # bildUrl und referenzbilder bewusst nicht hier: Bilder kommen über
     # Upload-Endpunkte, wie bei Gegenständen und Personen auch.
 
@@ -119,6 +130,7 @@ class RasseResponse(BaseModel):
     rundumsicht: bool = False
     referenzAktiv: bool = False
     referenzbilder: list[str] = []
+    erlaubteWege: list[str] = []
     # Kommt vom Server mit, damit Übersicht und Editor dieselbe Bewertung
     # zeigen wie die Prüfung beim Speichern.
     bilanz: Bilanz

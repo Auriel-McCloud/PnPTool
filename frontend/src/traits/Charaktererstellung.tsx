@@ -48,9 +48,10 @@ import { vorschau } from "../shell/vorschau";
  * bis "Charakter anlegen".
  */
 
+// Rasse vor Weg (20.11.2026, Mark): die Rasse entscheidet, welche Wege offen sind.
 const SCHRITTE = [
-  { id: "weg", titel: "Weg" },
   { id: "rasse", titel: "Rasse" },
+  { id: "weg", titel: "Weg" },
   { id: "attribute", titel: "Attribute" },
   { id: "fertigkeiten", titel: "Fertigkeiten" },
   { id: "hintergrund", titel: "Hintergrund" },
@@ -308,6 +309,17 @@ export function Charaktererstellung({
   }
 
   const gewaehlteRasse: Rasse | undefined = regeln?.rassen.find((r) => r.name === rasse);
+
+  // Weg-Sperre der Rasse (20.11.2026): ohne Angabe sind alle Wege offen.
+  // Passt der aktuelle Weg nicht (Rasse gewechselt, Entwurf geladen), springt
+  // er auf den ersten erlaubten — bei nur einem ist das die automatische Wahl.
+  const erlaubteWege = useMemo(
+    () => (gewaehlteRasse?.erlaubteWege?.length ? gewaehlteRasse.erlaubteWege : (regeln?.wege ?? []).map((w) => w.id)),
+    [gewaehlteRasse, regeln],
+  );
+  useEffect(() => {
+    if (erlaubteWege.length > 0 && !erlaubteWege.includes(weg)) setWeg(erlaubteWege[0]);
+  }, [erlaubteWege, weg]);
   const gewaehltesPaket: FertigkeitsPaket | undefined = regeln?.fertigkeitsPakete.find((p) => p.id === paket);
 
   // Rassen-Feature "gratisZusatzfertigkeitId" (10.10.2026, Vaet-Transformation,
@@ -478,7 +490,7 @@ export function Charaktererstellung({
   const schrittFertig = useMemo(() => {
     switch (SCHRITTE[schritt].id) {
       case "weg":
-        return true; // "Normal" ist eine gültige Wahl
+        return erlaubteWege.includes(weg); // "Weg des Chroms" ist eine gültige Wahl, sofern die Rasse ihn darf
       case "rasse":
         return Boolean(rasse);
       case "attribute":
@@ -583,7 +595,7 @@ export function Charaktererstellung({
 
       <div className="er-buehne">
         {aktuell.id === "weg" && (
-          <SchrittWeg regeln={regeln} weg={weg} onWaehlen={setWeg} />
+          <SchrittWeg regeln={regeln} weg={weg} erlaubt={erlaubteWege} rasse={rasse} onWaehlen={setWeg} />
         )}
 
         {aktuell.id === "rasse" && (
@@ -768,26 +780,41 @@ export function Charaktererstellung({
 function SchrittWeg({
   regeln,
   weg,
+  erlaubt,
+  rasse,
   onWaehlen,
 }: {
   regeln: Erstellungsregeln;
   weg: string;
+  /** Von der Rasse freigegebene Wege (20.11.2026). Gesperrte bleiben sichtbar, aber nicht wählbar. */
+  erlaubt: string[];
+  rasse: string;
   onWaehlen: (id: string) => void;
 }) {
   return (
-    <div className="er-karten">
-      {regeln.wege.map((w) => (
-        <button
-          key={w.id}
-          type="button"
-          className={`er-karte${weg === w.id ? " er-karte-aktiv" : ""}`}
-          onClick={() => onWaehlen(w.id)}
-        >
-          <span className="er-karte-titel">{w.name}</span>
-          <span className="er-karte-text">{w.beschreibung}</span>
-        </button>
-      ))}
-    </div>
+    <>
+      {erlaubt.length === 1 && (
+        <p className="er-leer">Für {rasse} gibt es nur diesen einen Weg — er ist schon gewählt.</p>
+      )}
+      <div className="er-karten">
+        {regeln.wege.map((w) => {
+          const offen = erlaubt.includes(w.id);
+          return (
+            <button
+              key={w.id}
+              type="button"
+              className={`er-karte${weg === w.id ? " er-karte-aktiv" : ""}${offen ? "" : " er-karte-gesperrt"}`}
+              onClick={() => onWaehlen(w.id)}
+              disabled={!offen}
+            >
+              <span className="er-karte-titel">{w.name}</span>
+              {!offen && <span className="er-karte-sperre">Für {rasse} nicht wählbar</span>}
+              <span className="er-karte-text">{w.beschreibung}</span>
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 

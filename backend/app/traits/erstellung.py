@@ -417,6 +417,8 @@ def regelwerk(
                 "gratisFertigkeitBonus": int(daten.get("gratisFertigkeitBonus") or 0),
                 "featureHinweis": daten.get("featureHinweis", ""),
                 "istGross": bool(daten.get("istGross")),
+                # Erlaubte Wege (20.11.2026) — immer ausgeschrieben, nie leer.
+                "erlaubteWege": erlaubte_wege(daten),
                 # Anzeigenamen für den Steckbrief. Leer, bis die Route sie
                 # aus Gegenstand/Zusatzfertigkeit auflöst — die IDs allein
                 # sind für Spieler unlesbar.
@@ -478,6 +480,37 @@ def normalisiere_weg(weg: str) -> tuple[str, str]:
     if weg == "HAERETIKER":
         return "MAGIER", "HAERETIKER"
     return weg, "MAGIER"
+
+
+WEG_IDS = [w["id"] for w in WEGE]
+
+
+def erlaubte_wege(rasse_daten: dict[str, Any] | None) -> list[str]:
+    """Welche Wege eine Rasse bei der Erstellung wählen darf (20.11.2026,
+    Mark: vier Häkchen an der Rasse). Leere Liste = alle — so bleiben
+    Bestandsrassen ohne Migration offen, und ein später neuer Weg ist
+    automatisch dabei. Reihenfolge immer wie in `WEGE`. Häretiker zählt hier
+    als eigener Weg (Kennung vor `normalisiere_weg`).
+    """
+    gesetzt = set((rasse_daten or {}).get("erlaubteWege") or [])
+    return [w for w in WEG_IDS if w in gesetzt] or list(WEG_IDS)
+
+
+def weg_fuer_rasse(weg: str, rasse_daten: dict[str, Any] | None) -> str:
+    """Der gewählte Weg, wenn die Rasse ihn darf — sonst der erste erlaubte.
+    Für die KI-Erstellung, die nicht nachfragen kann."""
+    erlaubt = erlaubte_wege(rasse_daten)
+    return weg if weg in erlaubt else erlaubt[0]
+
+
+def weg_fehler(weg: str, rasse: str, rassen: dict[str, dict[str, Any]] | None) -> str | None:
+    """Fehlertext, wenn die Rasse diesen (nicht normalisierten) Weg nicht wählen darf."""
+    daten = (rassen or RASSEN).get(rasse)
+    if daten is None or weg in erlaubte_wege(daten):
+        return None
+    namen = {w["id"]: w["name"] for w in WEGE}
+    erlaubt = ", ".join(namen[w] for w in erlaubte_wege(daten))
+    return f"{rasse} kann den Weg „{namen.get(weg, weg)}“ nicht wählen — erlaubt: {erlaubt}."
 
 
 def freebee_kosten(auswahl: dict[str, Any], kategorie_von: dict[str, str]) -> int:
@@ -1140,6 +1173,9 @@ def ki_konzept_text(
     for name, daten in verfuegbar.items():
         mods = daten.get("modifikatoren") or {}
         mod_text = ", ".join(f"{attr} {wert:+d}" for attr, wert in mods.items()) or "keine Besonderheiten"
+        wege_der_rasse = erlaubte_wege(daten)
+        if len(wege_der_rasse) < len(WEG_IDS):
+            mod_text += "; Weg nur: " + "/".join(wege_der_rasse)
         rassen_zeilen.append(f"{name} ({mod_text})")
     wege_zeilen = [f"{w['id']} ({w['name']})" for w in WEGE]
     pakete_zeilen = [

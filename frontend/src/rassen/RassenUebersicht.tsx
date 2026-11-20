@@ -3,7 +3,7 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { bogenApi, type Erstellungsregeln } from "../traits/bogenApi";
 import { traitsApi, type TraitDef } from "../traits/api";
-import { rassenApi, type Rasse } from "./api";
+import { rassenApi, WEGE_AUSWAHL, type Rasse } from "./api";
 import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { TYP_OPTIONEN } from "../items/typKatalog";
@@ -237,6 +237,8 @@ function RasseEditor({
   const [istGross, setIstGross] = useState(rasse.istGross ?? false);
   const [rundumsicht, setRundumsicht] = useState(rasse.rundumsicht ?? false);
   const [referenzAktiv, setReferenzAktiv] = useState(rasse.referenzAktiv ?? false);
+  // Leer = alle Wege (20.11.2026). Angezeigt wird das als vier gesetzte Häkchen.
+  const [erlaubteWege, setErlaubteWege] = useState<string[]>(rasse.erlaubteWege ?? []);
   const [referenzWeg, setReferenzWeg] = useState<string | null>(null);
   const [vorlagen, setVorlagen] = useState<GegenstandMitBesitzer[]>([]);
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<Zusatzfertigkeit[]>([]);
@@ -259,7 +261,17 @@ function RasseEditor({
     setIstGross(rasse.istGross ?? false);
     setRundumsicht(rasse.rundumsicht ?? false);
     setReferenzAktiv(rasse.referenzAktiv ?? false);
+    setErlaubteWege(rasse.erlaubteWege ?? []);
   }, [rasse.id]);
+
+  /** Ein Weg-Häkchen umschalten. Das letzte bleibt stehen (ohne Weg kein
+   * Charakter); alle vier gesetzt wird als leere Liste gespeichert = alle. */
+  function wegUmschalten(id: string) {
+    const aktuell = erlaubteWege.length ? erlaubteWege : WEGE_AUSWAHL.map((w) => w.id);
+    const neu = aktuell.includes(id) ? aktuell.filter((w) => w !== id) : [...aktuell, id];
+    if (neu.length === 0) return;
+    setErlaubteWege(neu.length === WEGE_AUSWAHL.length ? [] : WEGE_AUSWAHL.map((w) => w.id).filter((w) => neu.includes(w)));
+  }
 
   // Vorlagen-Gegenstände für die Dug'Rah-Gratis-Rüstung-Auswahl — nur
   // Vorlagen (istVorlage), eine Kante zum Gegenstand selbst ergäbe sonst
@@ -324,6 +336,7 @@ function RasseEditor({
         istGross,
         rundumsicht,
         referenzAktiv,
+        erlaubteWege,
       });
       await onGeaendert();
     } finally {
@@ -581,6 +594,26 @@ function RasseEditor({
               Additiv auf die bestehende, ganz normale Fertigkeit — jeder Charakter dieser Rasse
               bekommt den Bonus obendrauf, egal was er selbst dort verteilt. Zum Beispiel beim Zorak:
               +1 auf Anführen. Gedeckelt auf das Fertigkeitsmaximum.
+            </p>
+
+            <div className="ra-feld" style={{ marginTop: 10 }}>
+              Erlaubte Wege
+              <div className="ra-wege">
+                {WEGE_AUSWAHL.map((w) => (
+                  <label key={w.id} className="ra-weg">
+                    <input
+                      type="checkbox"
+                      checked={erlaubteWege.length === 0 || erlaubteWege.includes(w.id)}
+                      onChange={() => wegUmschalten(w.id)}
+                    />{" "}
+                    {w.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <p className="ra-hinweis">
+              Nur diese Wege stehen bei der Erstellung zur Wahl. Ist nur einer angehakt, wird er
+              automatisch gewählt. Bestehende Charaktere bleiben unberührt.
             </p>
 
             <label className="ra-feld" style={{ marginTop: 10 }}>

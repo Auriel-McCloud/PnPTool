@@ -1,7 +1,7 @@
 ---
 title: Charaktererschaffung
 created: 2026-09-18
-updated: 2026-11-01
+updated: 2026-11-20
 type: konzept
 tags: [charaktererschaffung, attribute, fertigkeiten, versionsgeschichte]
 sources: [../../reference/Neotopia_Charaktererschaffung.md, ../../regeln-neotopia.md, ../../../backend/app/traits/erstellung.py]
@@ -63,6 +63,8 @@ genau diesen Textverlust gemeldet hat.
 links neben den Punkten den ganzen vergebenen Slot zurück. Runterklicken
 scheitert, sobald die nächstkleinere Stufe schon belegt ist. Feste
 Rassenpunkte (Sockel, Gratis-Zusatzfertigkeit) bleiben.
+
+- **20.11.2026:** Reihenfolge jetzt Rasse → Weg → Attribute … Die Rasse kann Wege sperren oder genau einen vorgeben (automatisch gewählt), siehe [[rassen]] „Wege je Rasse sperren“.
 
 ## Offene Fragen
 

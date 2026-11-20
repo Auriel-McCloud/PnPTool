@@ -209,6 +209,8 @@ export interface Rasse {
   gratisGegenstandName: string;
   featureHinweis: string;
   istGross?: boolean;
+  /** Erlaubte Wege (20.11.2026), vom Server immer ausgeschrieben. Nur einer = automatisch gewählt. */
+  erlaubteWege?: string[];
 }
 
 export interface FertigkeitsPaket {

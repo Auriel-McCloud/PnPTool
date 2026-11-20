@@ -104,6 +104,23 @@ Baukasten; wird eine der Rassen umbenannt, die Liste dort mitziehen.
 
 Schalter und Bildpool an der Rasse. Zufällige Vorlage bei der Portrait-Generierung, in den Pool nur übernommene KI-Portraits. Siehe [[../entities/rassen-referenzbilder]].
 
+## Gebaut: Wege je Rasse sperren (20.11.2026)
+
+Mark (offener Punkt seit 10.10.): manche Rassen sollen nur bestimmte Wege
+wählen dürfen oder genau einen. Gebaut:
+
+- Rasse hat `erlaubteWege` (Liste der Kennungen `KEINER`/`MAGIER`/`HAERETIKER`/`NEUROWEAVER`).
+  Leer = alle — Bestandsrassen bleiben ohne Migration offen, ein neuer Weg wäre automatisch dabei.
+  Häretiker ist hier ein eigenes Häkchen, obwohl er mechanisch Magier ist.
+- Baukasten: vier Häkchen „Erlaubte Wege“. Das letzte lässt sich nicht abwählen; alle vier = leer gespeichert.
+- Erstellung: Rasse kommt jetzt **vor** dem Weg. Gesperrte Wege bleiben als Karte sichtbar,
+  ausgegraut mit „Für X nicht wählbar“. Nur ein Weg erlaubt → automatisch gewählt, Hinweiszeile.
+  Rasse wechseln oder Entwurf laden springt auf den ersten erlaubten Weg.
+- Server prüft beim Anlegen (`erstellung.weg_fehler`), die KI-Erstellung nimmt bei unpassendem
+  Weg den ersten erlaubten (`weg_fuer_rasse`) und bekommt die Sperre im Prompt.
+- **Annahme Neko:** gilt nur bei der Erstellung. Bestehende Charaktere bleiben, wie sie sind;
+  die SL kann den Weg am Steckbrief weiter frei ändern („wer soweit kommt, hat's verdient“).
+
 ## Siehe auch
 
 - [[../entities/rassen-baukasten-feature]] — die UI/Backend-Umsetzung im Detail

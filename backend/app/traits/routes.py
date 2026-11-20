@@ -917,6 +917,7 @@ async def _rassen_der_kampagne(campaign_id: str) -> dict[str, dict]:
             "gratisFertigkeitBonus": r["gratisFertigkeitBonus"],
             "kannKredithai": r.get("kannKredithai") or False,
             "istGross": r.get("istGross") or False,
+            "erlaubteWege": r.get("erlaubteWege") or [],
         }
         for r in await rassen_repository.liste_fuer_kampagne(campaign_id)
     }
@@ -1115,6 +1116,11 @@ async def erstelle_charakter(
     einstellungen = await get_einstellungen(campaign_id)
     hintergrund_pool = await hintergruende_repository.pool_fuer_erstellung(campaign_id, einstellungen)
     fehler = erstellung.pruefe(auswahl, katalog, verfuegbare_rassen, einstellungen, hintergrund_pool)
+    # Weg-Sperre der Rasse (20.11.2026) — mit dem Weg VOR der Normalisierung,
+    # Häretiker kann an der Rasse eigens gesperrt sein.
+    weg_sperre = erstellung.weg_fehler(body.weg, body.rasse, verfuegbare_rassen)
+    if weg_sperre:
+        fehler.append(weg_sperre)
     for zid in set(body.zusatzfertigkeitPunkte) | set(body.zusatzfertigkeitFreebees):
         if zid not in zusatzfertigkeit_ids:
             fehler.append(f"Unbekannte Zusatzfertigkeit: {zid}")

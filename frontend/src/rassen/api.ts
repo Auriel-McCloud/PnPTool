@@ -47,6 +47,8 @@ export interface Rasse {
   rundumsicht: boolean;
   referenzAktiv: boolean;
   referenzbilder: string[];
+  /** Erlaubte Wege bei der Erstellung. Leer = alle (20.11.2026). */
+  erlaubteWege: string[];
 }
 
 export interface RasseEingabe {
@@ -66,7 +68,17 @@ export interface RasseEingabe {
   istGross?: boolean;
   rundumsicht?: boolean;
   referenzAktiv?: boolean;
+  erlaubteWege?: string[];
 }
+
+/** Die vier Wege der Erstellung — Kennungen wie backend/app/traits/erstellung.py::WEGE.
+ * Nur für die Häkchen an der Rasse; die Erstellung selbst liest die Namen vom Server. */
+export const WEGE_AUSWAHL: { id: string; name: string }[] = [
+  { id: "KEINER", name: "Weg des Chroms" },
+  { id: "MAGIER", name: "Magier" },
+  { id: "HAERETIKER", name: "Häretiker" },
+  { id: "NEUROWEAVER", name: "NeuroWeaver" },
+];
 
 function basis(cid: string) {
   return `/api/campaigns/${cid}/rassen`;
