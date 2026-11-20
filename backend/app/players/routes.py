@@ -360,6 +360,7 @@ async def eigenes_charakterportrait_ki_prompt(spieler: dict = Depends(require_sp
         person.get("name", ""),
         klartext(person.get("description") or ""),
         klartext(person.get("notes") or ""),
+        spieler["personId"],
     )
     if not prompt:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Die KI hat keinen Prompt-Vorschlag geliefert.")

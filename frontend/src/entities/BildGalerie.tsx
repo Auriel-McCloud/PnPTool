@@ -327,6 +327,7 @@ export function BildGalerie({
             objektName: name,
             bisherigeBeschreibung: beschreibung ? extrahiereReinenText(beschreibung) : "",
             notizen: notizen ? extrahiereReinenText(notizen) : "",
+            personId: art === "personen" ? id : undefined,
           })
         }
         onGenerieren={(provider, prompt) =>

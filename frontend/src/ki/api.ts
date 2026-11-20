@@ -45,6 +45,10 @@ export interface KiBildPromptInput {
   objektName: string;
   bisherigeBeschreibung?: string;
   notizen?: string;
+  /** Nur bei Personen: zieht Rassen-Lore + sichtbare Ausrüstung in den
+   * Prompt-Vorschlag (Mark-Bug 20.11.2026, "Gemini liefert kein Bild" +
+   * Quill/avian-Fall — die KI kannte die Rassen-Beschreibung nicht). */
+  personId?: string;
 }
 
 /** Schritt 1 des KI-Bild-Popups: Prompt-Vorschlag aus Name+Beschreibung+Notizen. */

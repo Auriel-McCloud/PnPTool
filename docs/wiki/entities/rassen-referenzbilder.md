@@ -61,6 +61,35 @@ Request sonst mit „Failed to fetch“ killt. Siehe `docs/api/ki.md`,
 
 Siehe [[ki-integration]], [[../concepts/rassen]], [[rassen-baukasten-feature]].
 
+## Gebaut (20.11.2026): Rassen-Beschreibung + Ausrüstung im Bild-Prompt
+
+Mark, nach dem Quill-Fall: Bild-Prompt-Vorschlag für Personen (PC/NPC, SL-
+UND Spieler-Weg) bekommt jetzt `Rasse.beschreibung` + sichtbar getragene
+Ausrüstung (nur `ablage=AUSGERUESTET`, nicht der ganze Rucksack) als eigenen,
+scharf benannten "MUSS berücksichtigt werden"-Block
+(`app/ki/routes.py::_person_visueller_kontext`). Dafür bekommen
+`BildPromptInput`/`KiBildPromptInput` ein neues optionales `personId`-Feld,
+von `BildGalerie.tsx`/`EntitaetsBild.tsx` bei `art === "personen"` gesetzt;
+der Spieler-Weg (`/spieler/mein-bild-ki-prompt`) kennt die eigene `personId`
+ohnehin aus der Session.
+
+Zusätzlich: `sammle_kontext()` (der allgemeine KI-Weltkontext für JEDE
+Text-Generierung — Story/NPC/Ideenschmiede/Beratung) zieht jetzt auch alle
+für die Kampagne freigegebenen Rassen (Name + Beschreibung) mit rein, nicht
+nur Person/Ort/Event/Fraktion/Gegenstand/WikiSeite — vorher kannte KEINE
+KI-Generierung im ganzen Projekt die Rassen-Lore, nur den Namen.
+
+Reichweite entschieden (Mark, 20.11.2026): Bild-Prompt für PC/NPC jetzt
+fertig; „alle anderen Sachen" (Charakter-/NPC-Erzeugung, Story, Ideenschmiede)
+bekommen die Rassen-Beschreibung über `sammle_kontext` automatisch mit.
+**Noch offen, nicht gebaut:** „Dinge, mit denen eine Entität verknüpft ist"
+(Beziehungsgraph-Kanten) in die Text-Generierung einfließen lassen — das
+würde pro Aufruf eine Entitäts-ID brauchen, die viele bestehende KI-
+Text-Helfer (z.B. `kiObjektText`, der ✨-Knopf im RichTextEditor) aktuell gar
+nicht entgegennehmen; eigener Umbau, nicht Teil dieses Fixes.
+
+Siehe [[ki-integration]], `docs/api/ki.md`.
+
 ## Offene Idee (20.11.2026): Rassen-Beschreibung fehlt im Bild-Prompt
 
 Mark, am Live-Beispiel Quill ("Häretiker"): der Bild-Prompt-Vorschlag (Schritt

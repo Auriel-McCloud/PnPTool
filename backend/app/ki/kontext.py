@@ -70,10 +70,35 @@ async def sammle_kontext(campaign_id: str) -> str:
         result = await session.run(query, campaign_id=campaign_id)
         eintraege = [dict(record) async for record in result]
 
-    if not eintraege:
+    # Rassen sind eigene Knoten ohne campaignId-Property (Katalog, über
+    # Freigabe an die Kampagne gehängt) — separate Abfrage, keine eigene
+    # `istEntwurf`-Semantik. Mark-Bug 20.11.2026: ohne das kennt JEDE
+    # KI-Generierung (NPC/Story/Bild-Prompt) die Rassen-Lore nicht, nur den
+    # bloßen Namen — eine Rasse namens "Quill" wird dann aus dem englischen
+    # Wort heraus geraten (Feder/Vogel) statt aus der echten Beschreibung
+    # ("Rote-Panda-Aliens"). Siehe docs/wiki/entities/rassen-referenzbilder.md.
+    rassen_query = """
+        MATCH (c:Campaign {id: $campaign_id})-[:ERLAUBT_RASSE]->(r:Rasse)
+        WHERE NOT coalesce(r.geloescht, false)
+        RETURN r.name AS name, coalesce(r.beschreibung, '') AS description
+        ORDER BY r.name
+    """
+    async with driver.session() as session:
+        result = await session.run(rassen_query, campaign_id=campaign_id)
+        rassen_eintraege = [dict(record) async for record in result]
+
+    if not eintraege and not rassen_eintraege:
         return ""
 
     zeilen: list[str] = []
+    for e in rassen_eintraege:
+        name = (e["name"] or "").strip()
+        beschreibung = (e["description"] or "").strip()
+        if beschreibung:
+            zeilen.append(f"- Rasse: {name} — {beschreibung}")
+        elif name:
+            zeilen.append(f"- Rasse: {name}")
+
     for e in eintraege:
         kind = e["kind"]
         name = (e["name"] or "").strip()

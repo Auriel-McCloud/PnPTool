@@ -535,6 +535,9 @@ class BildPromptInput(BaseModel):
     objektName: str
     bisherigeBeschreibung: str = ""
     notizen: str = ""
+    # Nur bei Personen gesetzt: zieht Rassen-Lore + sichtbare Ausrüstung in
+    # den Prompt-Vorschlag (Mark-Bug 20.11.2026, siehe _person_visueller_kontext).
+    personId: str | None = None
 
 
 class BildGenerierenInput(BaseModel):
@@ -1962,6 +1965,7 @@ def _bild_prompt_quelle(
     objekt_name: str,
     beschreibung: str = "",
     notizen: str = "",
+    visueller_kontext: str = "",
 ) -> str:
     """Baut den Text, den die Bild-Prompt-KI als Quelle bekommt.
 
@@ -1975,7 +1979,50 @@ def _bild_prompt_quelle(
         teile.append(f"Bisherige Beschreibung:\n{beschreibung}")
     if notizen:
         teile.append(f"Notizen:\n{notizen}")
+    if visueller_kontext:
+        # Mark-Bug 20.11.2026: ohne das rät die KI beim bloßen Namen einer
+        # Rasse (z.B. "Quill" → "avian/feather-like" statt der echten
+        # Rote-Panda-Alien-Lore) — MUSS, nicht nur ein Hinweis, deshalb
+        # eigener scharf benannter Block statt in "Notizen" versteckt.
+        teile.append(
+            "Rassen-/Ausrüstungskontext (MUSS im Bild berücksichtigt werden, "
+            f"nicht vom Namen raten):\n{visueller_kontext}"
+        )
     return "\n\n".join(teile)
+
+
+async def _person_visueller_kontext(campaign_id: str, person_id: str) -> str:
+    """Rassen-Lore + sichtbar getragene Ausrüstung einer Person, für den
+    Bild-Prompt-Vorschlag (Mark, 20.11.2026, siehe docs/wiki/entities/
+    rassen-referenzbilder.md, Abschnitt "Rassen-Beschreibung fehlt im
+    Bild-Prompt").
+
+    Nur AUSGERÜSTETE Gegenstände (sichtbar am Körper) — Mark will die
+    Ausrüstung mit reinnehmen, aber ein Ersatzmagazin im Rucksack soll das
+    Bild nicht beeinflussen.
+    """
+    from app.entities.repository import PERSON_FIELDS, get_node
+    from app.items.repository import list_gegenstaende
+    from app.rassen import repository as rassen_repository
+
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person is None:
+        return ""
+
+    teile: list[str] = []
+    rasse_name = (person.get("rasse") or "").strip()
+    if rasse_name:
+        rasse = await rassen_repository.hole_nach_name(rasse_name)
+        beschreibung = (rasse.get("beschreibung") or "").strip() if rasse else ""
+        teile.append(f"Rasse {rasse_name}: {beschreibung}" if beschreibung else f"Rasse: {rasse_name}")
+
+    gegenstaende = await list_gegenstaende(campaign_id, person_id)
+    ausgeruestet = [g for g in gegenstaende if g.get("ablage") == "AUSGERUESTET"]
+    if ausgeruestet:
+        namen = ", ".join(f"{g.get('name')} ({g.get('typ')})" for g in ausgeruestet)
+        teile.append(f"Trägt/führt sichtbar: {namen}")
+
+    return "\n".join(teile)
 
 
 async def _bild_prompt_vorschlagen(
@@ -1984,12 +2031,18 @@ async def _bild_prompt_vorschlagen(
     objekt_name: str,
     beschreibung: str,
     notizen: str = "",
+    person_id: str | None = None,
 ) -> str:
     """Gemeinsame Logik für den Prompt-Vorschlag — von der GM-Route UND der
     Spieler-Portrait-Route genutzt (players/routes.py ruft das direkt auf,
-    da sie außerhalb dieses require_campaign_gm-Routers liegt)."""
+    da sie außerhalb dieses require_campaign_gm-Routers liegt).
+
+    `person_id` (nur bei Personen-Bildern gesetzt) zieht Rassen-Lore +
+    sichtbar getragene Ausrüstung dazu (siehe _person_visueller_kontext).
+    """
     kontext = await sammle_kontext(campaign_id)
-    prompt = _bild_prompt_quelle(objekt_typ, objekt_name, beschreibung, notizen)
+    visuell = await _person_visueller_kontext(campaign_id, person_id) if person_id else ""
+    prompt = _bild_prompt_quelle(objekt_typ, objekt_name, beschreibung, notizen, visuell)
     try:
         ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _BILD_PROMPT_SYSTEM, _BILD_PROMPT_SCHEMA, campaign_id=campaign_id)
     except KiFehler as e:
@@ -2004,7 +2057,7 @@ async def ki_bild_prompt(campaign_id: str, body: BildPromptInput):
     Generieren noch anpassen (Marks Entscheidung, siehe Aufgabenbeschreibung)."""
     prompt = await _bild_prompt_vorschlagen(
         campaign_id, body.objektTyp, body.objektName,
-        body.bisherigeBeschreibung, body.notizen,
+        body.bisherigeBeschreibung, body.notizen, body.personId,
     )
     if not prompt:
         raise HTTPException(status_code=502, detail="Die KI hat keinen Prompt-Vorschlag geliefert.")

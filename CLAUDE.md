@@ -2,11 +2,13 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
-## Bild-Generieren als Hintergrund-Job, Gemini-Retry bei NO_IMAGE (20.11.2026)
+## Bild-Generieren als Hintergrund-Job, Gemini-Retry bei NO_IMAGE, Rassen-Kontext (20.11.2026)
 
 Mark: "Failed to fetch" bei Textfeldern, zuletzt beim KI-Bild-Popup. Ursache: `/ki/bild-generieren` (und das Spieler-Pendant `/spieler/mein-bild-ki`) war ein einziger lange offener Request — ein Netzwerk-Hänger während der (je nach Provider zig Sekunden dauernden) Generierung killt ihn komplett, exakt dasselbe Problem, das `/ki/massenidee` am 05.10.2026 schon per Job+Polling gelöst hat. Jetzt läuft die Bildgenerierung über denselben `massenjobs.py`-Mechanismus: `POST /bild-generieren` startet nur noch den Job (Antwort `{jobId}`), `GET /bild-generieren-status/{job_id}` liefert `{fertig, bildBase64, contentType, referenz, fehler}`. Frontend (`ki/api.ts::kiBildGenerieren`, `players/api.ts::meinBildKiGenerieren`) pollt alle 1,5s, toleriert dabei einzelne fehlgeschlagene Poll-Ticks (Netzwerk-Hänger beim Pollen selbst killt den Job nicht mehr). Aufrufer-Signaturen unverändert — keine UI-Änderung nötig.
 
 Zusätzlich, ausgelöst durch Marks Bugreport "Gemini liefert kein Bild (Grund: No Image)" beim ersten Versuch mit Rassen-Referenzbild (Quill): `NO_IMAGE`/`IMAGE_OTHER` (Google-API-Doku: Modell-Unzuverlässigkeit, kein bewusster Inhalts-Block) lässt `_generiere_gemini` (`app/ki/bildgenerierung.py`) automatisch bis zu 2× erneut versuchen, bevor der Fehler durchschlägt. Ein expliziter Block (`IMAGE_SAFETY`, `promptFeedback.blockReason`, …) wird NICHT wiederholt, da der bei identischem Prompt deterministisch bleibt. Siehe `docs/api/ki.md`.
+
+Root Cause des eigentlichen Quill-Bugs (Mark, live nachgestellt): der Bild-Prompt-Vorschlag kannte `Rasse.beschreibung` nirgends — die Text-KI riet beim Namen "Quill" frei "avian/feather-like" statt der echten Rote-Panda-Alien-Lore. Fix: `_person_visueller_kontext` (`app/ki/routes.py`) liefert Rassen-Beschreibung + sichtbar getragene Ausrüstung (nur `AUSGERUESTET`) in den Bild-Prompt für PC/NPC (SL- und Spieler-Weg, neues `personId`-Feld an `BildPromptInput`). Zusätzlich zieht `sammle_kontext()` (`app/ki/kontext.py`) jetzt alle freigegebenen Rassen mit Beschreibung — wirkt automatisch auf jede andere KI-Text-Generierung (NPC/Story/Ideenschmiede). Offen: Beziehungsgraph-Kontext (Verknüpfungen) pro Entität in die Text-Generierung — bräuchte Entitäts-IDs an vielen KI-Helfern, die sie noch nicht kennen. Siehe `docs/wiki/entities/rassen-referenzbilder.md`.
 
 ## Rassen-Referenzbilder für die Portrait-Generierung (20.11.2026)
 
