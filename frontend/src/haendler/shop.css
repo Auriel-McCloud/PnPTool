@@ -637,6 +637,218 @@
   color: var(--gut);
 }
 
+/* --- Kapital, Stückzahl, Warenkorb (20.11.2026) ------------------------- */
+
+.shop-ware-fehler-inline {
+  color: var(--signal);
+}
+
+.shop-ware-anzahl {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+
+.shop-ware-anzahl-summe {
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.shop-ware-anzahl-summe strong {
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.shop-stepper {
+  display: inline-flex;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+.shop-stepper-knopf {
+  min-width: 34px;
+  padding: 4px 8px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.shop-stepper-knopf:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.shop-stepper-knopf:last-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Die −/+ Knöpfe SIND die Pfeile — die eingebauten Spinner würden doppeln. */
+.shop-stepper-zahl {
+  width: 3.5em;
+  text-align: center;
+  font-family: var(--mono);
+  border-radius: 0;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.shop-stepper-zahl::-webkit-outer-spin-button,
+.shop-stepper-zahl::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.shop-kasse {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.shop-kapital {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 14px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-leise);
+  white-space: nowrap;
+}
+
+.shop-kapital strong {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.shop-warenkorb {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--flaeche);
+  border: 1px solid var(--gut);
+  border-radius: var(--radius);
+}
+
+.shop-warenkorb[data-leer="true"] {
+  border-color: var(--linie);
+}
+
+.shop-warenkorb-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 2px 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 15px;
+  text-align: left;
+}
+
+.shop-warenkorb-kopf strong {
+  margin-left: auto;
+  font-family: var(--mono);
+}
+
+.shop-warenkorb-hinweis,
+.shop-warenkorb-leer {
+  margin: 0;
+}
+
+.shop-warenkorb-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shop-warenkorb-zeile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--linie);
+}
+
+.shop-warenkorb-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.shop-warenkorb-marke {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--text-leise);
+}
+
+.shop-warenkorb-fest {
+  min-width: 34px;
+  text-align: center;
+  font-family: var(--mono);
+  color: var(--text-leise);
+}
+
+.shop-warenkorb-stueckpreis {
+  font-size: 12px;
+  color: var(--text-leise);
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+
+.shop-warenkorb-zeilensumme {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--mono);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.shop-warenkorb-gratis {
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--gut);
+}
+
+.shop-warenkorb-weg {
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.shop-warenkorb-fuss {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 599px) {
+  .shop-warenkorb-zeile {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    row-gap: 4px;
+  }
+  .shop-warenkorb-name {
+    grid-column: 1 / -1;
+  }
+}
+
 /* --- KI-Alltagswunsch (24.09.2026) --------------------------------------- */
 
 .shop-alltagswunsch {

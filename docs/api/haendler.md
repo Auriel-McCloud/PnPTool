@@ -126,6 +126,39 @@ POST /api/campaigns/{campaign_id}/haendler/{haendler_id}/kaufen
 Käufer-Identität serverseitig in der Route selbst, nicht über
 `require_campaign_gm`.
 
+### Anzahl + Warenkorb (20.11.2026)
+
+- `KaufRequest.anzahl` (1–99, Default 1): mehr als 1 Stück nur bei
+  stapelbarer Ware (`istVorlage && !einzigartig`), sonst `400`. Ergebnis ist
+  **EIN Stapel** im Inventar (`hatMenge=true`, `menge = anzahl ×
+  Packungsgröße der Vorlage`), keine N Einzelstücke; kein automatisches
+  Zusammenlegen mit vorhandenen Stapeln. `anzahl=1` verhält sich wie bisher.
+  Preis = Stückpreis × anzahl; das Rassen-Feature macht davon **genau ein
+  Stück** gratis. Im Tutorial-Shop bleibt es Stück für Stück (`400` bei
+  anzahl > 1 — `tutorial-zurueck` erstattet pro Stück).
+- Warenkorb: nur Client-Stand (localStorage pro Kampagne + Laden + Käufer,
+  `haendler/warenkorb.ts`), bezahlt wird erst an der Kasse:
+
+```
+POST /api/campaigns/{campaign_id}/haendler/{haendler_id}/kaufen-warenkorb
+{ "positionen": [{ "gegenstandId": "...", "anzahl": 3 }, ...], "kaeuferPersonId": "..." }
+```
+
+  Dieselben Käufer-Regeln wie `kaufen`. **Erst wird alles geprüft**, dann
+  gekauft (`haendler/kauf.py::posten_pruefen` → `posten_ausfuehren`, den
+  Kern teilt sich auch der Einzelkauf): Ware noch im Sortiment (`409` mit
+  Warenname), keine Zeile doppelt (`400`), Anzahl-Regeln (`400`),
+  Rassen-Feature einmal auf das erste passende Stück, Gesamtsumme gegen
+  Kapital (`409`, auch über die Tutorial-Buchung während der Erstellung).
+  Scheitert danach eine einzelne Übergabe, wird nur diese Zeile nicht
+  berechnet bzw. zurückgebucht und unter `fehlgeschlagen` gemeldet.
+  Antwort: `gekauft`, `fehlgeschlagen`, `gegenstaende`, `bestellungen`,
+  `bezahlt`, `erstattet`, `kapitalNeu`, `tutorialAusgegeben`. Kein Warenkorb
+  im Tutorial-Shop (`400`).
+- Digitale Läden: eine Bestellung pro Zeile, `Bestellung.anzahl` (Default 1
+  für Altbestand); `POST .../bestellungen/{id}/liefern` übergibt denselben
+  Stapel.
+
 ## Endpunkte
 
 Basis: `/api/campaigns/{campaign_id}/haendler`
@@ -140,6 +173,7 @@ Basis: `/api/campaigns/{campaign_id}/haendler`
 | DELETE | `/{id}/sortiment/{gegenstandId}` | nur SL | Explizite Ware wieder entfernen (wirkt nicht auf automatische) |
 | PUT | `/{id}/sortiment/{gegenstandId}/rabatt` | nur SL | Sonderangebot setzen (`prozent`, `hinweis`), `prozent=0` nimmt es weg |
 | POST | `/{id}/kaufen` | SL + Spieler (eigener Charakter) | Kauf durchführen — bei `vertriebsart=DIGITAL` entsteht eine Bestellung statt sofortiger Übergabe |
+| POST | `/{id}/kaufen-warenkorb` | SL + Spieler (eigener Charakter) | Ganzen Warenkorb bezahlen — alles-oder-nichts geprüft, dann gekauft (20.11.2026) |
 | GET | `/bestellungen/offen` | nur SL | Alle offenen Online-Bestellungen der Kampagne |
 | GET | `/bestellungen/eigene` | alle mit Zugang | Eigene Bestellungen (Spieler-Sicht) |
 | POST | `/bestellungen/{id}/liefern` | nur SL | Lieferung freigeben — übergibt die Ware jetzt tatsächlich |

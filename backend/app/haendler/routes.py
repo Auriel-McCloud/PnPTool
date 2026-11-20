@@ -21,9 +21,8 @@ from app.entities.visibility import is_visible_to, shop_fuer_viewer_sichtbar
 from app.haendler import repository
 from app.haendler import alltagswunsch
 from app.haendler import ki_vorschlag
-from app.haendler.uebergabe import UnikatEinhangFehler, critter_uebergeben, regale_raeumen, stueck_uebergeben, unikat_anlegen, unikat_einhaengen
-from app.rassen import repository as rassen_repository
-from app.rassen.gratis_kauf import trifft as erster_kauf_gratis
+from app.haendler import kauf
+from app.haendler.uebergabe import UnikatEinhangFehler, critter_uebergeben, stueck_uebergeben, unikat_anlegen, unikat_einhaengen
 from app.haendler.ki_vorschlag import AnwendenErgebnis, SortimentVorschlag, VorschlaegeAntwort, WareAnlegenErgebnis
 from app.haendler.schemas import (
     AlltagswunschAntwortRequest,
@@ -41,6 +40,9 @@ from app.haendler.schemas import (
     SortimentEintrag,
     SortimentHinzufuegenRequest,
     StandortRequest,
+    WarenkorbKaufRequest,
+    WarenkorbKaufResponse,
+    WarenkorbZeileErgebnis,
 )
 from app.items import chirurgie
 from app.items import repository as items_repository
@@ -207,7 +209,8 @@ async def rabatt_setzen(campaign_id: str, haendler_id: str, gegenstand_id: str, 
 
 @router.post("/{haendler_id}/kaufen", response_model=KaufResponse)
 async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: Viewer = Depends(get_viewer)):
-    """Kauft ein Stück aus dem Sortiment dieses Händlers.
+    """Kauft ein Stück (oder mit `anzahl` > 1 einen Stapel) aus dem Sortiment
+    dieses Händlers.
 
     **Spieler kaufen für sich selbst** (kaeuferPersonId wird ignoriert — wie
     beim Messenger kann sich niemand als fremder Charakter ausgeben). **Die
@@ -222,116 +225,69 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
     unverändert (wie bisher); bei Unikaten verschwindet die Ware trotzdem
     sofort aus dem Sortiment (ist ja verkauft), nur die physische Übergabe
     wartet.
+
+    **Anzahl** (20.11.2026): nur bei stapelbarer Ware (Vorlage, nicht
+    einzigartig), ergibt EINEN Stapel; Rassen-Feature „erster Kauf gratis“
+    macht davon genau ein Stück gratis. Prüfung und Ausführung teilt sich
+    diese Route mit dem Warenkorb (haendler/kauf.py). Der Tutorial-Shop
+    (TutorialShopPopup) nutzt weiterhin diese Route Stück für Stück.
     """
     haendler = await _haendler_oder_404(campaign_id, haendler_id, viewer)
-
-    if viewer.role == "GM":
-        if not body.kaeuferPersonId:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "kaeuferPersonId erforderlich")
-        kaeufer_id = body.kaeuferPersonId
-    else:
-        if not viewer.person_id:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein eigener Charakter")
-        kaeufer_id = viewer.person_id
-
-    preis = await repository.effektiver_preis(campaign_id, haendler_id, body.gegenstandId)
-    if preis is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Diese Ware führt der Händler nicht (mehr)")
-
-    kaeufer = await entities_repository.get_node("Person", PERSON_FIELDS, campaign_id, kaeufer_id)
-    if kaeufer is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Käufer nicht gefunden")
-
-    gegenstand = await items_repository.get_gegenstand(campaign_id, body.gegenstandId)
-    if gegenstand is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
-
-    # Rassen-Feature "gratisErsterKaufTyp" (10.10.2026, Quill-Hextech;
-    # 24.10.2026 Sentinel "alle Typen"): der erste passende Kauf ist
-    # kostenlos — nur einmal pro Person (`rassenFeatureGenutzt`), danach
-    # normaler Preis. "alle Typen" trifft jeden Gegenstand, verbraucht
-    # das Feature aber genauso nach dem ersten Stück. Gilt auch im
-    # Tutorial-Shop (dort ist es meistens der erste Kontakt überhaupt).
-    rassen_feature_genutzt = bool(kaeufer.get("rassenFeatureGenutzt"))
-    if not rassen_feature_genutzt and kaeufer.get("rasse"):
-        rassen_katalog = {r["name"]: r for r in await rassen_repository.liste_fuer_kampagne(campaign_id)}
-        feature = rassen_katalog.get(kaeufer["rasse"])
-        if feature and erster_kauf_gratis(feature.get("gratisErsterKaufTyp"), gegenstand.get("typ")):
-            preis = 0
-            rassen_feature_genutzt = True
-
-    kapital = kaeufer.get("kapital", 0)
-    if kapital < preis:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"Guthaben reicht nicht — {kapital}¥ verfügbar, {preis}¥ nötig",
-        )
-
-    erstellt = not kaeufer.get("erstellungAbgeschlossen")
-    tutorial_ausgegeben = int(kaeufer.get("tutorialAusgegeben") or 0)
-    if erstellt:
-        gebucht = await repository.tutorial_ausgabe_buchen(campaign_id, kaeufer_id, preis)
-        if gebucht is None:
-            raise HTTPException(
-                status.HTTP_409_CONFLICT,
-                f"Guthaben reicht nicht — {kapital}¥ verfügbar, {preis}¥ nötig",
-            )
-        kapital_neu = gebucht["kapital"]
-        tutorial_ausgegeben = gebucht["ausgegeben"]
-        person_update: dict = {}
-    else:
-        kapital_neu = kapital - preis
-        person_update = {"kapital": kapital_neu}
-    if rassen_feature_genutzt and rassen_feature_genutzt != bool(kaeufer.get("rassenFeatureGenutzt")):
-        person_update["rassenFeatureGenutzt"] = True
-
-    if haendler.get("vertriebsart") == "DIGITAL":
-        if not gegenstand["istVorlage"]:
-            await regale_raeumen(campaign_id, haendler_id, body.gegenstandId)
-        if person_update:
-            await entities_repository.update_node(
-                "Person", PERSON_FIELDS, campaign_id, kaeufer_id, person_update
-            )
-        bestellung = await repository.bestellung_anlegen(
-            campaign_id, haendler_id, haendler["name"], kaeufer_id, body.gegenstandId, gegenstand["name"], preis
-        )
-        await hooks.geld(
-            campaign_id, betrag=preis, art="AUSGABE", von_person_id=kaeufer_id,
-            detail=(
-                f"{gegenstand.get('name') or 'Bestellung'} bei {haendler['name']}"
-                if haendler.get("name") else (gegenstand.get("name") or "Bestellung")
-            ),
-        )
-        return KaufResponse(
-            gegenstand=None, kapitalNeu=kapital_neu, tutorialAusgegeben=tutorial_ausgegeben, bestellung=bestellung
-        )
-
-    alter_besitzer = None if gegenstand["istVorlage"] else await items_repository.get_owner_id(campaign_id, body.gegenstandId)
-    try:
-        gekauft = await stueck_uebergeben(campaign_id, haendler_id, body.gegenstandId, kaeufer_id)
-        if gekauft is None:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kauf fehlgeschlagen")
-    except HTTPException:
-        if erstellt:
-            await repository.tutorial_ausgabe_erstatten(campaign_id, kaeufer_id, preis)
-        raise
-
-    if person_update:
-        await entities_repository.update_node(
-            "Person", PERSON_FIELDS, campaign_id, kaeufer_id, person_update
-        )
-
-    await hooks.handel(
-        campaign_id,
-        gegenstand_id=gekauft["id"],
-        neuer_besitzer_id=kaeufer_id,
-        betrag=preis,
-        von_person_id=haendler_id,
-        alter_besitzer_id=alter_besitzer,
-        detail=f"bei {haendler['name']}" if haendler.get("name") else "",
+    kaeufer_id = kauf.kaeufer_bestimmen(viewer, body.kaeuferPersonId)
+    plan = await kauf.posten_pruefen(
+        campaign_id, haendler_id, haendler, kaeufer_id, [(body.gegenstandId, body.anzahl)]
+    )
+    ergebnis = await kauf.posten_ausfuehren(campaign_id, haendler_id, haendler, plan)
+    return KaufResponse(
+        gegenstand=ergebnis.uebergeben[0][1] if ergebnis.uebergeben else None,
+        kapitalNeu=ergebnis.kapital_neu,
+        tutorialAusgegeben=ergebnis.tutorial_ausgegeben,
+        bestellung=ergebnis.bestellt[0][1] if ergebnis.bestellt else None,
     )
 
-    return KaufResponse(gegenstand=gekauft, kapitalNeu=kapital_neu, tutorialAusgegeben=tutorial_ausgegeben)
+
+def _zeile(p: kauf.KaufPosten) -> WarenkorbZeileErgebnis:
+    return WarenkorbZeileErgebnis(gegenstandId=p.gegenstand_id, name=p.name, anzahl=p.anzahl, preis=p.preis)
+
+
+@router.post("/{haendler_id}/kaufen-warenkorb", response_model=WarenkorbKaufResponse)
+async def kaufen_warenkorb(
+    campaign_id: str, haendler_id: str, body: WarenkorbKaufRequest, viewer: Viewer = Depends(get_viewer)
+):
+    """Bezahlt einen ganzen Warenkorb (20.11.2026, Marks Vorgabe: nichts wird
+    bezahlt, bis an der Kasse bestätigt ist).
+
+    Dieselben Käufer-Regeln wie `kaufen`. Zuerst wird ALLES geprüft (jede
+    Ware noch im Sortiment, kein Einzelstück doppelt, Anzahl-Regeln,
+    Rassen-Feature genau einmal, Gesamtsumme gegen Kapital inkl. Tutorial-
+    Buchung während der Erstellung) — scheitert etwas, wird nichts gekauft.
+    Scheitert danach eine einzelne Übergabe, wird nur diese Zeile nicht
+    berechnet bzw. zurückgebucht und unter `fehlgeschlagen` gemeldet.
+    Digitale Läden: eine Bestellung pro Zeile mit ihrer Anzahl.
+    """
+    haendler = await _haendler_oder_404(campaign_id, haendler_id, viewer)
+    if haendler.get("istTutorialShop"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Der Tutorial-Shop hat keinen Warenkorb")
+    kaeufer_id = kauf.kaeufer_bestimmen(viewer, body.kaeuferPersonId)
+    plan = await kauf.posten_pruefen(
+        campaign_id,
+        haendler_id,
+        haendler,
+        kaeufer_id,
+        [(p.gegenstandId, p.anzahl) for p in body.positionen],
+        warenkorb=True,
+    )
+    ergebnis = await kauf.posten_ausfuehren(campaign_id, haendler_id, haendler, plan)
+    return WarenkorbKaufResponse(
+        gekauft=[_zeile(p) for p in ergebnis.erfolgreich],
+        fehlgeschlagen=[_zeile(p) for p in ergebnis.fehlgeschlagen],
+        gegenstaende=[g for _, g, _ in ergebnis.uebergeben],
+        bestellungen=[b for _, b in ergebnis.bestellt],
+        bezahlt=ergebnis.bezahlt,
+        erstattet=ergebnis.erstattet,
+        kapitalNeu=ergebnis.kapital_neu,
+        tutorialAusgegeben=ergebnis.tutorial_ausgegeben,
+    )
 
 
 # --- Tierladen: Pets im Sortiment (18.11.2026) -------------------------------
@@ -548,7 +504,11 @@ async def bestellung_liefern(campaign_id: str, bestellung_id: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht mehr auffindbar")
 
     geliefert = await stueck_uebergeben(
-        campaign_id, bestellung["haendlerId"], bestellung["gegenstandId"], bestellung["kaeuferPersonId"]
+        campaign_id,
+        bestellung["haendlerId"],
+        bestellung["gegenstandId"],
+        bestellung["kaeuferPersonId"],
+        bestellung.get("anzahl") or 1,
     )
 
     aktualisiert = await repository.bestellung_liefern(campaign_id, bestellung_id)
