@@ -39,8 +39,11 @@ export function NebenfigurKacheln({
               <div className="pc-kachel-name">{anzeigeName(p.name, p.alias)}</div>
               {kopf && <div className="nf-kachel-zeile">{kopf}</div>}
               {p.istBlankoKontakt ? (
-                <span className="nf-persoenlichkeit" title="Leerer Kontakt-Platz — der Spieler beschreibt ihn im Messenger">
-                  Platzhalter
+                <span
+                  className="nf-persoenlichkeit"
+                  title={`Leerer ${p.istMentor ? "Mentor" : "Kontakt"}-Platz — der Spieler beschreibt ihn im Messenger`}
+                >
+                  {p.istMentor ? "Mentor-Platzhalter" : "Platzhalter"}
                 </span>
               ) : (
                 p.persoenlichkeit && <span className="nf-persoenlichkeit">{p.persoenlichkeit}</span>

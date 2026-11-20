@@ -101,7 +101,9 @@ export function KontakteAnsicht({ campaignId }: { campaignId: string }) {
                   ？
                 </span>
                 <span className="ko-namen">
-                  <span className="ko-alias">Unbekannter Kontakt</span>
+                  {/* Mentor-Platz eigens benennen (20.11.2026): wer Mentor UND Kontakte
+                      hat, muss die leeren Plätze auseinanderhalten können. */}
+                  <span className="ko-alias">{k.istMentor ? "Unbekannter Mentor" : "Unbekannter Kontakt"}</span>
                 </span>
                 <span className="ko-stufe">Tippen zum Anlegen</span>
               </li>
@@ -180,8 +182,8 @@ export function KontakteAnsicht({ campaignId }: { campaignId: string }) {
 
       {generierenZiel && (
         <Fenster
-          titel="Unbekannter Kontakt"
-          unterzeile="Wer oder was soll das sein?"
+          titel={generierenZiel.istMentor ? "Unbekannter Mentor" : "Unbekannter Kontakt"}
+          unterzeile={generierenZiel.istMentor ? "Wer hat dich gelehrt?" : "Wer oder was soll das sein?"}
           kennung={`kontakt-generieren:${generierenZiel.id}`}
           offen={true}
           onSchliessen={() => {
@@ -191,15 +193,19 @@ export function KontakteAnsicht({ campaignId }: { campaignId: string }) {
           }}
         >
           <p className="ko-leise">
-            Beschreib kurz, wen du hier brauchst — die KI arbeitet daraus
-            einen vollständigen Kontakt aus (inkl. Ausrüstung, falls
-            sinnvoll). Das lässt sich danach nicht mehr rückgängig machen.
+            {generierenZiel.istMentor
+              ? "Beschreib kurz, wer dich gelehrt hat — die KI arbeitet daraus deinen Mentor aus, stärker je nach deinen Mentor-Punkten. Das lässt sich danach nicht mehr rückgängig machen."
+              : "Beschreib kurz, wen du hier brauchst — die KI arbeitet daraus einen vollständigen Kontakt aus (inkl. Ausrüstung, falls sinnvoll). Das lässt sich danach nicht mehr rückgängig machen."}
           </p>
           <div className="ko-generieren-form">
             <textarea
               value={wunsch}
               onChange={(e) => setWunsch(e.target.value)}
-              placeholder="z.B. ein Dealer im Nachtmarkt, der an Chrome kommt"
+              placeholder={
+                generierenZiel.istMentor
+                  ? "z.B. eine alte Straßenschamanin, die mir die Sphären gezeigt hat"
+                  : "z.B. ein Dealer im Nachtmarkt, der an Chrome kommt"
+              }
               rows={3}
               disabled={generiertLaedt}
             />

@@ -121,6 +121,8 @@ export interface Person extends VisibilityFields {
   istNebenfigur?: boolean;
   /** Leerer Kontakt-/Mentor-Platz aus dem Hintergrund, den der Spieler noch beschreibt. */
   istBlankoKontakt?: boolean;
+  /** Mentor-Platz bzw. ausgearbeiteter Mentor aus dem Hintergrund. */
+  istMentor?: boolean;
   /** Kurzes Stichwort, z.B. „Leitwolf“, „Angsthase“. */
   persoenlichkeit?: string;
   /** Freie feste Fähigkeiten, z.B. Straßenwissen 4 — kein Katalogbezug. */

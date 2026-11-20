@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Mentor-Platz im Kontaktverzeichnis als Mentor benannt (20.11.2026)
+
+Mark: wer Mentor UND Kontakte hat, sah im Kontaktverzeichnis (`KontakteAnsicht`) zwei gleiche „Unbekannter Kontakt“-Plätze. Der Messenger unterschied schon (`istMentor` → „Undefinierter Mentor“), das Verzeichnis nicht. Jetzt dort „Unbekannter Mentor“ samt Mentor-Titel/-Text im Beschreiben-Fenster, Mentor-Beispiel als Platzhaltertext (auch im Messenger), SL-Nebenfiguren-Kachel/-Detail zeigen „Mentor-Platzhalter“. Reine Anzeige, kein neues Datenmodell (`istMentor` lag schon am Knoten und in der Kontakt-API).
+
 ## NPC-Liste: Critter/Drohnen/KI ausblenden (20.11.2026)
 
 Mark: in der NPC-Liste sollen Critter, Drohnen/Fahrzeuge und KI-Personen ausblendbar sein — die sind alle normale `Person`-Knoten mit eigenem Flag (`istCritter`/`istDrohne`+`istFahrzeug`/`istKI`), bisher ununterscheidbar zwischen echten NPCs gemischt. Drei Checkboxen in der bestehenden `Filterleiste` (neue Query-Parameter `ohneCritter`/`ohneKI`/`ohneDrohnen` an `GET .../personen`, serverseitig gefiltert), nur in der NPC-Ansicht sichtbar (`mitSonderfigurenFilter`-Prop), nicht bei Nebenfiguren/PCs. Reversibel, kein neues Datenmodell.

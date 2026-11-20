@@ -79,6 +79,10 @@ Beschreibt ein Spieler einen leeren Kontakt-Platz, legt `generieren` jetzt eine
 Einkauf) statt eines vollen NPCs. Mentor-Plätze bleiben volle NPCs mit EP.
 Ablauf für den Spieler unverändert: Platzhalter weg, Chat offen, Name bekannt.
 
+## Mentor-Platz eigens benannt (20.11.2026)
+
+Mark: hat ein Spieler Mentor und Kontakte, muss er die leeren Plätze unterscheiden können. Messenger zeigte schon „Undefinierter Mentor“; das Kontaktverzeichnis jetzt auch „Unbekannter Mentor“ (statt „Unbekannter Kontakt“), mit eigenem Titel/Hinweis im Beschreiben-Fenster. SL-Seite: Nebenfiguren-Kachel „Mentor-Platzhalter“.
+
 ## Chatverlauf-Regel (07.11.2026)
 
 Lesen (`GET .../chat`) und Senden nutzen dieselbe Regel wie die Liste: `chat_ist_offen` in `kontakte/security.py`. Explizites `chatOffen` zählt; nur ein nie gesetztes Feld fällt auf Stufe ≥ KONTAKT_AUSGETAUSCHT zurück. Vorher lieferte Lesen bei einem von der SL angelegten Kontakt (Stufe GESEHEN, Chat offen) einen leeren Verlauf, obwohl die Nachrichten gespeichert waren.

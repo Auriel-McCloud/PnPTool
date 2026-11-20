@@ -2169,3 +2169,7 @@ Strahl reicht über das getragene Ding hinaus; unterbrochen fällt es hinunter u
 ## [2026-11-19] update | KI-Traktorstrahl holt vor dem Wurf aus
 
 Am Rand schwingt sie das Ding nach hinten und schleudert es dann hinaus. Siehe [[entities/critter-pet]].
+
+## [2026-11-20] update | Mentor-Platz im Kontaktverzeichnis als Mentor benannt
+
+Statt zweimal „Unbekannter Kontakt“ steht beim Mentor-Platz „Unbekannter Mentor“. Siehe [[entities/kontakte-messenger]].

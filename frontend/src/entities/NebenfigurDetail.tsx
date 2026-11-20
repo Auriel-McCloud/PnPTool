@@ -390,7 +390,7 @@ export function NebenfigurDetail({
                     </button>
                     {person.istBlankoKontakt ? (
                       <p className="nf-hinweis">
-                        Leerer Kontakt-Platz — der Spieler beschreibt ihn im Messenger, dann füllt die KI ihn.
+                        Leerer {person.istMentor ? "Mentor" : "Kontakt"}-Platz — der Spieler beschreibt ihn im Messenger, dann füllt die KI ihn.
                       </p>
                     ) : (
                       <button type="button" onClick={() => setZuNpcOffen(true)} disabled={zuNpcLaeuft}>

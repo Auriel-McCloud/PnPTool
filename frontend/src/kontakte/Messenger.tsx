@@ -265,7 +265,11 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
             <textarea
               value={wunsch}
               onChange={(e) => setWunsch(e.target.value)}
-              placeholder="z.B. ein Dealer im Nachtmarkt, der an Chrome kommt"
+              placeholder={
+                blanko.istMentor
+                  ? "z.B. eine alte Straßenschamanin, die mir die Sphären gezeigt hat"
+                  : "z.B. ein Dealer im Nachtmarkt, der an Chrome kommt"
+              }
               rows={4}
               disabled={legtAn}
             />
