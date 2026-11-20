@@ -261,6 +261,11 @@ export interface ListenFilter {
   verbindungsTyp?: string;
   /** Nur Personen: true = nur Nebenfiguren, false = ohne Nebenfiguren. */
   istNebenfigur?: boolean;
+  /** Nur NPC-Liste: Critter/KI/Drohne-Fahrzeug ausblenden (Mark, 20.11.2026) —
+   * das sind normale Person-Knoten mit eigenem Flag, keine eigene Liste. */
+  ohneCritter?: boolean;
+  ohneKI?: boolean;
+  ohneDrohnen?: boolean;
 }
 
 /** Eine Entität, mit der tatsächlich mindestens eine Verbindung besteht. */

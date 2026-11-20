@@ -52,6 +52,9 @@ export interface FilterleisteProps {
   /** Voreingestellte Sortierung dieser Liste, solange nichts anderes gewählt
    * wurde (z.B. "verbindungen" bei Orten). Fällt sonst auf "name" zurück. */
   standardSortierung?: Sortierung;
+  /** Nur NPC-Liste: Checkboxen zum Ausblenden von Critter/KI/Drohnen-Fahrzeug
+   * anbieten (Mark, 20.11.2026) — in Nebenfiguren/PCs gibt's die nie. */
+  mitSonderfigurenFilter?: boolean;
 }
 
 export function Filterleiste({
@@ -64,6 +67,7 @@ export function Filterleiste({
   farbe,
   mitZeitpunkt = false,
   standardSortierung = "name",
+  mitSonderfigurenFilter = false,
 }: FilterleisteProps) {
   const [optionen, setOptionen] = useState<FilterOptionen | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -120,6 +124,9 @@ export function Filterleiste({
     filter.suche?.trim() ||
       filter.verbundenMit ||
       filter.verbindungsTyp ||
+      filter.ohneCritter ||
+      filter.ohneKI ||
+      filter.ohneDrohnen ||
       (filter.sortierung && filter.sortierung !== standardSortierung)
   );
 
@@ -194,6 +201,35 @@ export function Filterleiste({
                 </option>
               ))}
             </select>
+          </label>
+        </div>
+      )}
+
+      {mitSonderfigurenFilter && (
+        <div className="fl-zeile">
+          <label className="fl-schalter">
+            <input
+              type="checkbox"
+              checked={filter.ohneCritter ?? false}
+              onChange={(e) => onFilter({ ...filter, ohneCritter: e.target.checked || undefined })}
+            />
+            Critter ausblenden
+          </label>
+          <label className="fl-schalter">
+            <input
+              type="checkbox"
+              checked={filter.ohneDrohnen ?? false}
+              onChange={(e) => onFilter({ ...filter, ohneDrohnen: e.target.checked || undefined })}
+            />
+            Drohnen/Fahrzeuge ausblenden
+          </label>
+          <label className="fl-schalter">
+            <input
+              type="checkbox"
+              checked={filter.ohneKI ?? false}
+              onChange={(e) => onFilter({ ...filter, ohneKI: e.target.checked || undefined })}
+            />
+            KI ausblenden
           </label>
         </div>
       )}

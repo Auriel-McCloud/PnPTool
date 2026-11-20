@@ -124,6 +124,22 @@
   border-color: var(--fl-farbe, var(--neon));
 }
 
+/* --- Schalter (Checkbox-Zeile, z.B. Sonderfiguren ausblenden) ----------- */
+
+.fl-schalter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-leise);
+  cursor: pointer;
+  user-select: none;
+}
+
+.fl-schalter input {
+  cursor: pointer;
+}
+
 /* --- Fusszeile ---------------------------------------------------------- */
 
 .fl-fuss {

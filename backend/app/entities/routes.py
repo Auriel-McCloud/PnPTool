@@ -212,6 +212,9 @@ async def list_personen(
         default=None,
         description="true = nur Nebenfiguren, false = keine Nebenfiguren (NPC-Liste), weglassen = alle.",
     ),
+    ohneCritter: bool | None = Query(default=None, description="true = Critter ausblenden (Mark, 20.11.2026)."),
+    ohneKI: bool | None = Query(default=None, description="true = KI-Personen ausblenden."),
+    ohneDrohnen: bool | None = Query(default=None, description="true = Drohnen/Fahrzeuge ausblenden."),
     viewer: Viewer = Depends(get_viewer),
 ):
     nodes = await repository.list_nodes("Person", PERSON_FIELDS, campaign_id)
@@ -222,6 +225,15 @@ async def list_personen(
     # sie drin (Kontakte, Gruppenchat, Beziehungs-Auswahl brauchen sie).
     if istNebenfigur is not None:
         nodes = [n for n in nodes if bool(n.get("istNebenfigur")) == istNebenfigur]
+    # Sonderfiguren-Filter (Mark, 20.11.2026): Critter/KI/Drohne-Fahrzeug sind
+    # alle normale Person-Knoten mit eigenem Flag (siehe schemas.py) — in der
+    # NPC-Liste bisher ununterscheidbar von echten NPCs gemischt.
+    if ohneCritter:
+        nodes = [n for n in nodes if not n.get("istCritter")]
+    if ohneKI:
+        nodes = [n for n in nodes if not n.get("istKI")]
+    if ohneDrohnen:
+        nodes = [n for n in nodes if not (n.get("istDrohne") or n.get("istFahrzeug"))]
     return await _aufbereiten(
         nodes,
         campaign_id,

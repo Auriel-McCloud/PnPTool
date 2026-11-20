@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## NPC-Liste: Critter/Drohnen/KI ausblenden (20.11.2026)
+
+Mark: in der NPC-Liste sollen Critter, Drohnen/Fahrzeuge und KI-Personen ausblendbar sein — die sind alle normale `Person`-Knoten mit eigenem Flag (`istCritter`/`istDrohne`+`istFahrzeug`/`istKI`), bisher ununterscheidbar zwischen echten NPCs gemischt. Drei Checkboxen in der bestehenden `Filterleiste` (neue Query-Parameter `ohneCritter`/`ohneKI`/`ohneDrohnen` an `GET .../personen`, serverseitig gefiltert), nur in der NPC-Ansicht sichtbar (`mitSonderfigurenFilter`-Prop), nicht bei Nebenfiguren/PCs. Reversibel, kein neues Datenmodell.
+
 ## Bild-Generieren als Hintergrund-Job, Gemini-Retry bei NO_IMAGE, Rassen-Kontext (20.11.2026)
 
 Mark: "Failed to fetch" bei Textfeldern, zuletzt beim KI-Bild-Popup. Ursache: `/ki/bild-generieren` (und das Spieler-Pendant `/spieler/mein-bild-ki`) war ein einziger lange offener Request — ein Netzwerk-Hänger während der (je nach Provider zig Sekunden dauernden) Generierung killt ihn komplett, exakt dasselbe Problem, das `/ki/massenidee` am 05.10.2026 schon per Job+Polling gelöst hat. Jetzt läuft die Bildgenerierung über denselben `massenjobs.py`-Mechanismus: `POST /bild-generieren` startet nur noch den Job (Antwort `{jobId}`), `GET /bild-generieren-status/{job_id}` liefert `{fertig, bildBase64, contentType, referenz, fehler}`. Frontend (`ki/api.ts::kiBildGenerieren`, `players/api.ts::meinBildKiGenerieren`) pollt alle 1,5s, toleriert dabei einzelne fehlgeschlagene Poll-Ticks (Netzwerk-Hänger beim Pollen selbst killt den Job nicht mehr). Aufrufer-Signaturen unverändert — keine UI-Änderung nötig.

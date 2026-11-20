@@ -90,7 +90,7 @@ nicht entgegennehmen; eigener Umbau, nicht Teil dieses Fixes.
 
 Siehe [[ki-integration]], `docs/api/ki.md`.
 
-## Offene Idee (20.11.2026): Rassen-Beschreibung fehlt im Bild-Prompt
+## Bugfund (20.11.2026): Live-Beleg für den Quill-Fall
 
 Mark, am Live-Beispiel Quill ("Häretiker"): der Bild-Prompt-Vorschlag (Schritt
 1 vor der eigentlichen Generierung) kennt die Rassen-Beschreibung
@@ -103,11 +103,8 @@ rät deshalb allein vom Rassennamen und assoziierte bei "Quill" frei
 08:06 UTC) — obwohl ein korrektes Referenzbild mitgeschickt wurde, hat der
 widersprüchliche Text-Prompt offenbar mehr Gewicht bekommen als das Bild.
 
-**Offene Achsen, Formular ohne Antwort geblieben:**
-- Reichweite: nur in den Bild-Prompt-Vorschlag, oder generell in
-  `sammle_kontext` (dann wissen auch NPC-/Story-Generierung die Rassen-Lore)?
-- Verhalten bei vorhandenem Referenzbild: Text-Prompt automatisch
-  zurückhaltender beim Aussehen (Bild soll führen), oder weiterhin frei
-  beschreiben, nur mit korrekter Rassen-Info?
-
-Status: offen, nicht gebaut.
+**Gelöst** — siehe Abschnitt „Gebaut (20.11.2026): Rassen-Beschreibung +
+Ausrüstung im Bild-Prompt" oben. Zweite offene Achse von damals
+(„Bild soll bei Referenzbild führen, Text zurückhaltender") bewusst NICHT
+umgesetzt — Mark hat stattdessen Ausrüstung + `sammle_kontext` priorisiert;
+bei Bedarf eigenes Nachschärfen.

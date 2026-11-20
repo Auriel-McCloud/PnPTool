@@ -624,7 +624,7 @@ export function EntityManager({
   // Ist gerade gefiltert? Entscheidet, ob "nichts angelegt" oder "nichts
   // gefunden" dasteht — zwei sehr verschiedene Auskünfte.
   function gefiltert(f: ListenFilter) {
-    return Boolean(f.suche?.trim() || f.verbundenMit || f.verbindungsTyp);
+    return Boolean(f.suche?.trim() || f.verbundenMit || f.verbindungsTyp || f.ohneCritter || f.ohneKI || f.ohneDrohnen);
   }
   const istNpcGefiltert = gefiltert(npcFilter);
   const istNebenfigurGefiltert = gefiltert(nebenfigurFilter);
@@ -930,6 +930,7 @@ export function EntityManager({
           onFilter={setNpcFilter}
           trefferzahl={personenInAnsicht.length}
           farbe="var(--bereich-npcs, var(--neon))"
+          mitSonderfigurenFilter
         />
       )}
       {ansicht === "nebenfiguren" && (
