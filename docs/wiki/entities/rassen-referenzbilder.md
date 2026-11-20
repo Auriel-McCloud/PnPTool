@@ -60,3 +60,25 @@ Request sonst mit „Failed to fetch“ killt. Siehe `docs/api/ki.md`,
 `CLAUDE.md`.
 
 Siehe [[ki-integration]], [[../concepts/rassen]], [[rassen-baukasten-feature]].
+
+## Offene Idee (20.11.2026): Rassen-Beschreibung fehlt im Bild-Prompt
+
+Mark, am Live-Beispiel Quill ("Häretiker"): der Bild-Prompt-Vorschlag (Schritt
+1 vor der eigentlichen Generierung) kennt die Rassen-Beschreibung
+(`Rasse.beschreibung`, z.B. Quill: "Kleine geschickte, schlaue Aliens.
+Erinnern an humanoide Rote Pandas.") NIRGENDS — weder über die eigene
+Personen-Beschreibung noch über `sammle_kontext` (zieht Person/Ort/Event/
+**Fraktion**/Gegenstand/WikiSeite, aber keine `Rasse`-Knoten). Die Text-KI
+rät deshalb allein vom Rassennamen und assoziierte bei "Quill" frei
+"feather-like quills"/"avian" (Beleg: KI-Protokoll-Eintrag 20.11.2026
+08:06 UTC) — obwohl ein korrektes Referenzbild mitgeschickt wurde, hat der
+widersprüchliche Text-Prompt offenbar mehr Gewicht bekommen als das Bild.
+
+**Offene Achsen, Formular ohne Antwort geblieben:**
+- Reichweite: nur in den Bild-Prompt-Vorschlag, oder generell in
+  `sammle_kontext` (dann wissen auch NPC-/Story-Generierung die Rassen-Lore)?
+- Verhalten bei vorhandenem Referenzbild: Text-Prompt automatisch
+  zurückhaltender beim Aussehen (Bild soll führen), oder weiterhin frei
+  beschreiben, nur mit korrekter Rassen-Info?
+
+Status: offen, nicht gebaut.

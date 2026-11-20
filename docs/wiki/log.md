@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-20] idee | Rassen-Beschreibung fehlt im Bild-Prompt
+
+Mark, am Quill-Beispiel ("Häretiker"): Bild-Prompt-Vorschlag kennt `Rasse.beschreibung` nicht (weder eigene Personen-Beschreibung noch `sammle_kontext`, das Fraktionen aber keine Rassen zieht) — Text-KI rät vom Namen und produzierte "avian/feather-like" statt Quills echter Rote-Panda-Lore, trotz korrektem Referenzbild. Formular zu Reichweite (nur Bild-Prompt vs. überall) und Verhalten bei Referenzbild (Bild führt vs. frei) ohne Antwort geblieben. Offen, nicht gebaut. Siehe [[entities/rassen-referenzbilder]].
+
 ## [2026-11-20] gebaut | Bild-Generieren als Hintergrund-Job + Gemini-Retry bei NO_IMAGE
 
 Mark: "Failed to fetch" bei Textfeldern, zuletzt beim KI-Bild-Popup (Quill-Referenzbild, "Gemini liefert kein Bild (Grund: No Image)"). `/ki/bild-generieren` + `/spieler/mein-bild-ki` laufen jetzt als Hintergrund-Job + Polling (Muster wie `/massenidee`), `_generiere_gemini` versucht bei NO_IMAGE/IMAGE_OTHER automatisch bis zu 2× erneut. Siehe [[entities/rassen-referenzbilder]], `docs/api/ki.md`.
