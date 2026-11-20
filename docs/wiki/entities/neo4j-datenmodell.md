@@ -148,3 +148,7 @@ Offen, nicht raten:
 - [[gegenstand-transfer]] — `BESITZT`-Wechsel per Verhandlung (26.09.2026)
 - [[../concepts/rassen]] — konkretes Beispiel für saubere Kennungs-Gestaltung
 - [[../../../CLAUDE.md]] — vollständige Stolperstein-Liste
+
+## Neue VERBINDUNG standardmäßig sichtbar (20.11.2026)
+
+Mark: Anlegen-Dialoge (`VerbindungAnlegen`, `VerbindungAnlegenGlobal`) belegen die Sichtbarkeit jetzt mit „für alle“ statt „SL-geheim“ vor. Bestandskanten bleiben, KI-Verknüpfungen bleiben SL-geheim.

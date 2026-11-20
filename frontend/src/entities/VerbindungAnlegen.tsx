@@ -61,7 +61,7 @@ export function VerbindungAnlegen({
   const [typ, setTyp] = useState("");
   const [richtung, setRichtung] = useState<"aus" | "ein">("aus");
   const [beschreibung, setBeschreibung] = useState("");
-  const [sichtbarkeit, setSichtbarkeit] = useState<SichtbarkeitModus>("GM");
+  const [sichtbarkeit, setSichtbarkeit] = useState<SichtbarkeitModus>("ALLE");
   const [sichtbarFuer, setSichtbarFuer] = useState<string[]>([]);
   const [speichert, setSpeichert] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);

@@ -35,7 +35,7 @@ export function VerbindungAnlegenGlobal({
   const [zuId, setZuId] = useState("");
   const [typ, setTyp] = useState("");
   const [beschreibung, setBeschreibung] = useState("");
-  const [sichtbarkeit, setSichtbarkeit] = useState<SichtbarkeitModus>("GM");
+  const [sichtbarkeit, setSichtbarkeit] = useState<SichtbarkeitModus>("ALLE");
   const [sichtbarFuer, setSichtbarFuer] = useState<string[]>([]);
   const [speichert, setSpeichert] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);

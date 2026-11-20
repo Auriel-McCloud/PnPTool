@@ -2181,3 +2181,7 @@ Statt zweimal „Unbekannter Kontakt“ steht beim Mentor-Platz „Unbekannter M
 ## [2026-11-20] update | Automata-Referenzpool mit Bestandsportraits befüllt
 
 5 Portraits vorhandener Automata-NPCs live auf bebop in den Pool kopiert, Schalter an. Siehe [[entities/rassen-referenzbilder]].
+
+## [2026-11-20] update | Neue Verbindungen standardmäßig für alle sichtbar
+
+Anlegen-Dialoge starten mit „für alle“ statt „SL-geheim“. Siehe [[entities/neo4j-datenmodell]].

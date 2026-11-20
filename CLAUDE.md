@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Neue Verbindungen standardmäßig für alle sichtbar (20.11.2026)
+
+Mark: neu angelegte Verbindungen/Beziehungen waren immer „SL-geheim“ vorbelegt. `VerbindungAnlegen.tsx` und `VerbindungAnlegenGlobal.tsx` starten jetzt mit `ALLE` (Backend-`VerbindungCreate` hatte schon `ALLE`). Bestehende Kanten unverändert; KI-Verknüpfungen (`ki/auto_verknuepfung.py`) bleiben bewusst SL-geheim (Vorschläge/Entwürfe). Wiki `entities/neo4j-datenmodell.md`.
+
 ## Wege je Rasse sperren, Erstellung Rasse vor Weg (20.11.2026)
 
 Mark: manche Rassen dürfen nur bestimmte Wege oder genau einen. `Rasse.erlaubteWege` (Liste, leer = alle, keine Migration), Häkchen „Erlaubte Wege“ in `RassenUebersicht.tsx` (letztes nicht abwählbar, alle vier → `[]`). `Charaktererstellung.tsx`: `SCHRITTE` jetzt Rasse → Weg; gesperrte Karten ausgegraut (`er-karte-gesperrt`), `useEffect` setzt den Weg auf den ersten erlaubten (deckt Rassenwechsel, Entwurf-Laden und „nur einer = automatisch“ ab). Backend `traits/erstellung.py`: `erlaubte_wege`/`weg_fuer_rasse`/`weg_fehler` (mit Weg VOR `normalisiere_weg`, Häretiker eigens sperrbar), `regelwerk()` schreibt die Liste aus, `erstelle_charakter` meldet den Fehler, KI-Erstellung (`ki/routes.py`) weicht auf den ersten erlaubten aus, `ki_konzept_text` nennt die Sperre. Gilt nur bei der Erstellung — SL ändert den Weg danach frei (Annahme). Tests `tests/test_rassen_wege.py`. Wiki `concepts/rassen.md`.
