@@ -108,3 +108,12 @@ Ausrüstung im Bild-Prompt" oben. Zweite offene Achse von damals
 („Bild soll bei Referenzbild führen, Text zurückhaltender") bewusst NICHT
 umgesetzt — Mark hat stattdessen Ausrüstung + `sammle_kontext` priorisiert;
 bei Bedarf eigenes Nachschärfen.
+
+## Datenpflege (20.11.2026): Automata-Pool aus Bestandsbildern
+
+Auf Marks Wunsch einmalig die Portraits der 5 vorhandenen Automata-NPCs
+(Charly-08, X-Corp Sentinel-09, Hound-VX, Aegis-Sphere, Warden-07) als Kopie
+in den Pool der Rasse Automata gelegt und `referenzAktiv` dort angeschaltet.
+Originale an den NPCs unverändert. Ausnahme zur Regel „vorhandene
+Kampagnenbilder ziehen nicht automatisch mit“ — gilt nur für diesen
+Einmal-Import, kein Code.

@@ -2173,3 +2173,7 @@ Am Rand schwingt sie das Ding nach hinten und schleudert es dann hinaus. Siehe [
 ## [2026-11-20] update | Mentor-Platz im Kontaktverzeichnis als Mentor benannt
 
 Statt zweimal „Unbekannter Kontakt“ steht beim Mentor-Platz „Unbekannter Mentor“. Siehe [[entities/kontakte-messenger]].
+
+## [2026-11-20] update | Automata-Referenzpool mit Bestandsportraits befüllt
+
+5 Portraits vorhandener Automata-NPCs live auf bebop in den Pool kopiert, Schalter an. Siehe [[entities/rassen-referenzbilder]].
