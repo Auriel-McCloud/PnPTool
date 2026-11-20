@@ -81,7 +81,7 @@ Ablauf für den Spieler unverändert: Platzhalter weg, Chat offen, Name bekannt.
 
 ## Mentor-Platz eigens benannt (20.11.2026)
 
-Mark: hat ein Spieler Mentor und Kontakte, muss er die leeren Plätze unterscheiden können. Messenger zeigte schon „Undefinierter Mentor“; das Kontaktverzeichnis jetzt auch „Unbekannter Mentor“ (statt „Unbekannter Kontakt“), mit eigenem Titel/Hinweis im Beschreiben-Fenster. SL-Seite: Nebenfiguren-Kachel „Mentor-Platzhalter“.
+Mark: hat ein Spieler Mentor und Kontakte, muss er die leeren Plätze unterscheiden können. Messenger zeigte schon „Undefinierter Mentor“; das Kontaktverzeichnis jetzt auch „Unbekannter Mentor“ (statt „Unbekannter Kontakt“), mit eigenem Titel/Hinweis im Beschreiben-Fenster. SL-Seite: Nebenfiguren-Kachel „Mentor-Platzhalter“. Hinweis: `KontakteAnsicht.tsx` ist aktuell nirgends eingebunden; für den Spieler zählt der Messenger.
 
 ## Chatverlauf-Regel (07.11.2026)
 

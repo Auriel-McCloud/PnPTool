@@ -4,7 +4,7 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Mentor-Platz im Kontaktverzeichnis als Mentor benannt (20.11.2026)
 
-Mark: wer Mentor UND Kontakte hat, sah im Kontaktverzeichnis (`KontakteAnsicht`) zwei gleiche „Unbekannter Kontakt“-Plätze. Der Messenger unterschied schon (`istMentor` → „Undefinierter Mentor“), das Verzeichnis nicht. Jetzt dort „Unbekannter Mentor“ samt Mentor-Titel/-Text im Beschreiben-Fenster, Mentor-Beispiel als Platzhaltertext (auch im Messenger), SL-Nebenfiguren-Kachel/-Detail zeigen „Mentor-Platzhalter“. Reine Anzeige, kein neues Datenmodell (`istMentor` lag schon am Knoten und in der Kontakt-API).
+Mark: wer Mentor UND Kontakte hat, sah im Kontaktverzeichnis (`KontakteAnsicht`) zwei gleiche „Unbekannter Kontakt“-Plätze. Der Messenger unterschied schon (`istMentor` → „Undefinierter Mentor“), das Verzeichnis nicht. Jetzt dort „Unbekannter Mentor“ samt Mentor-Titel/-Text im Beschreiben-Fenster, Mentor-Beispiel als Platzhaltertext (auch im Messenger), SL-Nebenfiguren-Kachel/-Detail zeigen „Mentor-Platzhalter“. Reine Anzeige, kein neues Datenmodell (`istMentor` lag schon am Knoten und in der Kontakt-API). Nachtrag: `KontakteAnsicht.tsx` ist derzeit nirgends eingebunden — beim Spieler wirkt nur der Messenger, der schon vorher „Undefinierter Mentor“ zeigte; live geprüft: alle Mentoren (2× Dr. Ren Ishida) tragen `istMentor`.
 
 ## NPC-Liste: Critter/Drohnen/KI ausblenden (20.11.2026)
 
