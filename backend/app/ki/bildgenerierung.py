@@ -26,14 +26,47 @@ NICHT neu erfunden).
 """
 
 import base64
+from typing import cast
 
 import httpx
+from pydantic import BaseModel
 
 from app.config import settings
+from app.ki import massenjobs
 
 
 class BildgenerierungFehler(Exception):
     """Lesbare Fehlermeldung, unabhängig vom Provider dahinter."""
+
+
+class _BildgenerierungKeinBildFehler(BildgenerierungFehler):
+    """Internes Signal fuer den Retry in `_generiere_gemini`: Gemini hat aus
+    Modell-Unzuverlaessigkeit kein Bild geliefert (FinishReason NO_IMAGE/
+    IMAGE_OTHER laut Google-API-Doku) — ausdruecklich KEIN bewusster
+    Inhalts-Block (das waere IMAGE_SAFETY/SAFETY/RECITATION oder ein
+    promptFeedback.blockReason, beides nicht retrybar, siehe
+    bild_aus_gemini_antwort). Ein erneuter Versuch mit identischem Prompt
+    liefert in der Praxis oft doch ein Bild (Mark, 20.11.2026: "Gemini
+    liefert kein Bild (Grund: No Image)" beim ERSTEN Versuch mit
+    Rassen-Referenzbild, siehe rassen-referenzbilder.md)."""
+
+
+class BildJobGestartet(BaseModel):
+    """Sofortige Antwort beim Start — siehe starte_bild_job."""
+
+    jobId: str
+
+
+class BildJobStatus(BaseModel):
+    """Antwort auf das Fortschritts-Polling. `fertig` erst wahr, wenn das
+    Bild fertig generiert ist ODER die Generierung endgueltig fehlgeschlagen
+    ist (dann `fehler` gesetzt)."""
+
+    fertig: bool
+    bildBase64: str | None = None
+    contentType: str | None = None
+    referenz: str | None = None
+    fehler: str | None = None
 
 
 async def generiere_bild(
@@ -132,22 +165,35 @@ async def _generiere_gemini(prompt: str, referenz: tuple[bytes, str] | None = No
         "generationConfig": {"responseModalities": ["IMAGE"]},
     }
 
-    async with httpx.AsyncClient(timeout=120) as client:
-        resp = await client.post(url, params={"key": settings.gemini_api_key}, json=body)
+    # NO_IMAGE/IMAGE_OTHER ist Modell-Unzuverlässigkeit, kein bewusster Block
+    # (siehe _BildgenerierungKeinBildFehler) — bis zu 2 weitere Versuche mit
+    # demselben Prompt, bevor wir das dem Nutzer als Fehler zeigen.
+    _MAX_VERSUCHE = 3
+    letzter_fehler: _BildgenerierungKeinBildFehler | None = None
+    for _ in range(_MAX_VERSUCHE):
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(url, params={"key": settings.gemini_api_key}, json=body)
 
-    if resp.status_code != 200:
-        detail = ""
+        if resp.status_code != 200:
+            detail = ""
+            try:
+                detail = resp.json().get("error", {}).get("message", "")
+            except Exception:
+                pass
+            raise BildgenerierungFehler(f"Gemini-Bildaufruf fehlgeschlagen (HTTP {resp.status_code})" + (f": {detail}" if detail else ""))
+
         try:
-            detail = resp.json().get("error", {}).get("message", "")
+            payload = resp.json()
         except Exception:
-            pass
-        raise BildgenerierungFehler(f"Gemini-Bildaufruf fehlgeschlagen (HTTP {resp.status_code})" + (f": {detail}" if detail else ""))
+            raise BildgenerierungFehler("Gemini lieferte eine unerwartete Antwort")
 
-    try:
-        payload = resp.json()
-    except Exception:
-        raise BildgenerierungFehler("Gemini lieferte eine unerwartete Antwort")
-    return bild_aus_gemini_antwort(payload)
+        try:
+            return bild_aus_gemini_antwort(payload)
+        except _BildgenerierungKeinBildFehler as e:
+            letzter_fehler = e
+            continue
+
+    raise BildgenerierungFehler(f"{letzter_fehler} (auch nach {_MAX_VERSUCHE} Versuchen)")
 
 
 def bild_aus_gemini_antwort(payload: dict) -> tuple[bytes, str]:
@@ -189,5 +235,65 @@ def bild_aus_gemini_antwort(payload: dict) -> tuple[bytes, str]:
 
     grund = block or (finish_reasons[0] if finish_reasons else "")
     if grund:
-        raise BildgenerierungFehler(f"Gemini lieferte kein Bild (Grund: {grund})")
+        # NO_IMAGE/IMAGE_OTHER (Google-Doku: "model was expected to generate
+        # an image, but none was generated" / "miscellaneous issue") sind
+        # Modell-Unzuverlässigkeit, kein Inhalts-Entscheid — retrybar. Ein
+        # explizites blockReason (promptFeedback) oder ein anderer
+        # FinishReason (SAFETY, IMAGE_SAFETY, RECITATION, …) ist ein
+        # bewusster Block und bleibt bei Wiederholung derselbe.
+        retrybar = not block and grund in {"NO_IMAGE", "IMAGE_OTHER"}
+        fehlerklasse = _BildgenerierungKeinBildFehler if retrybar else BildgenerierungFehler
+        raise fehlerklasse(f"Gemini lieferte kein Bild (Grund: {grund})")
     raise BildgenerierungFehler("Gemini lieferte eine unerwartete Antwort")
+
+
+def starte_bild_job(
+    campaign_id: str,
+    provider: str,
+    prompt: str,
+    referenz: tuple[bytes, str] | None,
+    rassen_name: str,
+) -> str:
+    """Startet die Bildgenerierung als Hintergrund-Job (siehe massenjobs.py).
+
+    Derselbe Grund wie bei der Massen-KI-Anlage (05.10.2026): ein einzelner,
+    lange offener Request stirbt bei einem Netzwerk-Hänger mit "Failed to
+    fetch", bevor das — je nach Provider mehrere zig Sekunden dauernde —
+    Bild fertig ist (Mark, 20.11.2026). Die Route startet nur noch den Job
+    und antwortet sofort mit einer Job-ID; das Frontend pollt den
+    Fortschritt über bild_job_status.
+    """
+    from app.ereignisprotokoll import hooks
+
+    async def _arbeit(job: massenjobs.MassenJob) -> dict:
+        inhalt, content_type = await generiere_bild(provider, prompt, referenz)
+        job.erstellt = 1
+        await hooks.ki(
+            campaign_id, anlass="bild-generieren", prompt=prompt,
+            antwort_text=f"{provider}: {len(inhalt)} Bytes", uebernommen=False,
+        )
+        return {"inhalt": inhalt, "contentType": content_type, "referenz": rassen_name or None}
+
+    return massenjobs.starten(1, _arbeit)
+
+
+def bild_job_status(job_id: str) -> BildJobStatus | None:
+    """None = Job unbekannt (schon abgeholt oder Server neugestartet, siehe
+    massenjobs.py) — der Aufrufer macht daraus ein HTTP 404."""
+    job = massenjobs.status(job_id)
+    if job is None:
+        return None
+    if not job.fertig:
+        return BildJobStatus(fertig=False)
+    if job.fehler:
+        return BildJobStatus(fertig=True, fehler=job.fehler)
+    # job.ergebnis ist generisch als `object | None` typisiert (massenjobs.py
+    # kennt den Inhalt nicht) — hier wissen wir, dass starte_bild_job() immer
+    # dieses dict zurückgibt.
+    ergebnis = cast(dict, job.ergebnis or {})
+    return BildJobStatus(
+        fertig=True,
+        bildBase64=base64.b64encode(ergebnis["inhalt"]).decode("ascii"),
+        contentType=ergebnis["contentType"],
+        referenz=ergebnis.get("referenz"),
+    )

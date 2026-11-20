@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-20] gebaut | Bild-Generieren als Hintergrund-Job + Gemini-Retry bei NO_IMAGE
+
+Mark: "Failed to fetch" bei Textfeldern, zuletzt beim KI-Bild-Popup (Quill-Referenzbild, "Gemini liefert kein Bild (Grund: No Image)"). `/ki/bild-generieren` + `/spieler/mein-bild-ki` laufen jetzt als Hintergrund-Job + Polling (Muster wie `/massenidee`), `_generiere_gemini` versucht bei NO_IMAGE/IMAGE_OTHER automatisch bis zu 2× erneut. Siehe [[entities/rassen-referenzbilder]], `docs/api/ki.md`.
+
 ## [2026-11-20] gebaut | Rassen-Referenzbilder
 
 Schalter und Bildpool an der Rasse. Zufällige Vorlage bei der Portrait-Generierung, in den Pool nur übernommene KI-Portraits plus eigene Uploads. Start an für Dug'Rah, Sephari, Quill. Siehe [[entities/rassen-referenzbilder]].

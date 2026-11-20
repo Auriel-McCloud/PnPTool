@@ -129,19 +129,44 @@ Spielmechanik). `502` wenn die KI keinen Vorschlag liefert.
 
 ### POST `/bild-generieren`
 
-Schritt 2: generiert das Bild und liefert die **rohen Bild-Bytes als
-Vorschau** zurück (`Content-Type` je nach Provider) — **speichert nichts**.
-Erst der bestätigte "✓ Übernehmen"-Klick im Popup schickt das Bild als Datei
-an die jeweils bestehende Upload-Route der Entität (dieselbe Route wie ein
-manueller Upload, kein zweiter Ablage-Mechanismus).
+Schritt 2: startet die Bildgenerierung als **Hintergrund-Job** und antwortet
+sofort mit einer Job-ID — speichert nichts. Grund: eine einzelne,
+lange offene HTTP-Antwort stirbt bei einem Netzwerk-Hänger mit "Failed to
+fetch", bevor das (je nach Provider mehrere zig Sekunden dauernde) Bild
+fertig ist (Mark, 20.11.2026). Gleiches Muster wie `/massenidee` unten.
 
 ```json
-{ "provider": "lokal" | "cloud", "prompt": "A grizzled fixer in a rain-soaked alley..." }
+{ "provider": "lokal" | "cloud", "prompt": "A grizzled fixer in a rain-soaked alley...", "personId": null }
 ```
+
+```json
+{ "jobId": "…" }
+```
+
+### GET `/bild-generieren-status/{job_id}`
+
+Polling-Ziel. Antwort:
+
+```json
+{ "fertig": false }
+```
+```json
+{ "fertig": true, "bildBase64": "…", "contentType": "image/png", "referenz": "Quill" }
+```
+
+`404` wenn der Job unbekannt ist (schon abgeholt oder Server neugestartet).
+Ist die Generierung endgültig fehlgeschlagen, antwortet die Status-Route mit
+`502` statt `200` (dieselbe Fehlerklasse wie früher, nur einen Poll-Tick
+später sichtbar).
 
 - **`cloud`** — Google Gemini `gemini-3.1-flash-image`
   (`generateContent` mit `responseModalities: ["IMAGE"]`), braucht nur den
-  bestehenden `gemini_api_key` in `backend/.env`.
+  bestehenden `gemini_api_key` in `backend/.env`. Liefert Gemini
+  `finishReason: NO_IMAGE` oder `IMAGE_OTHER` (Modell-Unzuverlässigkeit, kein
+  bewusster Inhalts-Block), versucht der Server denselben Prompt automatisch
+  bis zu 2× erneut, bevor er aufgibt (`app/ki/bildgenerierung.py`,
+  `_BildgenerierungKeinBildFehler`). Ein expliziter Block (`IMAGE_SAFETY`,
+  `promptFeedback.blockReason`, …) wird NICHT wiederholt.
 - **`lokal`** — spricht `pnptool_server.py` in `C:\DEV\Fooocus` an (eigener
   Wrapper-Prozess, **außerhalb dieses Repos**, nicht eingecheckt — muss
   manuell laufen, z.B. als Autostart). Fooocus 2.5.5/Gradio 3.41.2 hat keine
@@ -151,21 +176,23 @@ manueller Upload, kein zweiter Ablage-Mechanismus).
   (`"Speed"`), `fooocus_timeout_sekunden` (300 — eine GTX 1070 kann bei
   SDXL mehrere Minuten brauchen).
 
-`502` bei jedem Fehler (Fooocus nicht erreichbar, Timeout, Gemini lehnt ab
-z.B. per Sicherheitsfilter) mit einer für den jeweiligen Provider
-verständlichen Fehlermeldung; `422` wenn `prompt` leer ist.
+`422` beim Start wenn `prompt` leer ist.
 
 Optional `personId`: bei einer Person mit Rasse, deren Schalter
 `referenzAktiv` an ist und deren Pool nicht leer ist, hängt der Server
 zufällig eine Bildvorlage an (Gemini als Bild, Fooocus als ImagePrompt).
-Antwort-Header `X-Rassen-Referenz` (URL-kodierter Rassenname). Die Vorschau
-selbst wird weiterhin nicht gespeichert. In den Pool kommt das Bild erst,
-wenn es als Portrait übernommen wird (`POST .../rassen/uebernommen` bzw.
-`POST /api/spieler/mein-bild-rassenpool`).
+`referenz` im Status (Rassenname) ersetzt den früheren Antwort-Header
+`X-Rassen-Referenz`. Die Vorschau selbst wird weiterhin nicht gespeichert.
+In den Pool kommt das Bild erst, wenn es als Portrait übernommen wird
+(`POST .../rassen/uebernommen` bzw. `POST /api/spieler/mein-bild-rassenpool`).
 
 **Provider ist pro Aufruf wählbar** (Dropdown im Popup), anders als der
 Text-Provider `KI_PROVIDER` in `.env`, der global für alle Text-Endpunkte
 oben gilt.
+
+Spieler-Pendant (eigenes Portrait): `POST /api/spieler/mein-bild-ki` +
+`GET /api/spieler/mein-bild-ki-status/{job_id}`, identisches Muster, siehe
+`backend/app/players/routes.py`.
 
 ### Datenmodell
 

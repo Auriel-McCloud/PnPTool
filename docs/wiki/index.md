@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-11-20 | Seiten: 41 | Rassen-Referenzbilder (offen, nicht gebaut)
+> Zuletzt aktualisiert: 2026-11-20 | Seiten: 41 | Rassen-Referenzbilder (gebaut, Bugfix NO_IMAGE-Retry + Bild-Generieren als Hintergrund-Job)
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die

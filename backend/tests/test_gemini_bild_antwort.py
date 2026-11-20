@@ -4,7 +4,7 @@ import base64
 
 import pytest
 
-from app.ki.bildgenerierung import BildgenerierungFehler, bild_aus_gemini_antwort
+from app.ki.bildgenerierung import BildgenerierungFehler, _BildgenerierungKeinBildFehler, bild_aus_gemini_antwort
 
 _PNG = b"\x89PNG\r\n\x1a\n"
 _B64 = base64.b64encode(_PNG).decode()
@@ -78,3 +78,34 @@ def test_leere_candidates_nennen_block_reason():
         bild_aus_gemini_antwort(
             {"candidates": [], "promptFeedback": {"blockReason": "SAFETY"}}
         )
+
+
+def test_no_image_ist_retrybar_und_kein_block():
+    """NO_IMAGE (Mark, 20.11.2026: 'Gemini liefert kein Bild (Grund: No
+    Image)') ist Modell-Unzuverlässigkeit, kein bewusster Inhalts-Block —
+    muss die retrybare Unterklasse auslösen, damit _generiere_gemini
+    automatisch nochmal versucht."""
+    with pytest.raises(_BildgenerierungKeinBildFehler, match="NO_IMAGE"):
+        bild_aus_gemini_antwort({"candidates": [{"finishReason": "NO_IMAGE"}]})
+
+
+def test_image_other_ist_retrybar():
+    with pytest.raises(_BildgenerierungKeinBildFehler, match="IMAGE_OTHER"):
+        bild_aus_gemini_antwort({"candidates": [{"finishReason": "IMAGE_OTHER"}]})
+
+
+def test_image_safety_ist_nicht_retrybar():
+    """Ein bewusster Sicherheits-Block bleibt bei Wiederholung derselbe —
+    darf NICHT die retrybare Unterklasse auslösen, sonst verschwendet
+    _generiere_gemini 2 weitere Versuche umsonst."""
+    with pytest.raises(BildgenerierungFehler, match="IMAGE_SAFETY") as exc:
+        bild_aus_gemini_antwort({"candidates": [{"finishReason": "IMAGE_SAFETY"}]})
+    assert not isinstance(exc.value, _BildgenerierungKeinBildFehler)
+
+
+def test_no_image_mit_block_reason_ist_nicht_retrybar():
+    """Ein promptFeedback.blockReason entscheidet VOR der Generierung — auch
+    wenn der Text zufällig 'NO_IMAGE' wäre, zählt der explizite Block."""
+    with pytest.raises(BildgenerierungFehler) as exc:
+        bild_aus_gemini_antwort({"candidates": [], "promptFeedback": {"blockReason": "NO_IMAGE"}})
+    assert not isinstance(exc.value, _BildgenerierungKeinBildFehler)

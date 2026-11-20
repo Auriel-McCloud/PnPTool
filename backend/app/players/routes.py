@@ -18,7 +18,12 @@ from app.entities.repository import (
 from app.entities import repository as entities_repository
 from app.items.routes import ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, UPLOAD_DIR
 from app.entities.schemas import PersonCreate
-from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
+from app.ki.bildgenerierung import (
+    BildJobGestartet,
+    BildJobStatus,
+    bild_job_status,
+    starte_bild_job,
+)
 from app.ki.routes import BildGenerierenInput, _bild_prompt_vorschlagen
 from app.lexikon import hooks as lexikon_hooks
 from app.players import repository
@@ -361,22 +366,24 @@ async def eigenes_charakterportrait_ki_prompt(spieler: dict = Depends(require_sp
     return MeinBildPromptAntwort(prompt=prompt)
 
 
-@login_router.post("/mein-bild-ki")
+@login_router.post("/mein-bild-ki", response_model=BildJobGestartet)
 async def eigenes_charakterportrait_ki_generieren(
     body: BildGenerierenInput, spieler: dict = Depends(require_spieler)
 ):
-    """Generiert eine Bildvorschau für das eigene Charakterportrait (Schritt
-    2) — speichert NICHTS. Übernehmen läuft über dieselbe Upload-Route wie
-    ein manuell hochgeladenes Bild (`/mein-bild`, POST mit multipart/form-data),
-    das Frontend baut daraus eine Datei und schickt sie dorthin."""
+    """Startet die Bildvorschau fürs eigene Charakterportrait (Schritt 2) als
+    Hintergrund-Job — speichert NICHTS. Übernehmen läuft über dieselbe
+    Upload-Route wie ein manuell hochgeladenes Bild (`/mein-bild`, POST mit
+    multipart/form-data), das Frontend baut daraus eine Datei und schickt sie
+    dorthin.
+
+    Hintergrund-Job statt direkter Antwort, derselbe Grund wie beim SL-Weg in
+    ki/routes.py (Mark, 20.11.2026: "Failed to fetch")."""
     if not spieler.get("personId"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
 
     prompt = body.prompt.strip()
     if not prompt:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Der Prompt darf nicht leer sein.")
-
-    from urllib.parse import quote
 
     from app.rassen.referenz import ziehe_fuer_person
 
@@ -389,15 +396,22 @@ async def eigenes_charakterportrait_ki_generieren(
         daten, mime, rassen_name = gezogen
         referenz = (daten, mime)
 
-    try:
-        inhalt, content_type = await generiere_bild(body.provider, prompt, referenz)
-    except BildgenerierungFehler as e:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(e))
+    job_id = starte_bild_job(campaign_id, body.provider, prompt, referenz, rassen_name)
+    return BildJobGestartet(jobId=job_id)
 
-    antwort = Response(content=inhalt, media_type=content_type)
-    if rassen_name:
-        antwort.headers["X-Rassen-Referenz"] = quote(rassen_name)
-    return antwort
+
+@login_router.get("/mein-bild-ki-status/{job_id}", response_model=BildJobStatus)
+async def eigenes_charakterportrait_ki_status(job_id: str, spieler: dict = Depends(require_spieler)):
+    """Polling-Ziel für eigenes_charakterportrait_ki_generieren oben."""
+    stand = bild_job_status(job_id)
+    if stand is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "Job nicht gefunden — entweder abgeschlossen und schon abgeholt, oder der Server wurde neugestartet.",
+        )
+    if stand.fehler:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, stand.fehler)
+    return stand
 
 
 @login_router.post("/mein-bild-rassenpool")

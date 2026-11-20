@@ -46,4 +46,17 @@ Personen-Galerie nutzen. Critter, KI, Drohnen, Orte und Gegenstände nicht.
   Vorlage, dass der Wrapper die Referenz noch nicht kennt. Cloud braucht das
   nicht.
 
+## Bugfix (20.11.2026)
+
+Mark: erster Generierungsversuch mit Quill-Referenzbild scheiterte mit
+„Gemini liefert kein Bild (Grund: No Image)“. `NO_IMAGE` ist laut
+Google-API-Doku Modell-Unzuverlässigkeit, kein bewusster Inhalts-Block —
+`generiere_bild`/`_generiere_gemini` versucht seither bei `NO_IMAGE`/
+`IMAGE_OTHER` automatisch bis zu 2× erneut, bevor der Fehler durchschlägt.
+Gleichzeitig läuft `/bild-generieren` jetzt als Hintergrund-Job + Polling
+(dasselbe Muster wie `/massenidee`), weil die Generierung mit Referenzbild
+mehrere zig Sekunden dauert und ein Netzwerk-Hänger den einzelnen langen
+Request sonst mit „Failed to fetch“ killt. Siehe `docs/api/ki.md`,
+`CLAUDE.md`.
+
 Siehe [[ki-integration]], [[../concepts/rassen]], [[rassen-baukasten-feature]].

@@ -99,20 +99,41 @@ export const playersApi = {
     return antwort.prompt;
   },
   /** Schritt 2: generiert eine Bildvorschau — speichert NICHTS, siehe
-   * KiBildPopup.tsx. Übernehmen läuft über meinBildHochladen oben. */
+   * KiBildPopup.tsx. Übernehmen läuft über meinBildHochladen oben.
+   *
+   * Läuft als Hintergrund-Job + Polling (20.11.2026, Marks Bugreport
+   * "Failed to fetch"), derselbe Grund und dasselbe Muster wie
+   * ki/api.ts::kiBildGenerieren. */
   meinBildKiGenerieren: async (provider: "lokal" | "cloud", prompt: string): Promise<{ blob: Blob; referenz: string | null }> => {
-    const antwort = await fetch("/api/spieler/mein-bild-ki", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider, prompt }),
-    });
-    if (!antwort.ok) {
-      const f = await antwort.json().catch(() => ({ detail: antwort.statusText }));
-      throw new Error(f.detail ?? "Bildgenerierung fehlgeschlagen");
+    const gestartet = await api.post<{ jobId: string }>("/api/spieler/mein-bild-ki", { provider, prompt });
+
+    let fehlgeschlageneVersuche = 0;
+    for (;;) {
+      await new Promise((r) => setTimeout(r, 1500));
+      let stand: {
+        fertig: boolean;
+        bildBase64?: string | null;
+        contentType?: string | null;
+        referenz?: string | null;
+        fehler?: string | null;
+      };
+      try {
+        stand = await api.get(`/api/spieler/mein-bild-ki-status/${gestartet.jobId}`);
+      } catch (e) {
+        fehlgeschlageneVersuche += 1;
+        if (fehlgeschlageneVersuche > 10) throw e;
+        continue;
+      }
+      fehlgeschlageneVersuche = 0;
+      if (!stand.fertig) continue;
+      if (!stand.bildBase64 || !stand.contentType) {
+        throw new Error("Bildgenerierung lieferte kein Ergebnis");
+      }
+      const bin = atob(stand.bildBase64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return { blob: new Blob([bytes], { type: stand.contentType }), referenz: stand.referenz ?? null };
     }
-    const roh = antwort.headers.get("X-Rassen-Referenz");
-    return { blob: await antwort.blob(), referenz: roh ? decodeURIComponent(roh) : null };
   },
   meinBildInPool: async (blob: Blob) => {
     const formData = new FormData();

@@ -55,27 +55,71 @@ export async function kiBildPrompt(campaignId: string, input: KiBildPromptInput)
 
 /**
  * Schritt 2: generiert ein Bild und liefert es als Blob zur Vorschau —
- * speichert NICHTS. „Übernehmen" schickt den Blob als Datei an die jeweils
+ * speichert NICHTS. „Übernehmen“ schickt den Blob als Datei an die jeweils
  * bestehende Bild-Upload-Route (siehe KiBildPopup.tsx).
+ *
+ * Läuft als Hintergrund-Job + Polling (20.11.2026, Marks Bugreport "Failed
+ * to fetch"): ein einzelner, lange offener Request stirbt bei einem
+ * Netzwerk-Hänger, bevor das Bild fertig ist — derselbe Grund, aus dem
+ * massenIdee weiter unten schon länger so läuft. Die Funktionssignatur
+ * bleibt unverändert, Polling passiert komplett hier drin, kein Aufrufer
+ * (KiBildPopup.tsx, BildGalerie.tsx, …) muss sich ändern.
  */
+interface BildJobGestartet {
+  jobId: string;
+}
+
+interface BildJobStatus {
+  fertig: boolean;
+  bildBase64?: string | null;
+  contentType?: string | null;
+  referenz?: string | null;
+  fehler?: string | null;
+}
+
+function base64ZuBlob(b64: string, contentType: string): Blob {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: contentType });
+}
+
 export async function kiBildGenerieren(
   campaignId: string,
   provider: "lokal" | "cloud",
   prompt: string,
   personId?: string,
 ): Promise<{ blob: Blob; referenz: string | null }> {
-  const antwort = await fetch(`/api/campaigns/${campaignId}/ki/bild-generieren`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider, prompt, personId: personId || null }),
+  const gestartet = await api.post<BildJobGestartet>(`/api/campaigns/${campaignId}/ki/bild-generieren`, {
+    provider,
+    prompt,
+    personId: personId || null,
   });
-  if (!antwort.ok) {
-    const f = await antwort.json().catch(() => ({ detail: antwort.statusText }));
-    throw new Error(f.detail ?? "Bildgenerierung fehlgeschlagen");
+
+  let fehlgeschlageneVersuche = 0;
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 1500));
+    let stand: BildJobStatus;
+    try {
+      stand = await api.get<BildJobStatus>(`/api/campaigns/${campaignId}/ki/bild-generieren-status/${gestartet.jobId}`);
+    } catch (e) {
+      // Ein kurzer Netzwerk-Hänger während des Pollens selbst killt den Job
+      // nicht mehr — einfach weiterpollen, erst nach vielen Fehlschlägen in
+      // Folge (echte Verbindungslosigkeit) aufgeben.
+      fehlgeschlageneVersuche += 1;
+      if (fehlgeschlageneVersuche > 10) throw e;
+      continue;
+    }
+    fehlgeschlageneVersuche = 0;
+    if (!stand.fertig) continue;
+    if (!stand.bildBase64 || !stand.contentType) {
+      throw new Error("Bildgenerierung lieferte kein Ergebnis");
+    }
+    return {
+      blob: base64ZuBlob(stand.bildBase64, stand.contentType),
+      referenz: stand.referenz ?? null,
+    };
   }
-  const roh = antwort.headers.get("X-Rassen-Referenz");
-  return { blob: await antwort.blob(), referenz: roh ? decodeURIComponent(roh) : null };
 }
 
 /** Auto-Verknüpfung für einen freien Text ohne Wiki-Seitenbezug (Ideenschmiede-

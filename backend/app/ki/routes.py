@@ -19,7 +19,6 @@ import logging
 from typing import Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.auth.dependencies import require_campaign_gm
@@ -34,7 +33,12 @@ from app.items.repository import assign_copy, assign_owner, create_gegenstand
 from app.items.routes import _create_data, _default_sichtbarkeit
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
 from app.items.waffenbonus import ki_schaden_roh, parade_lesen, schaden_art_fuer_waffe, schaden_klemmen, waffenfelder
-from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
+from app.ki.bildgenerierung import (
+    BildJobGestartet,
+    BildJobStatus,
+    bild_job_status,
+    starte_bild_job,
+)
 from app.ki.client import KiFehler, generiere_json, generiere_text
 from app.ki import beratung as beratung_repo
 from app.ki import massenjobs
@@ -2011,21 +2015,24 @@ async def ki_bild_prompt(campaign_id: str, body: BildPromptInput):
     return {"prompt": prompt}
 
 
-@router.post("/bild-generieren")
+@router.post("/bild-generieren", response_model=BildJobGestartet)
 async def ki_bild_generieren(campaign_id: str, body: BildGenerierenInput):
-    """Generiert ein Bild (Schritt 2) und liefert es als rohe Bytes zur
-    Vorschau zurück — speichert NICHTS. Das Popup zeigt das Bild an; erst
-    „Übernehmen“ schickt es (als Datei) an die jeweils bestehende
+    """Generiert ein Bild (Schritt 2) als Hintergrund-Job — speichert NICHTS,
+    liefert nur die Job-ID. Das Frontend pollt den Fortschritt über
+    /bild-generieren-status/{job_id} und zeigt dann die Vorschau; erst
+    „Übernehmen“ schickt das Bild (als Datei) an die jeweils bestehende
     Upload-Route (Personen/Orte/Events/Fraktionen/Gegenstände/eigenes
     Portrait), genau wie ein manuell hochgeladenes Bild — dieselbe Route,
-    kein zweiter Ablage-Mechanismus. `campaign_id` wird hier nur für den
-    require_campaign_gm-Guard des Routers gebraucht, nicht für die
-    Bildgenerierung selbst (die hängt an keiner Entität)."""
+    kein zweiter Ablage-Mechanismus. `campaign_id` wird hier auch für den
+    require_campaign_gm-Guard des Routers gebraucht.
+
+    Hintergrund-Job statt direkter Antwort (Mark, 20.11.2026: "Failed to
+    fetch" bei der Bildgenerierung) — ein einzelner, lange offener Request
+    stirbt bei einem Netzwerk-Hänger, bevor das Bild fertig ist, siehe
+    massenjobs.py für dasselbe Muster bei der Massen-KI-Anlage."""
     prompt = body.prompt.strip()
     if not prompt:
         raise HTTPException(status_code=422, detail="Der Prompt darf nicht leer sein.")
-
-    from urllib.parse import quote
 
     from app.rassen.referenz import ziehe_fuer_person
 
@@ -2037,16 +2044,24 @@ async def ki_bild_generieren(campaign_id: str, body: BildGenerierenInput):
             daten, mime, rassen_name = gezogen
             referenz = (daten, mime)
 
-    try:
-        inhalt, content_type = await generiere_bild(body.provider, prompt, referenz)
-    except BildgenerierungFehler as e:
-        raise HTTPException(status_code=502, detail=str(e))
+    job_id = starte_bild_job(campaign_id, body.provider, prompt, referenz, rassen_name)
+    return BildJobGestartet(jobId=job_id)
 
-    await hooks.ki(
-        campaign_id, anlass="bild-generieren", prompt=prompt,
-        antwort_text=f"{body.provider}: {len(inhalt)} Bytes", uebernommen=False,
-    )
-    antwort = Response(content=inhalt, media_type=content_type)
-    if rassen_name:
-        antwort.headers["X-Rassen-Referenz"] = quote(rassen_name)
-    return antwort
+
+@router.get("/bild-generieren-status/{job_id}", response_model=BildJobStatus)
+async def ki_bild_generieren_status(campaign_id: str, job_id: str):
+    """Polling-Ziel für ki_bild_generieren oben. `campaign_id` wird nicht
+    gebraucht (Job-ID ist bereits eindeutig), bleibt aber im Pfad, damit
+    require_campaign_gm (Router-Abhängigkeit) greift."""
+    stand = bild_job_status(job_id)
+    if stand is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Job nicht gefunden — entweder abgeschlossen und schon abgeholt, oder der Server wurde neugestartet.",
+        )
+    if stand.fehler:
+        # Das Backend hat schon alle Retries ausgeschöpft (siehe
+        # bildgenerierung.py) — HTTP 502 statt 200+fehler, damit ein
+        # Bugreport/Log dieselbe Fehlerklasse wie früher zeigt.
+        raise HTTPException(status_code=502, detail=stand.fehler)
+    return stand
