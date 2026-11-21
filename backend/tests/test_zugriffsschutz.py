@@ -214,6 +214,11 @@ OHNE_GM_ERLAUBT = {
     # eigene Charakter (SL kann für jeden PC kaufen, Spieler nur für sich).
     # Siehe app/haendler/routes.py::kaufen.
     "/api/campaigns/{campaign_id}/haendler/{haendler_id}/kaufen",
+    # Warenkorb (20.11.2026): derselbe Kauf, nur mehrere Zeilen auf einmal —
+    # dieselben Käufer-Regeln (Spieler nur für sich, SL nennt den PC), prüft
+    # alles vor dem ersten Schreiben. Siehe app/haendler/routes.py::
+    # kaufen_warenkorb und app/haendler/kauf.py.
+    "/api/campaigns/{campaign_id}/haendler/{haendler_id}/kaufen-warenkorb",
     # Tierladen (18.11.2026): derselbe Grund wie beim Item-Kauf oben, nur
     # für Critter — Guthaben/1-Begleiter-Limit prüft die Route selbst.
     # Siehe app/haendler/routes.py::pet_kaufen.

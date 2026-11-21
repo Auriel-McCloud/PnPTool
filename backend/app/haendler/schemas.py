@@ -69,6 +69,12 @@ class SortimentEintrag(BaseModel):
     deckMatrixNavigation: int = 0
     istBehaelter: bool = False
     kapazitaet: float = 0
+    # Stapelbarkeit (20.11.2026): Anzahl > 1 beim Kauf nur für Vorlagen, die
+    # nicht einzigartig sind. hatMenge/menge = Packungsgröße der Vorlage —
+    # ein Kauf von N Stück ergibt EINEN Stapel mit N × menge.
+    einzigartig: bool = True
+    hatMenge: bool = False
+    menge: int = 1
 
 
 class SortimentHinzufuegenRequest(BaseModel):
@@ -86,6 +92,45 @@ class KaufRequest(BaseModel):
     # eigenen Charakter, dasselbe Muster wie beim Messenger
     # (kontakte/routes.py::nachricht_senden).
     kaeuferPersonId: str | None = None
+    # Stückzahl (20.11.2026): > 1 nur bei stapelbarer Ware (Vorlage, nicht
+    # einzigartig) — ergibt EINEN Stapel im Inventar, siehe haendler/kauf.py.
+    anzahl: int = Field(default=1, ge=1, le=99)
+
+
+class WarenkorbPosition(BaseModel):
+    gegenstandId: str
+    anzahl: int = Field(default=1, ge=1, le=99)
+
+
+class WarenkorbKaufRequest(BaseModel):
+    """Warenkorb an der Kasse (20.11.2026): alles wird zuerst geprüft und
+    erst dann gekauft — scheitert die Prüfung, wird nichts gekauft."""
+
+    positionen: list[WarenkorbPosition] = Field(min_length=1, max_length=50)
+    # Nur von der Spielleitung genutzt — dasselbe Muster wie KaufRequest.
+    kaeuferPersonId: str | None = None
+
+
+class WarenkorbZeileErgebnis(BaseModel):
+    gegenstandId: str
+    name: str
+    anzahl: int
+    # Gesamtpreis dieser Zeile (bezahlt bzw. bei Fehlschlag nicht berechnet/erstattet).
+    preis: int
+
+
+class WarenkorbKaufResponse(BaseModel):
+    gekauft: list[WarenkorbZeileErgebnis]
+    # Mittendrin gescheiterte Zeilen — nicht berechnet bzw. zurückgebucht.
+    fehlgeschlagen: list[WarenkorbZeileErgebnis] = []
+    # Physischer Laden: die übergebenen Stücke/Stapel.
+    gegenstaende: list[dict] = []
+    # Digitaler Laden: eine Bestellung pro Zeile (mit ihrer Anzahl).
+    bestellungen: list[dict] = []
+    bezahlt: int
+    erstattet: int = 0
+    kapitalNeu: int
+    tutorialAusgegeben: int | None = None
 
 
 class KaufResponse(BaseModel):
@@ -124,7 +169,10 @@ class BestellungResponse(BaseModel):
     kaeuferPersonId: str
     gegenstandId: str
     gegenstandName: str
+    # Gesamtpreis der Bestellung (bei anzahl > 1 also anzahl × Stückpreis).
     preis: int
+    # Stückzahl (20.11.2026) — die Lieferung übergibt einen Stapel dieser Größe.
+    anzahl: int = 1
     status: Literal["OFFEN", "GELIEFERT"] = "OFFEN"
     bestelltAm: str = ""
     geliefertAm: str = ""

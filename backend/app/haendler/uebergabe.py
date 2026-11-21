@@ -24,16 +24,30 @@ async def regale_raeumen(campaign_id: str, shop_id: str, gegenstand_id: str) -> 
 
 
 async def stueck_uebergeben(
-    campaign_id: str, shop_id: str, gegenstand_id: str, kaeufer_id: str
+    campaign_id: str, shop_id: str, gegenstand_id: str, kaeufer_id: str, anzahl: int = 1
 ) -> dict | None:
-    """Gibt die Ware an den Käufer. None, wenn Stück oder Übergabe fehlt."""
+    """Gibt die Ware an den Käufer. None, wenn Stück oder Übergabe fehlt.
+
+    `anzahl > 1` (20.11.2026, nur Vorlagen): EINE Kopie als Stapel —
+    `hatMenge=true`, `menge = anzahl × Packungsgröße der Vorlage` (Vorlage
+    ohne Menge zählt als 1). Kein automatisches Zusammenlegen mit einem
+    schon vorhandenen Stapel, dafür gibt es „Zusammenlegen“. Ein
+    Einzelstück mit anzahl > 1 lehnt die Kauf-Route vorher ab; kommt es
+    trotzdem hier an, wird nichts übergeben (None).
+    """
     gegenstand = await items_repository.get_gegenstand(campaign_id, gegenstand_id)
     if gegenstand is None:
         return None
     if gegenstand["istVorlage"]:
+        quelle = gegenstand
+        if anzahl > 1:
+            packung = max(1, int(gegenstand.get("menge") or 1)) if gegenstand.get("hatMenge") else 1
+            quelle = {**gegenstand, "hatMenge": True, "menge": anzahl * packung}
         return await items_repository.assign_copy(
-            campaign_id, gegenstand, kaeufer_id, "SPEZIFISCH", [kaeufer_id]
+            campaign_id, quelle, kaeufer_id, "SPEZIFISCH", [kaeufer_id]
         )
+    if anzahl != 1:
+        return None
     owner = await items_repository.get_owner_id(campaign_id, gegenstand_id)
     if owner is None:
         gekauft = await items_repository.assign_owner(

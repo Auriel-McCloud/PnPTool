@@ -45,6 +45,12 @@ export interface SortimentEintrag {
   deckMatrixNavigation: number;
   istBehaelter: boolean;
   kapazitaet: number;
+  /** Stapelbarkeit (20.11.2026): mehr als 1 Stück pro Kauf nur bei
+   * istVorlage && !einzigartig. hatMenge/menge = Packungsgröße der Vorlage —
+   * N Stück gekauft ergeben EINEN Stapel mit N × menge. */
+  einzigartig: boolean;
+  hatMenge: boolean;
+  menge: number;
 }
 
 export interface HaendlerGesicht {
@@ -94,6 +100,26 @@ export interface KaufResponse {
   bestellung: BestellungResponse | null;
 }
 
+/** Warenkorb an der Kasse (20.11.2026) — siehe backend/app/haendler/kauf.py. */
+export interface WarenkorbZeileErgebnis {
+  gegenstandId: string;
+  name: string;
+  anzahl: number;
+  /** Zeilensumme: bezahlt bzw. (bei fehlgeschlagen) nicht berechnet/erstattet. */
+  preis: number;
+}
+
+export interface WarenkorbKaufResponse {
+  gekauft: WarenkorbZeileErgebnis[];
+  fehlgeschlagen: WarenkorbZeileErgebnis[];
+  gegenstaende: Record<string, unknown>[];
+  bestellungen: BestellungResponse[];
+  bezahlt: number;
+  erstattet: number;
+  kapitalNeu: number;
+  tutorialAusgegeben?: number | null;
+}
+
 export interface BestellungResponse {
   id: string;
   haendlerId: string;
@@ -101,7 +127,10 @@ export interface BestellungResponse {
   kaeuferPersonId: string;
   gegenstandId: string;
   gegenstandName: string;
+  /** Gesamtpreis der Bestellung (anzahl × Stückpreis). */
   preis: number;
+  /** Stückzahl (20.11.2026) — fehlt bei älteren Backends, dann 1. */
+  anzahl?: number;
   status: "OFFEN" | "GELIEFERT";
   bestelltAm: string;
   geliefertAm: string;
@@ -153,8 +182,17 @@ export const haendlerApi = {
     // null = Standort entfernt, serverseitig gibt es dann keinen Shop-Eintrag
     // mehr für DIESEN Händler zurück (repository.py::standort_setzen).
     api.put<HaendlerEintrag | null>(`${base(cid, haendlerId)}/standort`, { ortId }),
-  kaufen: (cid: string, haendlerId: string, gegenstandId: string, kaeuferPersonId?: string) =>
-    api.post<KaufResponse>(`${base(cid, haendlerId)}/kaufen`, { gegenstandId, kaeuferPersonId }),
+  /** `anzahl` > 1 nur bei stapelbarer Ware — ergibt EINEN Stapel (20.11.2026). */
+  kaufen: (cid: string, haendlerId: string, gegenstandId: string, kaeuferPersonId?: string, anzahl = 1) =>
+    api.post<KaufResponse>(`${base(cid, haendlerId)}/kaufen`, { gegenstandId, kaeuferPersonId, anzahl }),
+  /** Ganzen Warenkorb bezahlen: Server prüft alles, bevor irgendetwas gekauft wird. */
+  kaufenWarenkorb: (
+    cid: string,
+    haendlerId: string,
+    positionen: { gegenstandId: string; anzahl: number }[],
+    kaeuferPersonId?: string,
+  ) =>
+    api.post<WarenkorbKaufResponse>(`${base(cid, haendlerId)}/kaufen-warenkorb`, { positionen, kaeuferPersonId }),
   tutorialZurueck: (cid: string, haendlerId: string, gegenstandId: string, kaeuferPersonId?: string) =>
     api.post<KaufResponse>(`${base(cid, haendlerId)}/tutorial-zurueck`, { gegenstandId, kaeuferPersonId }),
 

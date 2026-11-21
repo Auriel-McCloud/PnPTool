@@ -24,6 +24,10 @@ export interface Person extends VisibilityFields {
   name: string;
   personType: "PC" | "NPC";
   description: string;
+  /** Geld des Charakters (Shop zeigt es an, 20.11.2026). */
+  kapital?: number;
+  /** Rassen-Feature „erster Kauf gratis“ schon verbraucht? (Shop-Warenkorb) */
+  rassenFeatureGenutzt?: boolean;
   /** Name, unter dem ein PC diese Person in den Kontakten sieht, bis der
    * echte Name freigegeben ist — bearbeitbar im Steckbrief (Charakterblatt.tsx),
    * genau wie Ambition/Verlangen/Ziel (Mark, 06.10.2026: "könnte sich ja

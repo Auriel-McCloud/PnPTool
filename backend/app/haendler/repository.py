@@ -269,7 +269,10 @@ _STECKBRIEF_FELDER = """
     coalesce(g.deckElectronicWarfare, 0) AS deckElectronicWarfare,
     coalesce(g.deckMatrixNavigation, 0) AS deckMatrixNavigation,
     coalesce(g.istBehaelter, false) AS istBehaelter,
-    coalesce(g.kapazitaet, 0) AS kapazitaet
+    coalesce(g.kapazitaet, 0) AS kapazitaet,
+    coalesce(g.einzigartig, true) AS einzigartig,
+    coalesce(g.hatMenge, false) AS hatMenge,
+    coalesce(g.menge, 1) AS menge
 """
 
 _EXPLIZIT_FELDER = f"""
@@ -316,6 +319,11 @@ def _steckbrief_normalisieren(eintrag: dict) -> None:
     eintrag["istWaffe"] = bool(eintrag.get("istWaffe"))
     eintrag["istBehaelter"] = bool(eintrag.get("istBehaelter"))
     eintrag["kapazitaet"] = float(eintrag.get("kapazitaet") or 0)
+    # Stapelbarkeit (20.11.2026, Anzahl beim Kauf): fehlendes `einzigartig`
+    # gilt wie überall in items/repository.py::_decode als einzigartig.
+    eintrag["einzigartig"] = eintrag.get("einzigartig") is not False
+    eintrag["hatMenge"] = bool(eintrag.get("hatMenge"))
+    eintrag["menge"] = int(eintrag.get("menge") if eintrag.get("menge") is not None else 1)
     eintrag["seltenheit"] = int(eintrag.get("seltenheit") or 1)
     for feld in (
         "kraft",
@@ -400,9 +408,15 @@ async def effektiver_preis(campaign_id: str, haendler_id: str, gegenstand_id: st
     fuer_sortiment = await sortiment(campaign_id, haendler_id)
     for eintrag in fuer_sortiment:
         if eintrag["gegenstandId"] == gegenstand_id:
-            rabatt = eintrag.get("rabattProzent") or 0
-            return eintrag["preis"] * (100 - rabatt) // 100
+            return preis_nach_rabatt(eintrag)
     return None
+
+
+def preis_nach_rabatt(eintrag: dict) -> int:
+    """Stückpreis eines Sortiment-Eintrags nach Rabatt, ganzzahlig abgerundet
+    (das Frontend rechnet in haendler/warenkorb.ts::stueckpreis genauso)."""
+    rabatt = eintrag.get("rabattProzent") or 0
+    return eintrag["preis"] * (100 - rabatt) // 100
 
 
 async def verkauft_hinzufuegen(campaign_id: str, haendler_id: str, gegenstand_id: str, preis: int | None) -> bool:
@@ -482,7 +496,8 @@ _BESTELLUNG_FELDER = """
     b.id AS id, b.haendlerId AS haendlerId, b.haendlerName AS haendlerName,
     b.kaeuferPersonId AS kaeuferPersonId, b.gegenstandId AS gegenstandId,
     b.gegenstandName AS gegenstandName, b.preis AS preis, b.status AS status,
-    b.bestelltAm AS bestelltAm, b.geliefertAm AS geliefertAm
+    b.bestelltAm AS bestelltAm, b.geliefertAm AS geliefertAm,
+    coalesce(b.anzahl, 1) AS anzahl
 """
 
 
@@ -494,6 +509,7 @@ def _decode_bestellung(record: dict) -> dict:
     b = dict(record)
     b["status"] = b.get("status") or "OFFEN"
     b["geliefertAm"] = b.get("geliefertAm") or ""
+    b["anzahl"] = int(b.get("anzahl") or 1)
     return b
 
 
@@ -505,7 +521,10 @@ async def bestellung_anlegen(
     gegenstand_id: str,
     gegenstand_name: str,
     preis: int,
+    anzahl: int = 1,
 ) -> dict:
+    """`preis` ist der Gesamtpreis der Bestellung, `anzahl` die Stückzahl
+    (20.11.2026) — die Lieferung übergibt später einen Stapel dieser Größe."""
     driver = get_driver()
     query = f"""
         MATCH (c:Campaign {{id: $campaign_id}})
@@ -514,7 +533,7 @@ async def bestellung_anlegen(
             haendlerId: $haendler_id, haendlerName: $haendler_name,
             kaeuferPersonId: $kaeufer_person_id,
             gegenstandId: $gegenstand_id, gegenstandName: $gegenstand_name,
-            preis: $preis, status: 'OFFEN', bestelltAm: $jetzt, geliefertAm: ''
+            preis: $preis, anzahl: $anzahl, status: 'OFFEN', bestelltAm: $jetzt, geliefertAm: ''
         }})
         CREATE (c)-[:HAT_BESTELLUNG]->(b)
         RETURN {_BESTELLUNG_FELDER}
@@ -530,6 +549,7 @@ async def bestellung_anlegen(
             gegenstand_id=gegenstand_id,
             gegenstand_name=gegenstand_name,
             preis=preis,
+            anzahl=anzahl,
             jetzt=_jetzt(),
         )
         record = await result.single()

@@ -111,6 +111,7 @@ export function ShopUebersicht({
             {bestellungen.map((b) => (
               <div key={b.id} className="shop-bestellung-zeile">
                 <span>
+                  {b.anzahl && b.anzahl > 1 ? `${b.anzahl}× ` : ""}
                   {b.gegenstandName} — <span style={{ color: "var(--text-leise)" }}>{b.haendlerName}</span>
                 </span>
                 <span style={{ display: "flex", alignItems: "center", gap: 10 }}>

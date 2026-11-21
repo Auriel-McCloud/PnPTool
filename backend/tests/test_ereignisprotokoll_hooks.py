@@ -116,7 +116,9 @@ def test_fachstellen_rufen_die_hooks():
         "ki/routes.py": "hooks.ki",
         "ki/wiki_pruefung.py": "hooks.ki",
         "ki/auto_verknuepfung.py": "hooks.ki",
-        "haendler/routes.py": "hooks.handel",
+        # Shop-Kauf (Einzelkauf + Warenkorb) liegt seit 20.11.2026 im
+        # gemeinsamen Kauf-Kern, die Routen rufen ihn nur auf.
+        "haendler/kauf.py": "hooks.handel",
         "items/routes.py": "hooks.gegenstand",
         "party/repository.py": "hooks.aufenthalt",
         "traits/routes.py": "hooks.kampf_treffer",
