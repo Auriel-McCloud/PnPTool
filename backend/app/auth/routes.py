@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.auth.dependencies import get_current_claims, require_gm
@@ -45,6 +46,20 @@ async def gm_logout(response: Response):
 
 @router.get("/me", response_model=MeResponse)
 async def me(claims: dict = Depends(get_current_claims)):
+    # Gelöschter Spielerzugang (Mark, 21.11.2026): Das Token bleibt bis zum
+    # Ablauf gültig, die Spieleransicht fand dann aber keinen Zugang mehr und
+    # blieb leer — ohne Abmeldeknopf, kein Weg zurück. Hier wie "nicht
+    # angemeldet" behandeln und das Cookie gleich mit wegräumen.
+    if claims.get("role") == "PLAYER":
+        # Spät importiert: app.players nutzt seinerseits auth (zirkulär).
+        from app.players.repository import get_spieler
+
+        if await get_spieler(claims.get("sub", "")) is None:
+            antwort = JSONResponse(
+                {"detail": "Zugang existiert nicht mehr"}, status_code=status.HTTP_401_UNAUTHORIZED
+            )
+            antwort.delete_cookie(SESSION_COOKIE)
+            return antwort
     return MeResponse(role=claims.get("role", "UNKNOWN"), username=claims.get("username"))
 
 

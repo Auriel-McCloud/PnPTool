@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Gelöschter Spielerzugang sperrt das Gerät nicht mehr aus (21.11.2026)
+
+Mark löschte einen Spielerzugang, mit dem noch ein Gerät angemeldet war: `/api/auth/me` las nur das JWT und meldete weiter `PLAYER`, `SpielerAnsicht` bekam von `/api/spieler/me` 401 und renderte `null` — leerer Schirm ohne Abmeldeknopf. Jetzt prüft `/api/auth/me` bei `PLAYER` den Zugang und antwortet sonst 401 + löscht das Cookie (→ Anmeldefenster). Zusätzlich meldet `SpielerAnsicht` bei 401 von `spieler/me` selbst ab und lädt neu (nur 401, kein Netzwerkfehler).
+
 ## Shop: Leiste „Etwas Bestimmtes gesucht?“ entfernt (21.11.2026)
 
 Mark: die KI-Alltagswunsch-Leiste unter dem Warenraster (Spieler-Ansicht, `ShopSeite.tsx`) ist raus, samt State, `wunschStellen()` und `.shop-alltagswunsch*`-CSS. Bewusst stehen gelassen: Backend-Route `POST .../haendler/{id}/alltagswunsch`, `haendlerApi.alltagswunschStellen` und die SL-Freigabe-/Ergebnis-Popups — noch offene Wünsche lassen sich so weiter entscheiden, und die Leiste wäre mit einem Block wieder einsetzbar.

@@ -239,7 +239,21 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     .filter((id): id is string => Boolean(id));
 
   useEffect(() => {
-    playersApi.me().then(setIch).catch(() => setIch(null));
+    // Zugang gelöscht, während das Gerät angemeldet war (21.11.2026): ohne
+    // `ich` bliebe die Ansicht leer und ohne Abmeldeknopf. Cookie räumen und
+    // zurück zum Anmeldefenster.
+    playersApi
+      .me()
+      .then(setIch)
+      .catch((e: unknown) => {
+        setIch(null);
+        // Nur bei "Zugang weg" (401) — ein Netzwerkwackler soll niemanden abmelden.
+        if ((e as { status?: number })?.status !== 401) return;
+        playersApi
+          .abmelden()
+          .catch(() => undefined)
+          .finally(() => onAbgemeldet());
+      });
   }, []);
 
   useEffect(() => {
