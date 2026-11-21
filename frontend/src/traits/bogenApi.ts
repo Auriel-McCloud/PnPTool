@@ -109,7 +109,7 @@ export interface SteckbriefUpdate {
   verlangen?: string;
   ziel?: string;
   alias?: string;
-  /** Während der Erstellung als Entwurf; nachträglich ändert das Blatt den Namen nicht hier. */
+  /** Während der Erstellung als Entwurf; seit 21.11.2026 auch nachträglich im Steckbrief-Fenster. */
   name?: string;
   /** Während der Erstellung als Entwurf; im fertigen Blatt bewusst read-only. */
   alter?: string;

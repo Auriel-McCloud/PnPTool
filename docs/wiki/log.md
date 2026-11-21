@@ -2189,3 +2189,7 @@ Anlegen-Dialoge starten mit „für alle“ statt „SL-geheim“. Siehe [[entit
 ## [2026-11-21] update | Shop-Leiste „Etwas Bestimmtes gesucht?“ entfernt
 
 Spieler-Alltagswunsch im Shop ausgebaut, Backend und SL-Popups bleiben. Siehe [[concepts/waehrung-und-preise]].
+
+## [2026-11-21] update | Charaktername im Steckbrief änderbar
+
+Spieler können den Namen ihres (auch vorgefertigten) Charakters im Steckbrief-Fenster ändern. Siehe [[entities/auth-und-rollen]].

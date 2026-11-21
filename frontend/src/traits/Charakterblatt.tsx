@@ -614,7 +614,7 @@ export function Charakterblatt({
             type="button"
             className="cb-steckbrief-bearbeiten"
             onClick={() => setSteckbriefOffen(true)}
-            title="Konzept, Ambition, Verlangen und Ziel bearbeiten"
+            title="Name, Konzept, Ambition, Verlangen und Ziel bearbeiten"
           >
             ✎ Steckbrief
           </button>
@@ -813,10 +813,14 @@ export function Charakterblatt({
         offen={steckbriefOffen}
         campaignId={campaignId}
         personId={personId}
-        werte={{ konzept: u.konzept, ambition: u.ambition, verlangen: u.verlangen, ziel: u.ziel, alias: u.alias, description: u.description }}
+        werte={{ name: bogen.person.name, konzept: u.konzept, ambition: u.ambition, verlangen: u.verlangen, ziel: u.ziel, alias: u.alias, description: u.description }}
         onSchliessen={() => setSteckbriefOffen(false)}
-        onGespeichert={(neu) => {
+        onGespeichert={(neu, name) => {
           uebernehmen(neu);
+          // Der Name steht nicht in der Übersicht, sondern an bogen.person —
+          // lokal nachziehen, sonst zeigt die Kopfzeile bis zum nächsten
+          // Laden noch den alten.
+          setBogen((alt) => (alt ? { ...alt, person: { ...alt.person, name } } : alt));
           setSteckbriefOffen(false);
         }}
       />
@@ -1098,6 +1102,11 @@ function Steckbrief({ titel, text }: { titel: string; text: string }) {
  * Denselben Vorschläge-Knopf wie bei der Erstellung wiederverwendet
  * (Archetypen für Ambition/Verlangen) — gleiche Erfahrung, ob man das Feld
  * zum ersten oder zehnten Mal ausfüllt.
+ *
+ * Name (21.11.2026, Mark: Spieler können bei vorgefertigten Charakteren den
+ * Namen sonst nicht ändern): gilt für jeden eigenen Charakter, nicht nur
+ * für übernommene Vorlagen — derselbe PATCH kannte `name` schon aus der
+ * Erstellung. Leer gelassen bleibt der alte Name stehen.
  */
 function SteckbriefFenster({
   offen,
@@ -1110,10 +1119,11 @@ function SteckbriefFenster({
   offen: boolean;
   campaignId: string;
   personId: string;
-  werte: { konzept: string; ambition: string; verlangen: string; ziel: string; alias: string; description: string };
+  werte: { name: string; konzept: string; ambition: string; verlangen: string; ziel: string; alias: string; description: string };
   onSchliessen: () => void;
-  onGespeichert: (neu: BogenUebersicht) => void;
+  onGespeichert: (neu: BogenUebersicht, name: string) => void;
 }) {
+  const [name, setName] = useState(werte.name);
   const [konzept, setKonzept] = useState(werte.konzept);
   const [ambition, setAmbition] = useState(werte.ambition);
   const [verlangen, setVerlangen] = useState(werte.verlangen);
@@ -1126,6 +1136,7 @@ function SteckbriefFenster({
   // nach einem Abbrechen und erneutem Öffnen der alte Entwurf da.
   useEffect(() => {
     if (offen) {
+      setName(werte.name);
       setKonzept(werte.konzept);
       setAmbition(werte.ambition);
       setVerlangen(werte.verlangen);
@@ -1138,9 +1149,11 @@ function SteckbriefFenster({
 
   async function speichern() {
     setSendet(true);
+    const neuerName = name.trim() || werte.name;
     try {
       onGespeichert(
         await bogenApi.steckbrief(campaignId, personId, {
+          name: neuerName,
           konzept,
           ambition,
           verlangen,
@@ -1148,6 +1161,7 @@ function SteckbriefFenster({
           alias,
           description: serializeRichText(beschreibungDoc),
         }),
+        neuerName,
       );
     } finally {
       setSendet(false);
@@ -1163,6 +1177,10 @@ function SteckbriefFenster({
       onSchliessen={onSchliessen}
     >
       <div className="er-person">
+        <label className="er-feld">
+          <span>Name</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={werte.name} />
+        </label>
         <label className="er-feld">
           <span>Alias</span>
           <input

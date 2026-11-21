@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Spieler können den Namen ihres Charakters im Steckbrief ändern (21.11.2026)
+
+Mark: bei übernommenen vorgefertigten Charakteren konnten Spieler den Namen nicht ändern. Das Steckbrief-Fenster im Charakterblatt (`Charakterblatt.tsx::SteckbriefFenster`) hat jetzt ein Feld „Name“ ganz oben — für jeden eigenen Charakter, nicht nur Vorlagen. Kein Backend-Umbau: `PATCH .../steckbrief` kannte `name` schon aus der Erstellung (Owner-oder-SL-Check). Leer gelassen bleibt der alte Name; die Kopfzeile zieht den neuen Namen lokal nach.
+
 ## Gelöschter Spielerzugang sperrt das Gerät nicht mehr aus (21.11.2026)
 
 Mark löschte einen Spielerzugang, mit dem noch ein Gerät angemeldet war: `/api/auth/me` las nur das JWT und meldete weiter `PLAYER`, `SpielerAnsicht` bekam von `/api/spieler/me` 401 und renderte `null` — leerer Schirm ohne Abmeldeknopf. Jetzt prüft `/api/auth/me` bei `PLAYER` den Zugang und antwortet sonst 401 + löscht das Cookie (→ Anmeldefenster). Zusätzlich meldet `SpielerAnsicht` bei 401 von `spieler/me` selbst ab und lädt neu (nur 401, kein Netzwerkfehler).

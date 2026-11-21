@@ -1,7 +1,7 @@
 ---
 title: Auth und Rollen
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-11-21
 type: entität
 tags: [auth, backend]
 sources: [../../api/auth.md]
@@ -122,3 +122,12 @@ Karte und Steckbrief, beide Stellen. `MAGIER` wurde dort immer „Magier“,
 Gebaut: die Liste liefert `magieFlavor` (`HAERETIKER` nur wenn das Feld
 genau so steht, sonst `MAGIER`). Karte und Steckbrief zeigen dann
 „Häretiker“. Der Weg wird dadurch kein dritter Mechanik-Wert.
+
+## Name nach Übernahme änderbar — gebaut (21.11.2026)
+
+Mark: Spieler konnten bei vorgefertigten Charakteren den Namen nicht ändern,
+das soll im Steckbrief gehen. Das Steckbrief-Fenster im Charakterblatt hat
+jetzt ein Feld „Name“. Gilt für jeden eigenen Charakter, nicht nur für
+übernommene Vorlagen. `PATCH .../personen/{id}/steckbrief` nahm `name`
+schon aus der Erstellung an (Spieler nur am eigenen Charakter, SL überall),
+es fehlte nur das Feld im fertigen Blatt. Leer gelassen bleibt der alte Name.
