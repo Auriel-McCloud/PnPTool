@@ -1,7 +1,7 @@
 ---
 title: Währung und Preise
 created: 2026-09-18
-updated: 2026-11-06
+updated: 2026-11-21
 type: konzept
 tags: [wirtschaft, versionsgeschichte, offen]
 sources: [../../reference/Neotopia_Gegenstaende.md, ../../regeln-neotopia.md, ../../../CLAUDE.md]
@@ -85,6 +85,11 @@ KI schätzt sofort Preis + Typ, geht als Popup an die SL zur Freigabe. Harter
 Ausschluss von Waffen/Rüstung über zwei unabhängige Sperren (Typ-Whitelist +
 KI-Selbsteinschätzung). Backend und Frontend fertig, E2E-verifiziert. Siehe
 `docs/api/haendler.md`.
+
+[ÜBERHOLT 21.11.2026: Mark hat die Spieler-Leiste „Etwas Bestimmtes gesucht?“
+aus `ShopSeite.tsx` entfernt — Spieler können im Shop keinen Alltagswunsch
+mehr stellen. Backend-Route, API-Client und SL-Freigabe-Popups bleiben
+(offene Wünsche entscheidbar, Leiste wieder einsetzbar).]
 
 ## Geld-Weitergabe und Credstick
 

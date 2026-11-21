@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Shop: Leiste „Etwas Bestimmtes gesucht?“ entfernt (21.11.2026)
+
+Mark: die KI-Alltagswunsch-Leiste unter dem Warenraster (Spieler-Ansicht, `ShopSeite.tsx`) ist raus, samt State, `wunschStellen()` und `.shop-alltagswunsch*`-CSS. Bewusst stehen gelassen: Backend-Route `POST .../haendler/{id}/alltagswunsch`, `haendlerApi.alltagswunschStellen` und die SL-Freigabe-/Ergebnis-Popups — noch offene Wünsche lassen sich so weiter entscheiden, und die Leiste wäre mit einem Block wieder einsetzbar.
+
 ## Neue Verbindungen standardmäßig für alle sichtbar (20.11.2026)
 
 Mark: neu angelegte Verbindungen/Beziehungen waren immer „SL-geheim“ vorbelegt. `VerbindungAnlegen.tsx` und `VerbindungAnlegenGlobal.tsx` starten jetzt mit `ALLE` (Backend-`VerbindungCreate` hatte schon `ALLE`). Bestehende Kanten unverändert; KI-Verknüpfungen (`ki/auto_verknuepfung.py`) bleiben bewusst SL-geheim (Vorschläge/Entwürfe). Wiki `entities/neo4j-datenmodell.md`.

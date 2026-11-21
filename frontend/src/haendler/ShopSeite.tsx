@@ -66,16 +66,6 @@ export function ShopSeite({
   useEffect(() => {
     setSortierFeld((f) => gueltigesFeld(f, kategorie, sortiment));
   }, [kategorie, sortiment]);
-  // KI-Alltagswunsch (24.09.2026, nur Spieler) — Hooks MÜSSEN vor dem frühen
-  // "noch nicht geladen"-Return weiter unten stehen (React verlangt in
-  // jedem Render exakt dieselbe Hook-Reihenfolge; standen sie danach, rief
-  // der erste Render mit haendler=null weniger Hooks auf als jeder weitere
-  // Render nach dem Laden — "Rendered more hooks than during the previous
-  // render", React-Fehler #310, Shop-Seite blieb schwarz/leer).
-  const [wunschText, setWunschText] = useState("");
-  const [wunschLäuft, setWunschLäuft] = useState(false);
-  const [wunschRückmeldung, setWunschRückmeldung] = useState<string | null>(null);
-
   // Kapital des Käufers (20.11.2026) + Rassen-Feature „erster Kauf gratis“
   // für die Warenkorb-Rechnung. null = unbekannt/kein Käufer.
   const [kaeufer, setKaeufer] = useState<KaeuferInfo | null>(null);
@@ -241,33 +231,6 @@ export function ShopSeite({
     });
   }
 
-  // --- KI-Alltagswunsch (24.09.2026, nur Spieler) ---------------------------
-  // Fragt nach etwas, das nicht im Sortiment steht. Kein Warten nötig — die
-  // KI antwortet sofort, die Anfrage geht parallel als Popup an die SL
-  // (siehe AlltagswunschFreigabePopup). NIE für Waffen/Rüstung, harter
-  // Backend-Filter, siehe app/haendler/alltagswunsch.py. (State-Deklaration
-  // liegt jetzt oben vor dem frühen Return, siehe Kommentar dort.)
-
-  async function wunschStellen() {
-    const text = wunschText.trim();
-    if (!text) return;
-    setWunschLäuft(true);
-    setWunschRückmeldung(null);
-    try {
-      const antwort = await haendlerApi.alltagswunschStellen(campaignId, haendlerId, text);
-      if (antwort.status === "AUTO_ABGELEHNT") {
-        setWunschRückmeldung(antwort.ablehnungsGrund || "Das führt dieser Verkäufer nicht.");
-      } else {
-        setWunschRückmeldung(`„${antwort.vorschlagName}“ (${antwort.vorschlagPreis}¥) wartet auf die Freigabe deiner Spielleitung.`);
-      }
-      setWunschText("");
-    } catch (e) {
-      setWunschRückmeldung(e instanceof Error ? e.message : "Anfrage fehlgeschlagen");
-    } finally {
-      setWunschLäuft(false);
-    }
-  }
-
   return (
     <div className="shop-seite">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -401,29 +364,6 @@ export function ShopSeite({
             />
           ))}
           {sortiment.length === 0 && <p className="shop-leer">Dieser Shop führt gerade nichts.</p>}
-        </div>
-      )}
-
-      {!istGm && (
-        <div className="shop-alltagswunsch">
-          <p className="shop-alltagswunsch-titel">Etwas Bestimmtes gesucht?</p>
-          <p className="shop-ware-hinweis">
-            Frag {haendler.name} nach einem Alltagsgegenstand, der nicht im Regal steht — z.B. „Hast du
-            Panzerklebeband?“. Waffen und Rüstung führt dieser Weg nie.
-          </p>
-          <div className="shop-alltagswunsch-zeile">
-            <input
-              value={wunschText}
-              onChange={(e) => setWunschText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && wunschStellen()}
-              placeholder="Hast du…?"
-              disabled={wunschLäuft}
-            />
-            <button type="button" onClick={wunschStellen} disabled={wunschLäuft || !wunschText.trim()}>
-              Fragen
-            </button>
-          </div>
-          {wunschRückmeldung && <p className="shop-ware-erfolg">{wunschRückmeldung}</p>}
         </div>
       )}
 

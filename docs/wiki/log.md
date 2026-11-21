@@ -2185,3 +2185,7 @@ Statt zweimal „Unbekannter Kontakt“ steht beim Mentor-Platz „Unbekannter M
 ## [2026-11-20] update | Neue Verbindungen standardmäßig für alle sichtbar
 
 Anlegen-Dialoge starten mit „für alle“ statt „SL-geheim“. Siehe [[entities/neo4j-datenmodell]].
+
+## [2026-11-21] update | Shop-Leiste „Etwas Bestimmtes gesucht?“ entfernt
+
+Spieler-Alltagswunsch im Shop ausgebaut, Backend und SL-Popups bleiben. Siehe [[concepts/waehrung-und-preise]].
