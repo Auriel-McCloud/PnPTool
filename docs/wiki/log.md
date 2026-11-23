@@ -2197,3 +2197,7 @@ Spieler können den Namen ihres (auch vorgefertigten) Charakters im Steckbrief-F
 ## [2026-11-23] create | Skalierung — mehrere Server und Regionen
 
 Zukunftsplanung, Status offen: Start daheim, Regionswahl beim Login, Leitplanken „nichts verbauen“. Siehe [[entities/skalierung-mehrere-regionen]].
+
+## [2026-11-23] create | Konten, Login-Wege und SL-Abo
+
+Richtung von Mark: E-Mail/Google/Discord-Konten, Spieler gratis, SL-Abo, Open Source. Siehe [[entities/konten-login-und-abo]].

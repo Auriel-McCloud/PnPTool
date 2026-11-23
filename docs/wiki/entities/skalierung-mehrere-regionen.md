@@ -67,6 +67,7 @@ nichts und planen für Erfolg.“**
   Login (eigener Dienst oder externer Anbieter wie Microsoft/Google/Discord).
 - **Umzug einer Kampagne** zwischen Regionen: denkbar über
   [[entities/kampagnen-export-import]].
+- **Konten und Login über Google/Discord/E-Mail:** siehe [[entities/konten-login-und-abo]].
 - **Zeitpunkt** für Stufe 1 (zweiter Server in derselben Region: Redis + Object
   Storage + Jobs in DB, grob einige Tage Arbeit).
 

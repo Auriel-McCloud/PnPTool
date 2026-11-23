@@ -68,6 +68,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/ring-raetsel]] | Burgermenü „Rätsel“: Modus Leicht (acht Räume) oder Mittel (zwei Ebenen nebeneinander, abwechselnd Ebene/Drehen), freie SL-Markierung pro Feld, Lage der Gruppe extra, Spieler sehen nach Freigabe nur zu ohne Lösungshinweise (03.11.) |
 | [[entities/battlemap]] | Hex-Kampfkarte. Party-Hex blau, Gegner magenta. Raster füllt Ecken. Fog of War optional in den Einstellungen, Standard aus (06.11.2026). Matrix-Navigation pingt die Kartenerinnerung, Hot gibt dem Decker Live-Sicht wie die SL (06.11.2026). 90°-Dreh-Button fürs Tablet-Hochkant, SL und Spieler, rein lokal pro Gerät (07.11.2026). Ansicht schwenkt per Ziehen auf der Karte, „Grid schieben“ nur SL; großer Token füllt drei Felder mit Blick-Ring drumherum (08.11.2026). ALT-Tokens bleiben drei Kampfrunden sichtbar, auch hinter Wänden und nach Bewegung (09.11.2026) |
 | [[entities/skalierung-mehrere-regionen]] | Zukunftsplanung (offen, 23.11.2026): Start daheim auf bebop, Regionswahl Europa/USA/Asien beim Login, jede Region eigener Stack, kein Anbieter-Lock-in. Listet, was heute an einem Server hängt (Verteiler, Uploads, KI-Jobs), und Leitplanken für neuen Code |
+| [[entities/konten-login-und-abo]] | Zukunftsplanung (offen, 23.11.2026): Konto per E-Mail, Google und Discord über den Kampagnen, Spieler gratis, SL-Abo monatlich, Open Source (Service wird verkauft). Folgen fürs Datenmodell, Abo-Abrechnung abschaltbar, Hürden vor der Veröffentlichung (IP, Repo-Historie, i18n) |
 
 ## Vergleiche
 
