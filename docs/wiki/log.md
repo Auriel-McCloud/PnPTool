@@ -2193,3 +2193,7 @@ Spieler-Alltagswunsch im Shop ausgebaut, Backend und SL-Popups bleiben. Siehe [[
 ## [2026-11-21] update | Charaktername im Steckbrief änderbar
 
 Spieler können den Namen ihres (auch vorgefertigten) Charakters im Steckbrief-Fenster ändern. Siehe [[entities/auth-und-rollen]].
+
+## [2026-11-23] create | Skalierung — mehrere Server und Regionen
+
+Zukunftsplanung, Status offen: Start daheim, Regionswahl beim Login, Leitplanken „nichts verbauen“. Siehe [[entities/skalierung-mehrere-regionen]].
