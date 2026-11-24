@@ -1,7 +1,7 @@
 ---
 title: Magie — Hexkraft und Sphären
 created: 2026-09-18
-updated: 2026-11-09
+updated: 2026-11-24
 type: konzept
 tags: [magie, versionsgeschichte]
 sources: [../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md, ../../../backend/app/traits/seed.py]
@@ -63,11 +63,14 @@ Hexkraft 0 fälschlich kein Magier.
 
 ## Noch nicht gebaut
 
-**Gedanken** hat noch keinen neuen Namen. Telepathie ist nur das Lesen.
+**Oberbegriff „Sphären“ heißt künftig „Domänen“** (Mark, 24.11.2026), noch nicht umgestellt. Der Umbau kommt in einem Rutsch mit dem neuen Gedanken-Namen. Nur die Anzeige ändert sich: Der gespeicherte Kategorie-Schlüssel `category = "Sphäre"` bleibt (Filter in `Probe.tsx`, `Kampfkarte.tsx`, `SpezialisierungPopup.tsx` u. a.), sonst wäre eine Migration nötig. Umzustellen sind sichtbare Texte, Seed-Langtexte, `docs/reference/Master/`, live `Erklaerung`-Knoten und `docs/regeln-neotopia.md`.
+
+**Gedanken** hat noch keinen neuen Namen. Telepathie ist nur das Lesen. Zuletzt im Rennen: Occultamentis, Persona (keine Entscheidung). Raus: Psyche, Innenwelt, Telepathie, jedes reine ment-Wort.
 Kräfte, Leben, Materie bleiben. Ursprung nicht neu entschieden.
 
 ## Entwicklung
 
+- **24.11.2026 — Oberbegriff Sphären heißt Domänen (Mark), entschieden, nicht gebaut.** Grund: letzter großer Mage-Fingerabdruck (IP, siehe [[../entities/konten-login-und-abo]]). Passt zu den Häretikern, denn Götter haben Domänen. Verworfen: Gefilde (klingt nach Ort, Konflikt mit Schattenwelten), Siegel (klingt nach Technik), Kreise (so heißen schon die Punkte am Blatt), Arkana (Mage: The Awakening), Disziplinen (Vampire), Gaben (Werwolf), Pfade (Vampire und Awakening), Fäden (NeuroWeaving).
 - **09.11.2026 — Korrespondenz heißt Raum, Zeit heißt Chronurgie, Entropie heißt Schicksal (Mark).** Häretiker sehen weiter Shu, Chronos, Kali. Gedanken bleibt. Der Vorschlags-Chip „Schicksal“ heißt jetzt Ordnung, sonst klebt er am Sphärennamen. Punkte hängen per `_migriere_sphaeren_namen` um.
 - **09.11.2026 — Sphärennamen Raum, Chronurgie, Schicksal entschieden, nicht gebaut (Mark).** Siehe den Eintrag darüber. Der Umbau ist gelaufen.
 - **09.11.2026 — Sphäre Geister heißt Schattenwelten (Mark).** Der Sphärenname

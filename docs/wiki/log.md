@@ -2205,3 +2205,7 @@ Richtung von Mark: E-Mail/Google/Discord-Konten, Spieler gratis, SL-Abo, Open So
 ## [2026-11-24] update | Währung NuYen heißt jetzt Enyu
 
 Shadowrun-Begriff ersetzt, Mehrzahl Enyus, Symbol ¥ bleibt. Siehe [[concepts/waehrung-und-preise]].
+
+## [2026-11-24] update | Sphären heißen künftig Domänen
+
+Entschieden, nicht gebaut. Umbau zusammen mit dem Gedanken-Namen, der Kategorie-Schlüssel bleibt. Siehe [[concepts/magie-hexkraft]].
