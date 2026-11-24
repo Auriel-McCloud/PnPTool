@@ -65,6 +65,8 @@ Hexkraft 0 fälschlich kein Magier.
 
 **Oberbegriff „Sphären“ heißt künftig „Domänen“** (Mark, 24.11.2026), noch nicht umgestellt. Der Umbau kommt in einem Rutsch mit dem neuen Gedanken-Namen. Nur die Anzeige ändert sich: Der gespeicherte Kategorie-Schlüssel `category = "Sphäre"` bleibt (Filter in `Probe.tsx`, `Kampfkarte.tsx`, `SpezialisierungPopup.tsx` u. a.), sonst wäre eine Migration nötig. Umzustellen sind sichtbare Texte, Seed-Langtexte, `docs/reference/Master/`, live `Erklaerung`-Knoten und `docs/regeln-neotopia.md`.
 
+**Offen (Mark, 24.11.2026): Chronurgie und Schicksal zu einer Domäne zusammenlegen?** Das ergäbe 8 statt 9 Domänen und bräche die 1:1-Entsprechung zu Mage. Vorschlag Neko: Der Name bleibt **Schicksal**, Zeit wird zum Faden des Schicksals. Gott Kali (Kāla = Zeit und Tod), Chronos würde frei. Alternative **Kairos** (der schicksalhafte Augenblick). Live-Stand 24.11.: nur 2 PCs (beide Häretiker) haben Punkte in Schicksal (2 und 3), niemand in Chronurgie. Eine Migration wäre also billig. Wird mit dem Domänen-Umbau zusammen entschieden.
+
 **Gedanken** hat noch keinen neuen Namen. Telepathie ist nur das Lesen. Zuletzt im Rennen: Occultamentis, Persona (keine Entscheidung). Raus: Psyche, Innenwelt, Telepathie, jedes reine ment-Wort.
 Kräfte, Leben, Materie bleiben. Ursprung nicht neu entschieden.
 

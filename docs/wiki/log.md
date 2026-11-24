@@ -2209,3 +2209,7 @@ Shadowrun-Begriff ersetzt, Mehrzahl Enyus, Symbol ¥ bleibt. Siehe [[concepts/wa
 ## [2026-11-24] update | Sphären heißen künftig Domänen
 
 Entschieden, nicht gebaut. Umbau zusammen mit dem Gedanken-Namen, der Kategorie-Schlüssel bleibt. Siehe [[concepts/magie-hexkraft]].
+
+## [2026-11-24] update | Idee: Chronurgie und Schicksal zusammenlegen (offen)
+
+8 statt 9 Domänen, Vorschlag Name Schicksal und Göttin Kali. Siehe [[concepts/magie-hexkraft]].
