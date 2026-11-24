@@ -43,7 +43,7 @@ _SYSTEM = (
     "Ein Spieler im Cyberpunk-Pen-and-Paper NeotopiA fragt einen Verkäufer "
     "nach einem ALLTAGSGEGENSTAND (Beispiel: Panzerklebeband, Taschenlampe, "
     "Regenschutz) — KEIN Kampf- oder Sicherheitsausrüstungsgegenstand. "
-    "Schätze einen realistischen Preis in Nuyen (1 Nuyen = 1 Euro, "
+    "Schätze einen realistischen Preis in Enyus (1 Enyu = 1 Euro, "
     "Realweltpreis als Richtwert, du hast keinen Internetzugang — schätze "
     "nach bestem Wissen). 'typ' MUSS exakt einer der folgenden Werte sein: "
     + ", ".join(ALLTAGSGEGENSTAND_TYPEN)

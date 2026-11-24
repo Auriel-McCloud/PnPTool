@@ -161,7 +161,7 @@ const TITEL: Record<string, string> = {
   buendel: "Bündel: wiederverwendbare Welt-Inhalte als ZIP exportieren",
   whiteboard: "Whiteboard: gemeinsame Boards zum Live-Mitzeichnen",
   battlemap: "Battlemap: Hex-Karten für den Kampf",
-  drohnen: "Fahrzeuge & Drohnen: eigenes Blatt, Riggerkonsole, Nuyen-Kauf",
+  drohnen: "Fahrzeuge & Drohnen: eigenes Blatt, Riggerkonsole, Enyu-Kauf",
   reparatur: "Werkbank: Reparatur (Material + Probe) und Upgraden (montieren/demontieren)",
   raetsel: "Rätsel: acht Räume um das Ziel, die SL dreht den Ring",
 };

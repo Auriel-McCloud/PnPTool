@@ -413,7 +413,7 @@ export function EinstellungenFenster({
           </h4>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px 0" }}>
-            <strong style={{ fontSize: 14 }}>Nuyen pro Punkt</strong>
+            <strong style={{ fontSize: 14 }}>Enyus pro Punkt</strong>
             <span style={{ fontSize: 12, color: "var(--text-leise)" }}>
               Umrechnungsfaktor für Attribut-/Fertigkeitskäufe an Drohnen und Fahrzeugen — der Rigger zahlt
               aus eigenem Kapital, die Drohne hat keins. Startwert 200¥, jederzeit änderbar.

@@ -1,7 +1,7 @@
 ---
 title: Währung und Preise
 created: 2026-09-18
-updated: 2026-11-21
+updated: 2026-11-24
 type: konzept
 tags: [wirtschaft, versionsgeschichte, offen]
 sources: [../../reference/Neotopia_Gegenstaende.md, ../../regeln-neotopia.md, ../../../CLAUDE.md]
@@ -12,7 +12,7 @@ status: aktuell
 
 ## Definition
 
-**NuYen (¥)** ist die Weltwährung, **1¥ = 1€** — vereinfacht reale Preise
+**Enyu (¥, Mehrzahl Enyus)** ist die Weltwährung, **1¥ = 1€** — vereinfacht reale Preise
 recherchierbar zu machen. Preise für nicht gelistete Gegenstände: recherchieren
 oder die Spielleitung fragen.
 
@@ -115,3 +115,20 @@ Sonderpreis nur über das Preis-Feld in „Ware wählen“.
 - [[../entities/gegenstand-transfer]] — Credstick gebaut (05.11.2026), Geld-Weitergabe geplant
 - [[cyberware-bioware]] — Preis→Willenskraftverlust
 - [[ruestung-kaestchen-durchlass]] — Reparaturkosten geklärt (23.09.2026, Punkt 9)
+
+## Umbenennung NuYen → Enyu (24.11.2026)
+
+Mark: „Nuyen“ ist eine Shadowrun-Wortschöpfung und soll weg (IP, siehe
+[[../entities/konten-login-und-abo]]). Zurück zum japanischen Wort, das „Yen“
+eigentlich ist: *En* (円), daraus **Enyu**, Mehrzahl **Enyus**. Das Symbol ¥ bleibt.
+
+Umgestellt sind die sichtbaren Texte (Kampagnen-Einstellung „Enyus pro Punkt“,
+Bereichs-Beschreibung Fahrzeuge & Drohnen, Hinweis im Reparatur-Fenster), die
+KI-Prompts für Shop-Sortiment und Alltagsgegenstand und `docs/regeln-neotopia.md`.
+
+**Annahmen Neko:** Einzahl „Enyu“, Mehrzahl „Enyus“. Interne Kennungen
+(`nuyenProXp`, `nuyen_kosten`) und Code-Kommentare bleiben vorerst. `nuyenProXp`
+ist ein gespeicherter Einstellungs-Schlüssel und wird erst mit Migration beim
+Aufräumen für eine Open-Source-Veröffentlichung umbenannt. Bestehende Texte in
+den Kampagnendaten wurden nicht umgeschrieben. Excel-Transkript und
+Entwicklungshistorie bleiben als Quellenstand.

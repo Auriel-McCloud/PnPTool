@@ -117,7 +117,7 @@ _SYSTEM = (
     "existiert, erfinde eine neue Ware: dann 'gegenstandId' weglassen, "
     "'typ' MUSS exakt einer der folgenden Werte sein: "
     + ", ".join(GEGENSTAND_TYPEN)
-    + ". Vermeide Duplikate zu bereits genannten Vorschlägen. preis in Nuyen, "
+    + ". Vermeide Duplikate zu bereits genannten Vorschlägen. preis in Enyus, "
     "orientiert an diesen Richtwerten aus dem Regelwerk (Orientierung, keine "
     "starre Vorgabe — bei einem begründeten Sonderfall darfst du abweichen):\n"
     + _RICHTWERTE_TEXT
@@ -331,7 +331,7 @@ async def ware_anlegen(
     system = (
         "Du erfindest EINEN Gegenstand für einen Laden in der Welt von NeotopiA "
         "(deutsches Cyberpunk-Pen-and-Paper). Der Typ ist fest vorgegeben und "
-        "darf nicht geändert werden. preis in Nuyen. "
+        "darf nicht geändert werden. preis in Enyus. "
         f"Richtwert für Typ '{typ}': {_RICHTWERTE.get(typ, _RICHTWERT_FALLBACK)} "
         "Das ist eine Orientierung aus dem Regelwerk, keine starre Vorgabe — "
         "bei einem begründeten Sonderfall (Einzelstück, Billigware, "

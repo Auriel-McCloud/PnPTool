@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Währung heißt jetzt Enyu statt NuYen (24.11.2026)
+
+Mark: „Nuyen“ ist Shadowrun-Begriff, soll weg. Neuer Name **Enyu** (Mehrzahl Enyus, vom japanischen *En*), Symbol ¥ bleibt. Umgestellt: `EinstellungenFenster.tsx` („Enyus pro Punkt“), `App.tsx` (Bereichs-Beschreibung Drohnen), `ReparaturFenster.tsx` (Händler-Hinweis), KI-Preis-Prompts in `haendler/alltagswunsch.py`, `haendler/ki_vorschlag.py`, `ki/routes.py`, `docs/regeln-neotopia.md`, Wiki `concepts/waehrung-und-preise.md`. Bewusst geblieben: interne Kennungen `nuyenProXp`/`nuyen_kosten` (gespeicherter Einstellungs-Schlüssel, Migration erst beim Open-Source-Aufräumen) und Kommentare.
+
 ## Spieler können den Namen ihres Charakters im Steckbrief ändern (21.11.2026)
 
 Mark: bei übernommenen vorgefertigten Charakteren konnten Spieler den Namen nicht ändern. Das Steckbrief-Fenster im Charakterblatt (`Charakterblatt.tsx::SteckbriefFenster`) hat jetzt ein Feld „Name“ ganz oben — für jeden eigenen Charakter, nicht nur Vorlagen. Kein Backend-Umbau: `PATCH .../steckbrief` kannte `name` schon aus der Erstellung (Owner-oder-SL-Check). Leer gelassen bleibt der alte Name; die Kopfzeile zieht den neuen Namen lokal nach.

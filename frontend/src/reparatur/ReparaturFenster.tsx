@@ -505,7 +505,7 @@ export function ReparaturFenster({
 
       {weg === "haendler" && !istRuestung && (
         <p style={{ color: "var(--text-leise)" }}>
-          Der Händler-Weg (Nuyen + Verhandlung) ist für Drohnen/Fahrzeuge noch nicht gebaut — bisher nur Selbst-Reparieren.
+          Der Händler-Weg (Enyus + Verhandlung) ist für Drohnen/Fahrzeuge noch nicht gebaut — bisher nur Selbst-Reparieren.
         </p>
       )}
     </Fenster>

@@ -2201,3 +2201,7 @@ Zukunftsplanung, Status offen: Start daheim, Regionswahl beim Login, Leitplanken
 ## [2026-11-23] create | Konten, Login-Wege und SL-Abo
 
 Richtung von Mark: E-Mail/Google/Discord-Konten, Spieler gratis, SL-Abo, Open Source. Siehe [[entities/konten-login-und-abo]].
+
+## [2026-11-24] update | Währung NuYen heißt jetzt Enyu
+
+Shadowrun-Begriff ersetzt, Mehrzahl Enyus, Symbol ¥ bleibt. Siehe [[concepts/waehrung-und-preise]].

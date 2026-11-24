@@ -418,7 +418,7 @@ _GEGENSTAND_SYSTEM = (
     "Ausrüstung, Kuriosität, was zum Wunsch passt. typ MUSS exakt einer der "
     "folgenden Werte sein (nichts anderes, keine Erfindung): "
     + ", ".join(GEGENSTAND_TYPEN)
-    + ". preis in Nuyen, realistisch für den Typ (eine Lederjacke kostet "
+    + ". preis in Enyus, realistisch für den Typ (eine Lederjacke kostet "
     "anders als ein Cyberdeck). seltenheit 1 (überall erhältlich) bis 5 "
     "(nur Speziallabor/Schwarzmarkt). schaden: ganze Zahl. Bei typ "
     "Waffe Pflicht, 1 bis 12, nie 0 und nie ein Würfelausdruck (kein W6, kein "

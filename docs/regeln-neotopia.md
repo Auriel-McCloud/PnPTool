@@ -247,7 +247,7 @@ Wo mehrere Dinge in einen Wert einzahlen, wird nicht jeder Beitrag einzeln gerun
 
 ## Geld
 
-NuYen (¥) ist Weltwährung, 1 ¥ = 1 €. Preise für Ungelistetes: recherchieren oder Spielleitung fragen.
+Enyu (¥, Mehrzahl Enyus) ist Weltwährung, 1 ¥ = 1 €. Preise für Ungelistetes: recherchieren oder Spielleitung fragen.
 
 ## Willenskraft
 
