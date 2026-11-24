@@ -2213,3 +2213,7 @@ Entschieden, nicht gebaut. Umbau zusammen mit dem Gedanken-Namen, der Kategorie-
 ## [2026-11-24] update | Idee: Chronurgie und Schicksal zusammenlegen (offen)
 
 8 statt 9 Domänen, Vorschlag Name Schicksal und Göttin Kali. Siehe [[concepts/magie-hexkraft]].
+
+## [2026-11-24] update | Domänen als Kreis am Blatt (Idee)
+
+8 Domänen im 3×3-Raster mit leerer Mitte, Gegensätze gegenüber. Siehe [[concepts/magie-hexkraft]].
