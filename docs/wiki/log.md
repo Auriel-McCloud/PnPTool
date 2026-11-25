@@ -2221,3 +2221,7 @@ Entschieden, nicht gebaut. Umbau zusammen mit dem Gedanken-Namen, der Kategorie-
 ## [2026-11-24] update | Schicksal geht in Chronurgie auf (entschieden, nicht gebaut)
 
 8 Domänen im Kreis. Offen sind noch der Häretiker-Gott der zusammengelegten Domäne und der neue Name für Gedanken. Siehe [[concepts/magie-hexkraft]].
+
+## [2026-11-24] update | Chronurgie bekommt Kali als Häretiker-Göttin
+
+Chronos fällt raus. Für den Umbau fehlt nur noch der neue Name für Gedanken. Siehe [[concepts/magie-hexkraft]].
