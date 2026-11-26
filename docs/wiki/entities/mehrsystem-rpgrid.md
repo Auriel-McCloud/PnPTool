@@ -120,8 +120,16 @@ Menü von oben reinkommt, bei dem wir dann parken?“ Gebaut als
 `CommlinkShell wechsel="fahrt"`: alte Ansicht beschleunigt unten raus
 (0,34 s), neue kommt von oben und parkt mit kleinem Nachfedern ein (0,65 s),
 der 3D-Boden fährt gleichzeitig mit dem Wegfahren an. NeotopiA behält den
-Ladebalken. *Annahme Neko:* der fliegende Menüname zur Überschrift bleibt auch
-in GridMonster.
+Ladebalken. Fliegender Menüname zur Überschrift bleibt (Mark bestätigt).
+
+**Nachschärfung (Mark, 26.11.2026):** „Das Rausfahren ist ok, aber das
+Wiederreinkommen wirkt überhaupt nicht, als wäre es mit dem Hintergrund in
+sync … ich hätte gern, dass es aussieht, als würde man dort ankommen.“
+Umgebaut: Die neue Ansicht kommt jetzt aus der Tiefe vom Horizont
+(`translateZ` unter derselben Perspektive wie der Boden) und wächst, während
+der Boden ausrollt — gleiche Dauer (1,2 s) und Kurve, beide stehen im selben
+Moment, kein Nachfedern mehr. Boden in zwei Teilen: anfahren (0,34 s, mit dem
+Wegfahren) + ausrollen (1,2 s, mit dem Ankommen).
 
 ## Gebaut: Grundgerüst (26.11.2026)
 

@@ -2253,3 +2253,7 @@ Gitter in Perspektive bis zum Horizont, kurze Fahrt bei jedem Menüwechsel. Sieh
 ## [2026-11-26] gebaut | GridMonster: Menüwechsel fährt weg und parkt ein
 
 Kein Ladebalken mehr in GridMonster. Siehe [[entities/mehrsystem-rpgrid]].
+
+## [2026-11-26] update | GridMonster: neue Ansicht kommt synchron zum Boden an
+
+Ankommen aus der Tiefe statt Hüpfen von oben. Siehe [[entities/mehrsystem-rpgrid]].

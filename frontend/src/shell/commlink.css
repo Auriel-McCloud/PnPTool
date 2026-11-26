@@ -706,20 +706,28 @@ button.cl-bereiche-pfeil:disabled {
 }
 
 /* Wechsel "fahrt" (GridMonster, Mark 26.11.2026): die aktuelle Ansicht
-   fährt beschleunigend unten aus dem Bild, die neue kommt von oben und
-   „parkt“ mit einem kleinen Nachfedern ein. Zeiten = WEG_MS/REIN_MS in
-   CommlinkShell.tsx. Während der Fahrt kein Scrollbalken (transformierter
-   Inhalt zählt sonst zur Scrollfläche). */
+   fährt beschleunigend unten aus dem Bild, die neue kommt vom Horizont
+   angefahren und kommt genau dann zum Stehen, wenn der 3D-Boden ausrollt
+   („als würde man dort ankommen“). Gekoppelt über Dauer und Kurve:
+   - wegfahren 0,34 s easeInQuad   = gm-anfahren  (Boden beschleunigt)
+   - ankommen  1,2 s  easeOutQuad  = gm-ausrollen (Boden bremst)
+   Die Ansicht startet 1475px in der Tiefe (= 24 Bodenzellen x sin 74°) unter
+   derselben Perspektive wie der Boden (300px, Fluchtpunkt auf Horizonthöhe
+   46vh), dadurch wächst sie im selben Takt, wie der Boden auf einen zukommt.
+   Zeiten = WEG_MS/REIN_MS in CommlinkShell.tsx. Während der Fahrt kein
+   Scrollbalken (transformierter Inhalt zählt sonst zur Scrollfläche). */
 .cl-inhalt[data-fahrt="true"] {
   overflow: hidden;
+  perspective: 300px;
+  perspective-origin: 50% calc(46vh - var(--leiste-hoehe));
 }
 
 .cl-ansicht[data-wechsel="weg"] {
-  animation: cl-wegfahren 0.34s cubic-bezier(0.55, 0, 0.9, 0.45) forwards;
+  animation: cl-wegfahren 0.34s cubic-bezier(0.11, 0, 0.5, 0) forwards;
 }
 
 .cl-ansicht[data-wechsel="rein"] {
-  animation: cl-einparken 0.65s cubic-bezier(0.2, 0.85, 0.25, 1.12) both;
+  animation: cl-ankommen 1.2s cubic-bezier(0.5, 1, 0.89, 1) both;
 }
 
 @keyframes cl-wegfahren {
@@ -733,13 +741,16 @@ button.cl-bereiche-pfeil:disabled {
   }
 }
 
-@keyframes cl-einparken {
+@keyframes cl-ankommen {
   from {
-    transform: translateY(-80vh);
-    opacity: 0.4;
+    transform: translateZ(-1475px);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
   }
   to {
-    transform: none;
+    transform: translateZ(0);
     opacity: 1;
   }
 }

@@ -28,10 +28,12 @@ export interface Bereich {
 const FLUG_MS = 420;
 /** Dauer des herabfahrenden Balkens, ebenfalls aus commlink.css. */
 const BALKEN_MS = 500;
-/** Wechsel „fahrt“ (GridMonster): alte Ansicht fährt unten raus, neue parkt
- *  von oben ein. Muss zu cl-wegfahren/cl-einparken in commlink.css passen. */
+/** Wechsel „fahrt“ (GridMonster): alte Ansicht fährt unten raus, die neue
+ *  kommt vom Horizont angefahren. Muss zu cl-wegfahren/cl-ankommen in
+ *  commlink.css UND gm-anfahren/gm-ausrollen (gridmonster.css) passen —
+ *  gleiche Dauer und Kurve, sonst laufen Boden und Ansicht auseinander. */
 const WEG_MS = 340;
-const REIN_MS = 650;
+const REIN_MS = 1200;
 
 /**
  * Die Hülle des Commlinks: Symbolspalte links, Werkzeugleiste oben.

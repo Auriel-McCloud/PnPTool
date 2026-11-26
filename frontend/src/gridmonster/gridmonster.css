@@ -311,15 +311,32 @@
   /* Zum Horizont hin weich ins Nichts */
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
   mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
-  animation: gm-fahrt 2.6s cubic-bezier(0.15, 0.6, 0.3, 1);
+  /* Zwei Teile, gekoppelt an den Menüwechsel (siehe commlink.css
+     "fahrt"): anfahren = solange die alte Ansicht wegfährt (easeInQuad),
+     ausrollen = während die neue ankommt (easeOutQuad, gleiche Dauer wie
+     cl-ankommen). Strecken 7 + 24 Zellen, Verhältnis = Dauerverhältnis,
+     damit die Geschwindigkeit am Übergang nicht springt. Summe 31 Zellen,
+     Endbild = Startbild. */
+  animation:
+    gm-anfahren 0.34s cubic-bezier(0.11, 0, 0.5, 0),
+    gm-ausrollen 1.2s cubic-bezier(0.5, 1, 0.89, 1) 0.34s forwards;
 }
 
-@keyframes gm-fahrt {
+@keyframes gm-anfahren {
   from {
     background-position: 50% 0;
   }
   to {
-    background-position: 50% 640px;
+    background-position: 50% 448px;
+  }
+}
+
+@keyframes gm-ausrollen {
+  from {
+    background-position: 50% 448px;
+  }
+  to {
+    background-position: 50% 1984px;
   }
 }
 

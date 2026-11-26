@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## GridMonster: neue Ansicht kommt synchron zum 3D-Boden an (26.11.2026)
+
+Mark: das Einparken von oben „hüpfte“ und lief nicht mit dem Boden. Jetzt `cl-ankommen`: `translateZ(-1475px)` → 0 unter `perspective: 300px` mit Fluchtpunkt auf Horizonthöhe (wie der Boden), 1,2 s easeOutQuad; Boden in zwei Animationen `gm-anfahren` (0,34 s easeInQuad, mit `cl-wegfahren`) + `gm-ausrollen` (1,2 s easeOutQuad, Strecke 24 Zellen ≈ 1475px Tiefe). Gleiche Dauer und Kurve = beide stehen im selben Moment. `REIN_MS` 1200 in `CommlinkShell.tsx`; Werte in commlink.css/gridmonster.css hängen zusammen (Kommentar dort). [ÜBERHOLT: „parkt von oben mit Nachfedern“ aus dem Eintrag darunter.]
+
 ## GridMonster: Menüwechsel fährt weg und parkt ein statt Ladebalken (26.11.2026)
 
 `CommlinkShell` hat Prop `wechsel` (`"balken"` = NeotopiA wie bisher, `"fahrt"` = GridMonster) und `onWechselStart`. Bei `"fahrt"`: `.cl-ansicht[data-wechsel="weg"]` fährt unten raus (`WEG_MS` 340), dann Bereichswechsel und `data-wechsel="rein"` parkt von oben mit Nachfedern ein (`REIN_MS` 650), `cl-inhalt[data-fahrt]` ohne Scrollbalken. Phase bleibt nach dem Einparken auf `rein`, sonst spielt `cl-ansicht-an` beim Zurücksetzen nochmal. 3D-Boden hängt jetzt an einem Zähler aus `onWechselStart` (fährt mit dem Wegfahren an). Mark: „der Balken, der von oben durchzischt, war unser Ding für NeotopiA“.
