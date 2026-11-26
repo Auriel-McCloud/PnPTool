@@ -55,10 +55,28 @@ kopieren.
   ([[konten-login-und-abo]]); heute hängt ein Spieler-Zugang an genau einer
   Kampagne und geht weiter direkt hinein.
 
+## Entschieden: Umfang erstes Gerüst (Mark, 26.11.2026)
+
+Kacheln + GridMonster-Kampagne anlegen + Monster & Mensch mit Attributen,
+Fertigkeiten, Würfelstufen W4–W20, LP/Energie als Zahl. Partnerschaft und
+zwei Charaktere je Spieler kommen im nächsten Schritt.
+
+## Figuren in GridMonster (Mark, 26.11.2026)
+
+> „Es gibt 2 Dinge: PC — jeder PC ist gleichzeitig ein Mensch und ein Monster —
+> und NPCs. NPCs sind entweder Menschen oder Monster, aber es gibt auch
+> NPC-Tamer, bei denen ein Mensch und ein Monster verknüpft werden.“
+
+Neko-Nacherzählung (von Mark noch zu bestätigen): Mensch und Monster sind je
+eine eigene Figur mit eigenem Blatt. PC = die zwei Figuren eines Spielers.
+NPC = eine Figur (Mensch oder Monster). Tamer-Verknüpfung Mensch↔Monster gibt
+es bei PCs (über Spielergrenzen, SL-änderbar) und bei NPC-Tamern — dieselbe
+Kante.
+
 ## Offene Achsen
 
 1. ~~Umschalten~~ → entschieden, siehe oben.
-2. **Umfang erstes Gerüst:** nur Schalter (GridMonster-Kampagne, NeotopiA-
+2. ~~Umfang~~ → entschieden, siehe oben. War: nur Schalter (GridMonster-Kampagne, NeotopiA-
    Bereiche ausgeblendet) / + Monster & Mensch mit Attributen, Fertigkeiten,
    Würfelstufen, LP/Energie / + Partnerschaft Mensch↔Monster und Spieler mit
    zwei Charakteren.
