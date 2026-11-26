@@ -2233,3 +2233,7 @@ Mark will NeotopiA ↔ GridMonster umschalten können. Code-Befund + drei offene
 ## [2026-11-26] update | RPGrid-Startseite mit Spiele-Kacheln entschieden
 
 Nach dem Login Kacheln je Spiel (SL alle, Spieler nur eigene). Spieler-Finden (Einladungslink vs. Name#Zahl) offen in [[entities/konten-login-und-abo]].
+
+## [2026-11-26] update | Einladungslink entschieden, mehrere Kampagnen je Spiel
+
+Spieler kommen per Einladungslink je Kampagne dazu ([[entities/konten-login-und-abo]]). Ein Spiel kann mehrere Kampagnen haben, auch unter derselben SL ([[entities/mehrsystem-rpgrid]]).

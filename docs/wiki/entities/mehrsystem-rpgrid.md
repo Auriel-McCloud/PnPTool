@@ -46,6 +46,8 @@ kopieren.
 - SL sieht alle Spiele; Spieler nur die, in denen er einen Zugang hat.
 - Datenmodell bleibt `Kampagne -NUTZT_REGELSYSTEM-> Regelsystem`; die Kacheln
   gruppieren nur.
+- **Mark (26.11.2026):** Ein Spiel kann mehrere Kampagnen haben, auch unter
+  derselben SL.
 - **Annahme Neko:** Hat das Spiel genau eine Kampagne, führt der Klick direkt
   hinein; bei mehreren kommt die Kampagnen-Auswahl dieses Spiels. Ein Knopf
   „Spiel wechseln“ führt zurück zu den Kacheln.
