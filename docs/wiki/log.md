@@ -2237,3 +2237,7 @@ Nach dem Login Kacheln je Spiel (SL alle, Spieler nur eigene). Spieler-Finden (E
 ## [2026-11-26] update | Einladungslink entschieden, mehrere Kampagnen je Spiel
 
 Spieler kommen per Einladungslink je Kampagne dazu ([[entities/konten-login-und-abo]]). Ein Spiel kann mehrere Kampagnen haben, auch unter derselben SL ([[entities/mehrsystem-rpgrid]]).
+
+## [2026-11-26] gebaut | RPGrid-Startseite + GridMonster-Grundgerüst
+
+Spiel-Kacheln nach dem SL-Login, GridMonster-Figuren (Mensch/Monster) mit eigenem Blatt. Marks Idee Mensch-/Monster-Schalter für die Spieler-Seite notiert. Siehe [[entities/mehrsystem-rpgrid]].

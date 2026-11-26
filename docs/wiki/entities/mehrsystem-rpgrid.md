@@ -5,7 +5,7 @@ updated: 2026-11-26
 type: entität
 tags: [regelsystem-kampagne-ideenschmiede, datenmodell, gridmonster]
 sources: [Gespräch 2026-11-26]
-status: offen
+status: teilweise-umgesetzt
 ---
 
 # Mehrsystem-Kern (RPGrid)
@@ -67,11 +67,47 @@ zwei Charaktere je Spieler kommen im nächsten Schritt.
 > und NPCs. NPCs sind entweder Menschen oder Monster, aber es gibt auch
 > NPC-Tamer, bei denen ein Mensch und ein Monster verknüpft werden.“
 
-Neko-Nacherzählung (von Mark noch zu bestätigen): Mensch und Monster sind je
-eine eigene Figur mit eigenem Blatt. PC = die zwei Figuren eines Spielers.
+**Bestätigt (Mark, 26.11.2026):** „Ja, beides sind Figuren. Bei einem PC hat
+sein Mensch und das Monster, das er spielt, auch jeweils ein eigenes Inventar.“
+
+Mensch und Monster sind je eine eigene Figur mit eigenem Blatt. PC = die zwei Figuren eines Spielers.
 NPC = eine Figur (Mensch oder Monster). Tamer-Verknüpfung Mensch↔Monster gibt
 es bei PCs (über Spielergrenzen, SL-änderbar) und bei NPC-Tamern — dieselbe
 Kante.
+
+## Idee Spieler-Ansicht: Mensch-/Monster-Schalter (Mark, 26.11.2026, nicht gebaut)
+
+> „Ich würde oben in der Menüleiste einfach einen Schalter machen, der geswitcht
+> werden kann, mit einem Menschen-Symbol und einem Monster-Symbol, und daraufhin
+> ändert sich das komplette Menü zum Menschen- oder Monster-Menü, was wir auch
+> mit eigenen Farben anzeigen — das Monster-Menü wird ganz anders aussehen als
+> das Menschen-Menü.“
+
+Gehört zur Spieler-Seite (nächster Schritt, zusammen mit „Spieler spielt zwei
+Figuren“). Offen: gilt der Schalter auch für die SL, und was steht in den
+beiden Menüs.
+
+## Gebaut: Grundgerüst (26.11.2026)
+
+- Startseite `frontend/src/campaigns/SpielStart.tsx` (nur SL), Spielwahl in
+  `sessionStorage` `rpgrid:spiel`, ⌂ „Spiel wechseln“ in der Kopfleiste.
+- GridMonster-Kampagne: Bereiche Menschen/Monster (`gridmonster/GridFiguren.tsx`)
+  plus systemneutrale Bereiche; NeotopiA-Bereiche, Achievements und
+  Spieler-Vorschau ausgeblendet. Ideenschmiede ausgeblendet (KI erzeugt
+  NeotopiA-Bögen).
+- Backend `app/gridmonster/`: Regelsystem + `TraitDef`-Katalog geseedet; Figur =
+  `Person {istMonster, personType}`, Werte per `HAS_TRAIT` (Würfelgröße, 0 =
+  nicht gelernt; feste Zahlen). Wegwerfen setzt `geloescht` (Papierkorb).
+- Blatt: Würfelknöpfe W4–W20 je Attribut/Fertigkeit, Zahlen mit −/+;
+  Monster zeigt Angriff/Verteidigung aus der Stufe, Mensch „Karten pro Zug“
+  aus dem Tamer-Level.
+
+**Annahmen Neko (reversibel, sag wenn anders):**
+- Startwerte: Attribute W4, Fertigkeiten „–“; Monster Stufe 2, LP 30, Energie 10;
+  Mensch LP 10, Tamer-Level 1, Deckkapazität 10; Level 1.
+- Stufen heißen im Code neutral „Stufe 1–5“ (keine Digimon-Namen im Repo).
+- Menschen haben keine Mystik und noch keinen Ersatz (Neko-Vorschlag „Technik“ offen).
+- Kraft hat 3 Fertigkeiten (4. offen, wie im Regel-Entwurf).
 
 ## Offene Achsen
 
@@ -80,7 +116,7 @@ Kante.
    Bereiche ausgeblendet) / + Monster & Mensch mit Attributen, Fertigkeiten,
    Würfelstufen, LP/Energie / + Partnerschaft Mensch↔Monster und Spieler mit
    zwei Charakteren.
-3. **Monster im Datenmodell:** Person mit Flag `istMonster` (Kampf, Graph,
+3. ~~Monster im Datenmodell~~ → Person mit `istMonster` (gebaut). War: Person mit Flag `istMonster` (Kampf, Graph,
    Zugang, Listen spielen sofort mit; Standardweg laut Projektregel) **oder**
    eigenes Label `Monster`.
 

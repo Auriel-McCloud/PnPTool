@@ -37,6 +37,8 @@ from app.mitteilungen.routes import router as mitteilungen_router
 from app.mitteilungen.routes import ws_router as mitteilungen_ws_router
 from app.regelsysteme.routes import router as regelsysteme_router
 from app.regelsysteme.repository import seed_neotopia
+from app.gridmonster.routes import router as gridmonster_router
+from app.gridmonster.repository import seed as seed_gridmonster
 from app.ki.routes import router as ki_router
 from app.spotify.routes import router as spotify_router
 from app.spotify.routes import campaign_router as spotify_campaign_router
@@ -72,6 +74,8 @@ async def lifespan(app: FastAPI):
     await seed_rassen()
     # NeotopiA Regelsystem anlegen falls nicht vorhanden
     await seed_neotopia()
+    # GridMonster (Grundgerüst 26.11.2026): Regelsystem + eigener Trait-Katalog
+    await seed_gridmonster()
     yield
     await close_driver()
 
@@ -120,6 +124,7 @@ app.include_router(gruppenchat_router)
 app.include_router(mitteilungen_router)
 app.include_router(mitteilungen_ws_router)
 app.include_router(regelsysteme_router)
+app.include_router(gridmonster_router)
 app.include_router(ki_router)
 app.include_router(spotify_router)
 app.include_router(spotify_campaign_router)

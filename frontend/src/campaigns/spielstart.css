@@ -1,0 +1,90 @@
+/* RPGrid-Startseite: Kacheln je Spiel */
+.rp-start {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px 24px;
+  box-sizing: border-box;
+  background: var(--grund);
+  color: var(--text);
+}
+
+.rp-start-kopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.rp-start-titel {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-size: 1.4em;
+  color: var(--neon);
+  margin: 0;
+}
+
+.rp-start-unter {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: var(--versalien);
+  color: var(--text-leise);
+  font-size: 0.85em;
+}
+
+.rp-kacheln {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.rp-kachel {
+  --roehre-farbe: var(--rp-ton, var(--neon));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+  min-height: 140px;
+}
+
+.rp-kachel-symbol {
+  font-size: 2em;
+  color: var(--rp-ton, var(--neon));
+}
+
+.rp-kachel-name {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: var(--versalien);
+  font-size: 1.1em;
+}
+
+.rp-kachel-text {
+  color: var(--text-leise);
+  font-size: 0.9em;
+}
+
+.rp-kachel-zahl {
+  margin-top: auto;
+  font-family: var(--mono);
+  font-size: 0.8em;
+  color: var(--text-leise);
+}
+
+.rp-zurueck,
+.rp-abmelden {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: var(--versalien);
+  padding: 6px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  color: var(--text);
+  cursor: pointer;
+}

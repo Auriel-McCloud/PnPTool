@@ -49,6 +49,8 @@ import { ZeichnungenAnsicht } from "./zeichnungen/ZeichnungenAnsicht";
 import { BattlemapAnsicht } from "./battlemap/BattlemapAnsicht";
 import { RaetselTafelAnsicht } from "./raetsel/RaetselTafel";
 import { DrohnenUebersicht } from "./drohnen/DrohnenUebersicht";
+import { SpielStart } from "./campaigns/SpielStart";
+import { GridFiguren } from "./gridmonster/GridFiguren";
 
 /**
  * Bereiche der SL-Ansicht.
@@ -138,6 +140,26 @@ const BEREICHE: Bereich[] = [
   { id: "raetsel", name: "Rätsel", symbol: "▣", farbe: "var(--bereich-protokoll)" },
 ];
 
+// RPGrid (26.11.2026): Jede Kampagne gehört zu einem Spiel (Regelsystem).
+// GridMonster bekommt eigene Figurenbereiche plus die systemneutralen
+// Bereiche; alles NeotopiA-Spezifische (Bogen, Kampf, Shop, Rassen …) bleibt
+// dort ausgeblendet. Ideenschmiede ist ausgeblendet, weil ihre KI-Entwürfe
+// NeotopiA-Bögen erzeugen.
+const GRIDMONSTER_BEREICHE: Bereich[] = [
+  { id: "gm-menschen", name: "Menschen", symbol: "◉", farbe: "var(--bereich-pcs)" },
+  { id: "gm-monster", name: "Monster", symbol: "✦", farbe: "var(--bereich-begleiter)" },
+];
+const SYSTEMNEUTRAL = new Set([
+  "orte", "events", "fraktionen", "verbindungen", "graph", "wiki", "protokoll", "whiteboard", "battlemap", "raetsel",
+]);
+
+function bereicheFuer(spiel: string): Bereich[] {
+  if (spiel === "GridMonster") return [...GRIDMONSTER_BEREICHE, ...BEREICHE.filter((b) => SYSTEMNEUTRAL.has(b.id))];
+  return BEREICHE;
+}
+
+const SPIEL_SCHLUESSEL = "rpgrid:spiel";
+
 const TITEL: Record<string, string> = {
   augments: "Körperkarte: wo sitzt welches Implantat",
   pcs: "Spielercharaktere",
@@ -164,6 +186,8 @@ const TITEL: Record<string, string> = {
   drohnen: "Fahrzeuge & Drohnen: eigenes Blatt, Riggerkonsole, Enyu-Kauf",
   reparatur: "Werkbank: Reparatur (Material + Probe) und Upgraden (montieren/demontieren)",
   raetsel: "Rätsel: acht Räume um das Ziel, die SL dreht den Ring",
+  "gm-menschen": "Menschen",
+  "gm-monster": "Monster",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -208,7 +232,7 @@ function Dashboard() {
   // beim Entsperren lädt sie neu. Der zuletzt offene Bereich wird deshalb
   // gemerkt, damit dieser Neustart nicht wie ein Rücksprung zur Startseite wirkt.
   const BEREICH_SCHLUESSEL = "pnptool:bereich:gm";
-  const [bereich, setBereichRoh] = useState(
+  const [bereichGemerkt, setBereichRoh] = useState(
     () => (typeof localStorage !== "undefined" && localStorage.getItem(BEREICH_SCHLUESSEL)) || "pcs",
   );
   const setBereich = (b: string) => {
@@ -226,6 +250,29 @@ function Dashboard() {
   const [viewAs, setViewAs] = useState<string | null>(null);
 
   const kampagne = aktive;
+
+  // RPGrid-Startseite (Mark, 26.11.2026): erst das Spiel wählen, dann die
+  // Kampagne. sessionStorage statt localStorage: ein neuer Login (neue
+  // Sitzung) zeigt wieder die Spiel-Kacheln, ein Neuladen im selben Tab nicht.
+  const [spiel, setSpielRoh] = useState<string | null>(() =>
+    typeof sessionStorage === "undefined" ? null : sessionStorage.getItem(SPIEL_SCHLUESSEL),
+  );
+  const setSpiel = (s: string | null) => {
+    setSpielRoh(s);
+    if (s) sessionStorage.setItem(SPIEL_SCHLUESSEL, s);
+    else sessionStorage.removeItem(SPIEL_SCHLUESSEL);
+  };
+  const spielDerKampagne = kampagne?.regelsystem ?? "NeotopiA";
+  const imSpiel = !!spiel && !!kampagne && spielDerKampagne === spiel;
+  const istGridMonster = spielDerKampagne === "GridMonster";
+  const systemBereiche = useMemo(() => bereicheFuer(spielDerKampagne), [spielDerKampagne]);
+  // Ein gemerkter Bereich aus dem anderen Spiel gilt hier nicht — dann der erste.
+  const bereich = systemBereiche.some((b) => b.id === bereichGemerkt) ? bereichGemerkt : systemBereiche[0].id;
+  const [neueKampagneSpiel, setNeueKampagneSpiel] = useState("NeotopiA");
+  const abmelden = () => {
+    sessionStorage.removeItem(SPIEL_SCHLUESSEL);
+    logout();
+  };
 
   const [einstellungenOffen, setEinstellungenOffen] = useState(false);
   const [neueKampagneOffen, setNeueKampagneOffen] = useState(false);
@@ -248,8 +295,8 @@ function Dashboard() {
 
   const menueBereiche = useMemo(() => {
     const slot = geraet === "tablet" ? menueLayouts.tablet : menueLayouts.pc;
-    return sichtbareBereiche(BEREICHE, slot, geraet, bereich);
-  }, [menueLayouts, geraet, bereich]);
+    return sichtbareBereiche(systemBereiche, slot, geraet, bereich);
+  }, [menueLayouts, geraet, bereich, systemBereiche]);
 
   // Kennung, mit der jede Ansicht neu aufgebaut wird: Wechsel der Kampagne
   // oder der Rollen-Sicht (viewAs) muss die Ansicht frisch laden lassen.
@@ -257,12 +304,19 @@ function Dashboard() {
 
   const werkzeuge = (
     <>
-      {/* Aktive Kampagne wechseln bzw. neu anlegen. */}
+      {/* Zurück zur RPGrid-Startseite (Spiel-Kacheln). */}
+      <button type="button" className="cl-werkzeug" onClick={() => setSpiel(null)} title="Spiel wechseln">
+        ⌂
+      </button>
+      {/* Aktive Kampagne wechseln bzw. neu anlegen — nur Kampagnen dieses Spiels. */}
       <KampagnenAuswahl
-        kampagnen={campaigns ?? []}
+        kampagnen={(campaigns ?? []).filter((k) => (k.regelsystem ?? "NeotopiA") === spielDerKampagne)}
         aktiveId={kampagne?.id ?? null}
         onWaehlen={waehleKampagne}
-        onNeu={() => setNeueKampagneOffen(true)}
+        onNeu={() => {
+          setNeueKampagneSpiel(spielDerKampagne);
+          setNeueKampagneOffen(true);
+        }}
       />
       {/* Geplante Werkzeuge (docs/ui-konzept.md): SL-Popups an Spieler und der
           Schalter fürs Tooltip-System. Sichtbar, aber deaktiviert — ein
@@ -276,7 +330,7 @@ function Dashboard() {
       {/* Pokal-Symbol (27.09.2026, Marks Vorgabe): Achievement-Verwaltung,
           kein eigener Burgermenü-Eintrag. SL bekommt das volle
           Verwaltungsfenster (Katalog/Baukasten/Vorschläge/Vergabe). */}
-      {kampagne && (
+      {kampagne && !istGridMonster && (
         <button type="button" className="cl-werkzeug" onClick={() => setAchievementsOffen(true)} title="Achievements">
           🏆
         </button>
@@ -294,7 +348,7 @@ function Dashboard() {
         ?
       </button>
       <VollbildKnopf />
-      <button type="button" className="cl-werkzeug" onClick={() => logout()} title="Abmelden">
+      <button type="button" className="cl-werkzeug" onClick={abmelden} title="Abmelden">
         ⏻
       </button>
     </>
@@ -310,6 +364,27 @@ function Dashboard() {
         <div>{me?.role === "GM" ? "Spielleitung" : me?.role}</div>
       </div>
     </>
+  );
+
+  // Neue Kampagne anlegen — über das Dropdown in der Kopfleiste oder die
+  // Spiel-Kacheln erreichbar; das Spiel steht dabei schon fest.
+  const neueKampagneFenster = (
+    <Fenster
+      offen={neueKampagneOffen}
+      titel={`Neue ${neueKampagneSpiel}-Kampagne`}
+      kennung="neue-kampagne"
+      onSchliessen={() => setNeueKampagneOffen(false)}
+    >
+      <CreateCampaignForm
+        hinweis="Name der neuen Kampagne:"
+        onCreate={async (name) => {
+          const neu = await createCampaign(name, neueKampagneSpiel);
+          setSpiel(neueKampagneSpiel);
+          return neu;
+        }}
+        onFertig={() => setNeueKampagneOffen(false)}
+      />
+    </Fenster>
   );
 
   const shell = (
@@ -345,7 +420,8 @@ function Dashboard() {
 
       {!loading && kampagne && (
         <>
-          <ViewAsSwitcher campaignId={kampagne.id} value={viewAs} onChange={setViewAs} />
+          {/* Spieler-Vorschau gibt es für GridMonster noch nicht (Spieler-Seite folgt). */}
+          {!istGridMonster && <ViewAsSwitcher campaignId={kampagne.id} value={viewAs} onChange={setViewAs} />}
 
           <EinstellungenFenster
             campaignId={kampagne.id}
@@ -398,6 +474,9 @@ function Dashboard() {
             <HintergruendeVerwaltung key={ansichtKennung} campaignId={kampagne.id} />
           )}
           {bereich === "kampf" && <Kampfmodus key={ansichtKennung} campaignId={kampagne.id} />}
+          {/* GridMonster-Grundgerüst (26.11.2026) */}
+          {bereich === "gm-menschen" && <GridFiguren key={ansichtKennung} campaignId={kampagne.id} art="mensch" />}
+          {bereich === "gm-monster" && <GridFiguren key={ansichtKennung} campaignId={kampagne.id} art="monster" />}
           {bereich === "graph" && <CampaignGraphView key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "zugang" && <SpielerVerwaltung campaignId={kampagne.id} />}
           {bereich === "wiki" && (
@@ -442,23 +521,11 @@ function Dashboard() {
       )}
     </CommlinkShell>
 
-      {/* Neue Kampagne anlegen — über das Dropdown in der Kopfleiste erreichbar. */}
-      <Fenster
-        offen={neueKampagneOffen}
-        titel="Neue Kampagne"
-        kennung="neue-kampagne"
-        onSchliessen={() => setNeueKampagneOffen(false)}
-      >
-        <CreateCampaignForm
-          hinweis="Name der neuen Kampagne:"
-          onCreate={createCampaign}
-          onFertig={() => setNeueKampagneOffen(false)}
-        />
-      </Fenster>
+      {neueKampagneFenster}
       <MenueAnpassen
         offen={menueOffen}
         onSchliessen={() => setMenueOffen(false)}
-        bereiche={BEREICHE}
+        bereiche={systemBereiche}
         layouts={menueLayouts}
         geraet={geraet}
         onSpeichern={async (layouts) => {
@@ -468,6 +535,28 @@ function Dashboard() {
       />
     </>
   );
+
+  // RPGrid-Startseite: solange kein Spiel gewählt ist (oder die gemerkte
+  // Kampagne zu einem anderen Spiel gehört), die Spiel-Kacheln zeigen.
+  if (!loading && campaigns && !imSpiel) {
+    return (
+      <>
+        <SpielStart
+          kampagnen={campaigns}
+          onBetreten={(s, id) => {
+            waehleKampagne(id);
+            setSpiel(s);
+          }}
+          onNeueKampagne={(s) => {
+            setNeueKampagneSpiel(s);
+            setNeueKampagneOffen(true);
+          }}
+          onAbmelden={abmelden}
+        />
+        {neueKampagneFenster}
+      </>
+    );
+  }
 
   // Ohne Kampagne gibt es keine Leitung, die man öffnen könnte.
   if (!kampagne) return shell;

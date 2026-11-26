@@ -4,6 +4,9 @@ import { api } from "../api/client";
 export interface Campaign {
   id: string;
   name: string;
+  /** Name des Regelsystems = Spiel ("NeotopiA", "GridMonster"), siehe RPGrid-Startseite. */
+  regelsystem?: string;
+  regelsystemId?: string;
 }
 
 const SPEICHER_SCHLUESSEL = "pnptool:aktiveKampagne";
@@ -24,11 +27,11 @@ export function useCampaign() {
     // nicht ein veralteter Closure-Wert (React StrictMode ruft den Effekt
     // zweimal) gegen die Liste geprüft wird. Gespeicherte ID behalten, wenn
     // sie noch existiert, sonst die erste nehmen.
-    setAktiveId((aktuell) => {
-      const id = list.some((c) => c.id === aktuell) ? aktuell : (list[0]?.id ?? null);
-      if (id) localStorage.setItem(SPEICHER_SCHLUESSEL, id);
-      return id;
-    });
+    // Kein localStorage-Schreiben hier drin: der Updater läuft erst beim
+    // nächsten Render — nach einem direkt folgenden `waehleKampagne(neu)`
+    // überschrieb er sonst die neue ID mit der alten (26.11.2026, fiel mit
+    // der RPGrid-Startseite auf). Das Merken macht der Effekt unten.
+    setAktiveId((aktuell) => (list.some((c) => c.id === aktuell) ? aktuell : (list[0]?.id ?? null)));
     return list;
   }
 
@@ -42,13 +45,18 @@ export function useCampaign() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (aktiveId) localStorage.setItem(SPEICHER_SCHLUESSEL, aktiveId);
+  }, [aktiveId]);
+
   const waehleKampagne = useCallback((id: string) => {
     setAktiveId(id);
     localStorage.setItem(SPEICHER_SCHLUESSEL, id);
   }, []);
 
-  async function createCampaign(name: string) {
-    const neu = await api.post<Campaign>("/api/campaigns", { name });
+  async function createCampaign(name: string, regelsystem = "NeotopiA") {
+    // `ruleset` nimmt Regelsystem-ID oder -Name (campaigns/repository.py).
+    const neu = await api.post<Campaign>("/api/campaigns", { name, ruleset: regelsystem });
     await refresh();
     waehleKampagne(neu.id);
     return neu;
