@@ -349,25 +349,50 @@
 }
 
 /* --- Fundstücke (GridBoden.tsx / GridDinge.tsx) ---------------------------
-   Stehen aufrecht in einem Gitterfeld: Fußpunkt unten Mitte, um -74deg
-   zurückgekippt (= Gegenrichtung der Ebene). Tauchen als Daten auf (von
-   unten nach oben aufgebaut, kurzes Aufleuchten), fahren beim nächsten
-   Menüwechsel mit dem Boden davon (gleiche Strecke und Kurve wie
-   gm-anfahren). */
-.gm-ding {
+   Echte Gegenstände als Störfaktor (Mark: „ein Wald, wo plötzlich ein
+   Fernseher steht“) — Materialfarben, dunkle Kontur, kein Leuchten.
+   .gm-fund = Punkt auf der Ebene (preserve-3d, darum KEINE opacity/filter
+   hier, das würde das Bild flach drücken; Ausblenden an den Kindern).
+   Darin flacher Schatten auf dem Boden und das Bild, um -74deg
+   zurückgekippt = steht aufrecht. Beim Wechsel fährt .gm-fund mit dem
+   Boden (gleiche Strecke und Kurve wie gm-anfahren). */
+.gm-fund {
   position: absolute;
-  width: 48px;
-  height: 60px;
-  margin-left: -24px;
-  margin-top: -60px;
-  transform-origin: 50% 100%;
-  transform: rotateX(-74deg);
-  color: var(--gm-ding-linie);
-  animation: gm-materialisieren 1.4s ease-out both;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
 }
 
-.gm-ding[data-geht="true"] {
-  animation: gm-ding-weg 0.34s cubic-bezier(0.11, 0, 0.5, 0) forwards;
+.gm-fund[data-geht="true"] {
+  animation: gm-fund-weg 0.34s cubic-bezier(0.11, 0, 0.5, 0) forwards;
+}
+
+.gm-fund[data-geht="true"] > * {
+  animation: gm-ausblenden 0.34s ease-in forwards;
+}
+
+.gm-ding-schatten {
+  position: absolute;
+  /* liegt in der Ebene, die Perspektive staucht es von selbst flach;
+     Mitte = Fußpunkt */
+  width: calc(var(--b) * 1.2);
+  height: calc(var(--b) * 1.1);
+  left: calc(var(--b) * -0.6);
+  top: calc(var(--b) * -0.55);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--gm-ding-schatten), transparent);
+  animation: gm-schatten-an 1.2s ease-out both;
+}
+
+.gm-ding {
+  position: absolute;
+  width: var(--b);
+  height: var(--h);
+  left: calc(var(--b) / -2);
+  top: calc(var(--h) * -1);
+  transform-origin: 50% 100%;
+  transform: rotateX(-74deg);
+  animation: gm-materialisieren 1.2s ease-out both;
 }
 
 .gm-ding-svg {
@@ -375,14 +400,42 @@
   width: 100%;
   height: 100%;
   overflow: visible;
-  fill: var(--gm-ding-fuellung);
-  stroke: currentColor;
-  stroke-width: 2;
+  stroke: var(--gm-ding-kontur);
+  stroke-width: 1.2;
   stroke-linejoin: round;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 3px var(--gm-ding-glut));
 }
 
+/* Materialfarben (Tokens in theme/gridmonster.css) */
+.gm-ding-svg .f-rot { fill: var(--gm-ding-rot); }
+.gm-ding-svg .f-rot-dunkel { fill: var(--gm-ding-rot-dunkel); }
+.gm-ding-svg .f-rot-an { fill: var(--gm-ding-rot-an); }
+.gm-ding-svg .f-aus { fill: var(--gm-ding-aus); }
+.gm-ding-svg .f-weiss { fill: var(--gm-ding-weiss); }
+.gm-ding-svg .f-weiss-dunkel { fill: var(--gm-ding-weiss-dunkel); stroke: none; }
+.gm-ding-svg .f-schwarz { fill: var(--gm-ding-schwarz); }
+.gm-ding-svg .f-grau { fill: var(--gm-ding-grau); }
+.gm-ding-svg .f-grau-hell { fill: var(--gm-ding-grau-hell); }
+.gm-ding-svg .f-grau-dunkel { fill: var(--gm-ding-grau-dunkel); }
+.gm-ding-svg .f-chrom { fill: var(--gm-ding-chrom); }
+.gm-ding-svg .f-beige { fill: var(--gm-ding-beige); }
+.gm-ding-svg .f-beige-dunkel { fill: var(--gm-ding-beige-dunkel); }
+.gm-ding-svg .f-holz { fill: var(--gm-ding-holz); }
+.gm-ding-svg .f-holz-dunkel { fill: var(--gm-ding-holz-dunkel); }
+.gm-ding-svg .f-glas { fill: var(--gm-ding-glas); }
+.gm-ding-svg .f-glas-hell { fill: var(--gm-ding-glas-hell); }
+.gm-ding-svg .f-display { fill: var(--gm-ding-display); }
+.gm-ding-svg .f-lcd { fill: var(--gm-ding-lcd); }
+.gm-ding-svg .l { fill: none; }
+.gm-ding-svg .l-grau { fill: none; stroke: var(--gm-ding-grau-dunkel); }
+.gm-ding-svg .l-rot { fill: none; stroke: var(--gm-ding-rot); stroke-width: 2; }
+.gm-ding-svg .l-chrom { fill: none; stroke: var(--gm-ding-chrom); stroke-width: 3; }
+.gm-ding-svg .l-dick { fill: none; stroke-width: 1.6; }
+.gm-ding-svg .l-glas { fill: none; stroke: var(--gm-ding-glas-hell); stroke-width: 1.5; }
+.gm-ding-svg .l-display { fill: none; stroke: var(--gm-ding-display); stroke-width: 1.5; }
+
+/* Auftauchen: baut sich kurz von unten nach oben auf, wie Daten, die sich
+   zusammensetzen — danach steht es ganz normal und echt da. */
 @keyframes gm-materialisieren {
   0% {
     clip-path: inset(100% -20% -20% -20%);
@@ -393,21 +446,32 @@
   }
   70% {
     clip-path: inset(0 -20% -20% -20%);
-    filter: brightness(2.2);
   }
   100% {
     clip-path: inset(-20% -20% -20% -20%);
-    filter: none;
   }
 }
 
-@keyframes gm-ding-weg {
+@keyframes gm-schatten-an {
   from {
-    transform: rotateX(-74deg);
-    opacity: 1;
+    opacity: 0;
   }
   to {
-    transform: translateY(448px) rotateX(-74deg);
+    opacity: 1;
+  }
+}
+
+@keyframes gm-fund-weg {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(448px);
+  }
+}
+
+@keyframes gm-ausblenden {
+  to {
     opacity: 0;
   }
 }
@@ -415,7 +479,9 @@
 @media (prefers-reduced-motion: reduce) {
   .gm-gitter,
   .gm-ding,
-  .gm-ding[data-geht="true"] {
+  .gm-ding-schatten,
+  .gm-fund[data-geht="true"],
+  .gm-fund[data-geht="true"] > * {
     animation: none;
   }
 }

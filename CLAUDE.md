@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## GridMonster-Fundstücke: echte Gegenstände als Störfaktor statt Leuchtlinien (26.11.2026)
+
+Mark: „nicht blau — Störfaktoren im Bild, wie ein Wald, wo plötzlich ein Fernseher steht“. `GridDinge.tsx` neu: 11 Dinge (+ Kassettenrekorder, Ampel, Handheld) als flache Illustration mit Materialfarben (`--gm-ding-*` in `theme/gridmonster.css`, Klassen `f-*`/`l-*` in `gridmonster/gridmonster.css`), dunkle Kontur, eigene viewBox + `hoehe` je Ding. `GridBoden`: `.gm-fund` (Punkt auf der Ebene, preserve-3d, fährt beim Wechsel mit) enthält flachen Bodenschatten + aufrechtes `.gm-ding`; Ausblenden an den Kindern, weil opacity am preserve-3d-Element das Bild flach drückt. [ÜBERHOLT: „leuchtende Linienzeichnungen“ aus dem Eintrag darunter.]
+
 ## GridMonster: zufällige Fundstücke auf dem Gitter + Figuren-Sichtbarkeit gefixt (26.11.2026)
 
 `gridmonster/GridDinge.tsx`: 8 eigene SVG-Linienzeichnungen (Elektronik, Mark: „wie in der Digiwelt, zufällig, nicht immer im Menü X“). `GridBoden.tsx` umgebaut: `.gm-boden` ist die gekippte Ebene mit `preserve-3d` (keine Maske dort, sonst flach), Gitter als Kind `.gm-gitter` mit Maske + Fahrt-Animation, Dinge stehen per `rotateX(-74deg)` aufrecht in Ebenen-Koordinaten (Zellmitte = `50% + spalte*64px`, Reihen 1–2). Erscheinen 30 % nach Ankunft bzw. alle 45–120 s zu 50 %, max. 2, fahren bei `gm-ding-weg` (= `gm-anfahren`) mit davon. **Fix:** `gridmonster/repository.py::anlegen` setzt jetzt `sichtbarkeit`/`sichtbarFuer`/`notizenSichtbarkeit`/`notizenSichtbarFuer`/`erstelltAm` — ohne sie lehnte `/personen` (z. B. aus „Orte“) die GridMonster-Figuren mit 6 validation errors ab; Migration `015_gridmonster_figuren_sichtbarkeit.cypher` zieht Altbestand nach.

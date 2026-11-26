@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { DING_ARTEN, DING_NAMEN, DingBild, type DingArt } from "./GridDinge";
+import { DING_ARTEN, DINGE, DingBild, dingBreite, type DingArt } from "./GridDinge";
 import "./gridmonster.css";
 
 /**
@@ -18,8 +18,9 @@ import "./gridmonster.css";
  * Aufbau: .gm-boden ist die gekippte Ebene (preserve-3d, darum OHNE Maske —
  * eine Maske würde die Kinder flach in die Ebene drücken). Das Gitter ist
  * ein eigenes Kind mit Maske und Fahrt-Animation (per `key` bei jedem
- * Wechsel neu gestartet), die Dinge stehen per rotateX zurückgekippt
- * aufrecht in Ebenen-Koordinaten. Liegt mit z-index -1 hinter allem, nimmt
+ * Wechsel neu gestartet). Ein Fundstück ist ein Punkt auf der Ebene
+ * (.gm-fund, fährt beim Wechsel mit) mit flachem Bodenschatten und dem per
+ * rotateX zurückgekippten, aufrecht stehenden Bild. Liegt mit z-index -1 hinter allem, nimmt
  * keine Klicks an; `prefers-reduced-motion` stoppt die Bewegung (CSS).
  */
 
@@ -110,16 +111,22 @@ export function GridBoden({ fahrt }: { fahrt: string }) {
         {dinge.map((d) => (
           <div
             key={d.id}
-            className="gm-ding"
+            className="gm-fund"
             data-geht={d.geht ? "true" : undefined}
-            title={DING_NAMEN[d.art]}
-            style={{
-              // Zellmitte seitlich, Unterkante kurz vor der vorderen Zelllinie
-              left: `calc(50% + ${d.spalte * ZELLE}px)`,
-              top: `${d.reihe * ZELLE + ZELLE * 0.8}px`,
-            }}
+            style={
+              {
+                // Zellmitte seitlich, Fußpunkt kurz vor der vorderen Zelllinie
+                left: `calc(50% + ${d.spalte * ZELLE}px)`,
+                top: `${d.reihe * ZELLE + ZELLE * 0.8}px`,
+                "--b": `${dingBreite(d.art)}px`,
+                "--h": `${DINGE[d.art].hoehe}px`,
+              } as React.CSSProperties
+            }
           >
-            <DingBild art={d.art} />
+            <div className="gm-ding-schatten" />
+            <div className="gm-ding" title={DINGE[d.art].name}>
+              <DingBild art={d.art} />
+            </div>
           </div>
         ))}
       </div>

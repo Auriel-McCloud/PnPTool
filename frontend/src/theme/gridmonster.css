@@ -63,10 +63,29 @@
   /* 3D-Gitterboden (gridmonster/GridBoden.tsx) */
   --gm-boden-linie: color-mix(in srgb, var(--p-blau) 32%, transparent);
   --gm-horizont-glut: color-mix(in srgb, var(--p-blau) 22%, transparent);
-  /* Fundstücke auf dem Boden (gridmonster/GridDinge.tsx) */
-  --gm-ding-linie: color-mix(in srgb, var(--p-blau) 85%, var(--p-weiss));
-  --gm-ding-fuellung: color-mix(in srgb, var(--p-nacht) 85%, transparent);
-  --gm-ding-glut: var(--p-blau);
+  /* Fundstücke (gridmonster/GridDinge.tsx): echte Materialfarben, die
+     bewusst NICHT zur digitalen Welt passen — Störfaktor im Bild (Mark). */
+  --gm-ding-kontur: #1c1a22;
+  --gm-ding-schatten: rgb(0 0 0 / 0.55);
+  --gm-ding-rot: #c8372d;
+  --gm-ding-rot-dunkel: #8f231c;
+  --gm-ding-rot-an: #ff4a3a;
+  --gm-ding-aus: #3a3a3e;
+  --gm-ding-weiss: #efeee8;
+  --gm-ding-weiss-dunkel: #cfcdc4;
+  --gm-ding-schwarz: #2b2c31;
+  --gm-ding-grau: #9b9da3;
+  --gm-ding-grau-hell: #c9c8c4;
+  --gm-ding-grau-dunkel: #5f6168;
+  --gm-ding-chrom: #c8ccd2;
+  --gm-ding-beige: #dccfae;
+  --gm-ding-beige-dunkel: #b6a682;
+  --gm-ding-holz: #8a5a34;
+  --gm-ding-holz-dunkel: #5e3b20;
+  --gm-ding-glas: #2f4048;
+  --gm-ding-glas-hell: #8fb3bd;
+  --gm-ding-display: #6bdc6b;
+  --gm-ding-lcd: #a7b86a;
   --ladebalken-deckkraft: 0.35;
   --flacker-a: transparent;
   --flacker-b: transparent;

@@ -145,6 +145,16 @@ fahren beim nächsten Menüwechsel mit dem Boden davon.
 eine 50-%-Chance, höchstens 2 gleichzeitig, nur die zwei vorderen Feldreihen
 (weiter hinten zu klein, weiter vorn zu groß).
 
+**Nachschärfung (Mark, 26.11.2026):** „Ich hätte gern, dass sie nicht blau
+sind, sie sollen ja mehr so Störfaktoren im Bild sein, wie in der Digiwelt —
+ein Wald, wo plötzlich ein Fernseher steht … oder ein Gameboy.“ Dazu
+gewünscht: Kassettenrekorder, Ampel, Handheld. Umgebaut: echte Gegenstände
+als flache Illustration in Materialfarben (rote Telefonzelle, Holz-Fernseher,
+Beige-Computer, Chrom-Ghettoblaster …) mit dunkler Kontur und Bodenschatten,
+kein Leuchten. Jetzt 11 Dinge, jedes mit eigener Größe (Telefonzelle/Ampel
+groß, Diskette/Handheld klein, aber leicht übertrieben). Das Handheld ist ein
+generisches Gerät ohne Logo (kein Nachbau).
+
 ## Gebaut: Grundgerüst (26.11.2026)
 
 - Startseite `frontend/src/campaigns/SpielStart.tsx` (nur SL), Spielwahl in
