@@ -28,6 +28,10 @@ export interface Bereich {
 const FLUG_MS = 420;
 /** Dauer des herabfahrenden Balkens, ebenfalls aus commlink.css. */
 const BALKEN_MS = 500;
+/** Wechsel „fahrt“ (GridMonster): alte Ansicht fährt unten raus, neue parkt
+ *  von oben ein. Muss zu cl-wegfahren/cl-einparken in commlink.css passen. */
+const WEG_MS = 340;
+const REIN_MS = 650;
 
 /**
  * Die Hülle des Commlinks: Symbolspalte links, Werkzeugleiste oben.
@@ -51,6 +55,8 @@ export function CommlinkShell({
   atmosphaere = true,
   marke = { zeichen: "⌬", name: "Commlink", zeile: "NeotopiA // v0.1" },
   themeWahl = true,
+  wechsel = "balken",
+  onWechselStart,
   children,
 }: {
   bereiche: Bereich[];
@@ -75,6 +81,14 @@ export function CommlinkShell({
   marke?: { zeichen: string; name: string; zeile: string };
   /** Theme-Schalter (Cyberpunk/Hextechpunk) zeigen — die gehören zu NeotopiA. */
   themeWahl?: boolean;
+  /**
+   * Art des Bereichswechsels. "balken" = NeotopiA (Ladebalken zischt von oben
+   * durch). "fahrt" = GridMonster (Mark, 26.11.2026): die aktuelle Ansicht
+   * fährt unten aus dem Bild, die neue kommt von oben und „parkt“ ein.
+   */
+  wechsel?: "balken" | "fahrt";
+  /** Wird beim Beginn eines animierten Wechsels gerufen (z. B. 3D-Boden anfahren). */
+  onWechselStart?: () => void;
   children: ReactNode;
 }) {
   // Kennung des einen Eintrags, der aus der Symbolspalte herausgefahren ist
@@ -89,6 +103,11 @@ export function CommlinkShell({
   const [balken, setBalken] = useState<number | null>(null);
   const [flug, setFlug] = useState<{ text: string; farbe: string; von: DOMRect; ziel: DOMRect } | null>(null);
   const [flugLaeuft, setFlugLaeuft] = useState(false);
+  // Wechsel „fahrt“: Phase der Ansicht. Bleibt nach dem Einparken auf "rein"
+  // stehen (nicht zurück auf null) — sonst würde die Standard-Einblendung
+  // cl-ansicht-an beim Zurücksetzen noch einmal abspielen.
+  const [fahrtPhase, setFahrtPhase] = useState<"weg" | "rein" | null>(null);
+  const [fahrtLaeuft, setFahrtLaeuft] = useState(false);
 
   const titelRef = useRef<HTMLSpanElement>(null);
   const timer = useRef<number[]>([]);
@@ -207,6 +226,24 @@ export function CommlinkShell({
     // Erst im nächsten Bild die Zielkoordinaten setzen, sonst gibt es keinen
     // Übergang — der Browser sähe nur den Endzustand.
     requestAnimationFrame(() => setFlugLaeuft(true));
+    onWechselStart?.();
+
+    if (wechsel === "fahrt") {
+      setFahrtPhase("weg");
+      setFahrtLaeuft(true);
+      timer.current.push(
+        window.setTimeout(() => {
+          onBereichWechsel(b.id);
+          setFahrtPhase("rein");
+        }, WEG_MS),
+        window.setTimeout(() => setFahrtLaeuft(false), WEG_MS + REIN_MS),
+        window.setTimeout(() => {
+          setFlug(null);
+          setFlugLaeuft(false);
+        }, FLUG_MS),
+      );
+      return;
+    }
 
     timer.current.push(
       // Auf halbem Weg wechselt der Inhalt, verdeckt vom herabfahrenden Balken
@@ -332,9 +369,14 @@ export function CommlinkShell({
           </div>
         </header>
 
-        <main className="cl-inhalt" data-statisch={statisch ? "true" : undefined} style={{ position: "relative" }}>
+        <main
+          className="cl-inhalt"
+          data-statisch={statisch ? "true" : undefined}
+          data-fahrt={fahrtLaeuft ? "true" : undefined}
+          style={{ position: "relative" }}
+        >
           {/* key: baut die Ansicht bei jedem Bereichswechsel neu auf */}
-          <div className="cl-ansicht" key={aktiv}>
+          <div className="cl-ansicht" key={aktiv} data-wechsel={wechsel === "fahrt" ? (fahrtPhase ?? undefined) : undefined}>
             {children}
           </div>
           {balken !== null && <div className="cl-balken" key={balken} aria-hidden="true" />}

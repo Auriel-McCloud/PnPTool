@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## GridMonster: Menüwechsel fährt weg und parkt ein statt Ladebalken (26.11.2026)
+
+`CommlinkShell` hat Prop `wechsel` (`"balken"` = NeotopiA wie bisher, `"fahrt"` = GridMonster) und `onWechselStart`. Bei `"fahrt"`: `.cl-ansicht[data-wechsel="weg"]` fährt unten raus (`WEG_MS` 340), dann Bereichswechsel und `data-wechsel="rein"` parkt von oben mit Nachfedern ein (`REIN_MS` 650), `cl-inhalt[data-fahrt]` ohne Scrollbalken. Phase bleibt nach dem Einparken auf `rein`, sonst spielt `cl-ansicht-an` beim Zurücksetzen nochmal. 3D-Boden hängt jetzt an einem Zähler aus `onWechselStart` (fährt mit dem Wegfahren an). Mark: „der Balken, der von oben durchzischt, war unser Ding für NeotopiA“.
+
 ## GridMonster: 3D-Gitterboden ins Endlose, fährt bei Menüwechsel (26.11.2026)
 
 `gridmonster/GridBoden.tsx` (in `App.tsx` nur bei GridMonster-Optik): Gitter per `perspective`/`rotateX` bis zum Horizont mit Leuchten, `z-index: -1`, steht still und fährt per `key`-Neuaufbau bei jedem Menüwechsel 2,6 s auf den Betrachter zu (Mark: „nur ein paar Sekunden, wenn man in einen anderen Menüpunkt geht“). Flaches Gitter entfällt; Hintergrund-Ebenen sitzen jetzt am `<html>`, `<body>` durchsichtig, sonst verdeckt der Body den Boden. `prefers-reduced-motion` = keine Fahrt.

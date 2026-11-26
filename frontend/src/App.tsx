@@ -273,6 +273,9 @@ function Dashboard() {
   // Spiel-Optik (theme/gridmonster.css): gilt nur, solange man IN einer
   // GridMonster-Kampagne ist; Startseite und NeotopiA bleiben beim Theme.
   const gridOptik = imSpiel && istGridMonster;
+  // Zählt jeden animierten Menüwechsel — der 3D-Boden fährt damit gleichzeitig
+  // mit dem Wegfahren der alten Ansicht an, nicht erst beim Einparken.
+  const [bodenFahrt, setBodenFahrt] = useState(0);
   useEffect(() => {
     if (gridOptik) document.documentElement.dataset.spiel = "gridmonster";
     else delete document.documentElement.dataset.spiel;
@@ -401,7 +404,7 @@ function Dashboard() {
   const shell = (
     <>
       {/* 3D-Gitterboden der GridMonster-Optik, fährt bei jedem Menüwechsel kurz an. */}
-      {gridOptik && <GridBoden fahrt={`${kampagne?.id}:${bereich}`} />}
+      {gridOptik && <GridBoden fahrt={`${kampagne?.id}:${bodenFahrt}`} />}
       <CommlinkShell
       bereiche={menueBereiche}
       aktiv={bereich}
@@ -410,6 +413,8 @@ function Dashboard() {
       werkzeuge={werkzeuge}
       fuss={fuss}
       atmosphaere={!istGridMonster}
+      wechsel={istGridMonster ? "fahrt" : "balken"}
+      onWechselStart={istGridMonster ? () => setBodenFahrt((n) => n + 1) : undefined}
       themeWahl={!istGridMonster}
       marke={istGridMonster ? { zeichen: "✦", name: "GridMonster", zeile: "RPGrid // v0.1" } : undefined}
       /* Jede fokussierte Weltansicht teilt sich ihre Fläche selbst ein;

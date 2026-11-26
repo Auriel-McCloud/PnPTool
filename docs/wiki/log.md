@@ -2249,3 +2249,7 @@ Spiel-Optik per `data-spiel`, Entwurf digitale Welt. Mensch/Monster-Schalter nur
 ## [2026-11-26] gebaut | GridMonster: 3D-Gitterboden fährt bei Menüwechsel
 
 Gitter in Perspektive bis zum Horizont, kurze Fahrt bei jedem Menüwechsel. Siehe [[entities/mehrsystem-rpgrid]].
+
+## [2026-11-26] gebaut | GridMonster: Menüwechsel fährt weg und parkt ein
+
+Kein Ladebalken mehr in GridMonster. Siehe [[entities/mehrsystem-rpgrid]].

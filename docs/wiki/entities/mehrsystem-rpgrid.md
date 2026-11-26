@@ -112,6 +112,17 @@ jedem Menüwechsel 2,6 s weich abbremsend auf den Betrachter zu.
 *Annahmen Neko:* Horizont knapp über der Bildmitte, Fahrt 10 Zellen, auch beim
 Betreten des Spiels; „Bewegung reduzieren“ am Gerät = keine Fahrt.
 
+**Menüwechsel „wegfahren und einparken“ (Mark, 26.11.2026, gebaut):** „Was wir
+bei GridMonster nicht brauchen, ist der Balken, der von oben durchzischt, das
+war unser Ding für NeotopiA. Könnten wir es so machen, dass wir von dem
+aktuellen Menü wegfahren, also dass das unten den Rand verlässt, und das neue
+Menü von oben reinkommt, bei dem wir dann parken?“ Gebaut als
+`CommlinkShell wechsel="fahrt"`: alte Ansicht beschleunigt unten raus
+(0,34 s), neue kommt von oben und parkt mit kleinem Nachfedern ein (0,65 s),
+der 3D-Boden fährt gleichzeitig mit dem Wegfahren an. NeotopiA behält den
+Ladebalken. *Annahme Neko:* der fliegende Menüname zur Überschrift bleibt auch
+in GridMonster.
+
 ## Gebaut: Grundgerüst (26.11.2026)
 
 - Startseite `frontend/src/campaigns/SpielStart.tsx` (nur SL), Spielwahl in

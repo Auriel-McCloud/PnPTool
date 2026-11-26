@@ -705,6 +705,51 @@ button.cl-bereiche-pfeil:disabled {
   }
 }
 
+/* Wechsel "fahrt" (GridMonster, Mark 26.11.2026): die aktuelle Ansicht
+   fährt beschleunigend unten aus dem Bild, die neue kommt von oben und
+   „parkt“ mit einem kleinen Nachfedern ein. Zeiten = WEG_MS/REIN_MS in
+   CommlinkShell.tsx. Während der Fahrt kein Scrollbalken (transformierter
+   Inhalt zählt sonst zur Scrollfläche). */
+.cl-inhalt[data-fahrt="true"] {
+  overflow: hidden;
+}
+
+.cl-ansicht[data-wechsel="weg"] {
+  animation: cl-wegfahren 0.34s cubic-bezier(0.55, 0, 0.9, 0.45) forwards;
+}
+
+.cl-ansicht[data-wechsel="rein"] {
+  animation: cl-einparken 0.65s cubic-bezier(0.2, 0.85, 0.25, 1.12) both;
+}
+
+@keyframes cl-wegfahren {
+  from {
+    transform: none;
+    opacity: 1;
+  }
+  to {
+    transform: translateY(105vh);
+    opacity: 0.4;
+  }
+}
+
+@keyframes cl-einparken {
+  from {
+    transform: translateY(-80vh);
+    opacity: 0.4;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-ansicht[data-wechsel] {
+    animation: none;
+  }
+}
+
 /* Der fliegende Name: ein Klon, der von der Menüzeile zur Überschrift
    wandert. Startkoordinaten setzt das Skript per Inline-Style. */
 .cl-flug {
