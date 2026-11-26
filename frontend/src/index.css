@@ -11,6 +11,7 @@
 
 @import "./theme/tokens.css";
 @import "./theme/hextechpunk.css";
+@import "./theme/gridmonster.css";
 
 *,
 *::before,

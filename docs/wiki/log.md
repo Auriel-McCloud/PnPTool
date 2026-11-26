@@ -2241,3 +2241,7 @@ Spieler kommen per Einladungslink je Kampagne dazu ([[entities/konten-login-und-
 ## [2026-11-26] gebaut | RPGrid-Startseite + GridMonster-Grundgerüst
 
 Spiel-Kacheln nach dem SL-Login, GridMonster-Figuren (Mensch/Monster) mit eigenem Blatt. Marks Idee Mensch-/Monster-Schalter für die Spieler-Seite notiert. Siehe [[entities/mehrsystem-rpgrid]].
+
+## [2026-11-26] gebaut | GridMonster bekommt eigene Optik, Rauschen nur NeotopiA
+
+Spiel-Optik per `data-spiel`, Entwurf digitale Welt. Mensch/Monster-Schalter nur für Spieler entschieden. Siehe [[entities/mehrsystem-rpgrid]].

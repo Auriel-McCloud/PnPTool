@@ -84,8 +84,25 @@ Kante.
 > das Menschen-Menü.“
 
 Gehört zur Spieler-Seite (nächster Schritt, zusammen mit „Spieler spielt zwei
-Figuren“). Offen: gilt der Schalter auch für die SL, und was steht in den
-beiden Menüs.
+Figuren“). **Nur für Spieler, nicht für die SL (Mark, 26.11.2026).** Offen: was
+steht in den beiden Menüs.
+
+## Eigene Optik für GridMonster (Mark, 26.11.2026, gebaut als Entwurf)
+
+> „Wir haben die Oberfläche von NeotopiA, das schaut natürlich gar nicht
+> digimonig aus. Wir haben außerdem auch das Rauschen, das sollte auch nur ein
+> NeotopiA-Ding sein.“
+
+Gebaut: Spiel-Optik `frontend/src/theme/gridmonster.css` greift automatisch in
+GridMonster-Kampagnen (`data-spiel` am `<html>`, siehe `docs/theming.md`).
+Rauschen/Bildstörung, Röhrenflackern und Theme-Schalter nur noch in NeotopiA,
+Menü-Marke „GridMonster / RPGrid“.
+
+**Annahmen Neko (erster Entwurf, Mark entscheidet am Tisch):** Digitale Welt
+statt Neon-Gasse — tiefes Himmelsblau mit leuchtendem Gitter im Hintergrund,
+Orange als Aktiv-Farbe, Menschen himmelblau, Monster digitalgrün, runde Ecken
+(12px), dickere weiche Ränder, runde Schrift statt Monospace, kaum
+Buchstaben-Sperrung.
 
 ## Gebaut: Grundgerüst (26.11.2026)
 

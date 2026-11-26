@@ -1,0 +1,136 @@
+/* ===================================================================
+   Spiel-Optik "GridMonster" (26.11.2026) — erster Entwurf, Mark
+   entscheidet am Tisch.
+
+   Keine Theme-Wahl wie Cyberpunk/Hextechpunk, sondern die Optik eines
+   SPIELS: App.tsx setzt <html data-spiel="gridmonster">, solange eine
+   GridMonster-Kampagne offen ist. `:root[...]` ist spezifischer als
+   `[data-theme=...]`, deshalb gewinnt die Spiel-Optik unabhängig vom
+   gewählten NeotopiA-Theme.
+
+   Leitidee, bewusst gegen die Neon-Gasse:
+   - Digitale Welt statt Slum: tiefes Himmelsblau, ein leuchtendes Gitter
+     im Hintergrund (das "Grid" im Namen), Orange als Aktiv-Farbe.
+   - Freundlich statt kantig: runde Ecken, dickere Ränder, weiches
+     Leuchten, keine Großbuchstaben-Sperrung wie am Commlink.
+   - Keine Störungen: kein Rauschen, keine flackernden Röhren (die
+     Stoerung-Schicht rendert in GridMonster gar nicht erst).
+
+   Wie bei den Themes: nur Token-WERTE überschreiben, keine Namen erfinden.
+   =================================================================== */
+
+:root[data-spiel="gridmonster"] {
+  /* == 1. Palette ==================================================== */
+  --p-schwarz: #06142e;
+  --p-nacht: #0c2350;
+  --p-nacht-hoch: #12306a;
+  --p-nacht-aktiv: #1a3f86;
+  --p-grau: #2a5196;
+  --p-grau-hell: #4170bf;
+  --p-weiss: #f2f7ff;
+  --p-weiss-leise: #a9c2ea;
+  --p-weiss-aus: #6d88b8;
+
+  /* Orange trägt das Aktive, Himmelsblau die Weite */
+  --p-cyan: #ffa424;
+  --p-magenta: #ff5fae;
+  --p-gold: #ffd23f;
+  --p-gruen: #4fe08a;
+  --p-bernstein: #ffbf3c;
+  --p-blau: #4fc3ff;
+  --p-rot: #ff5468;
+
+  --p-blau-tief: #3aa0ff;
+  --p-gruen-tief: #2fc06e;
+  --p-orange: #ff8a1f;
+  --p-violett: #8c7bff;
+  --p-violett-hell: #6fe36a;
+  --p-indigo: #6f8dff;
+  --p-koralle: #ff7a5c;
+  --p-tuerkis: #3fe0d8;
+
+  --grund-rgb: 6 20 46;
+  --flaeche-rgb: 12 35 80;
+
+  /* == 3. Bereiche (über die Palette) ================================= */
+  /* Menschen himmelblau, Monster digitalgrün */
+  --bereich-pcs: var(--p-blau);
+  --bereich-begleiter: var(--p-violett-hell);
+
+  /* == 5. Kulisse ==================================================== */
+  --schimmer-oben: color-mix(in srgb, var(--p-blau) 14%, transparent);
+  --schimmer-unten: color-mix(in srgb, var(--p-orange) 9%, transparent);
+  --gm-gitter: color-mix(in srgb, var(--p-blau) 11%, transparent);
+  --ladebalken-deckkraft: 0.35;
+  --flacker-a: transparent;
+  --flacker-b: transparent;
+  --flacker-c: transparent;
+
+  /* == 6. Form ======================================================= */
+  --radius: 12px;
+  --roehre-breite: 2px;
+  --glut-aussen: 6px;
+  --glut-innen: 10px;
+  --sans: "Nunito", "Segoe UI Rounded", "Trebuchet MS", system-ui, sans-serif;
+  --mono: "Nunito", "Segoe UI Rounded", "Trebuchet MS", system-ui, sans-serif;
+  --versalien: 0.04em;
+
+  --fenster-schatten:
+    0 0 0 1px rgb(2 10 30 / 0.6),
+    0 24px 60px -12px rgb(2 10 30 / 0.85),
+    0 0 26px -6px var(--bereich-farbe, var(--neon));
+  --abdunkelung: rgb(4 14 36 / 0.7);
+}
+
+/* Leuchtendes Gitter hinter allem — Ebenen wie in index.css (Schleier,
+   Kampagnenbild, Schimmer), plus zwei Gitter-Ebenen.
+   !important, weil index.html <html> und <body> eine Inline-Hintergrundfarbe
+   gegen das weiße Aufblitzen beim Laden mitgibt; die schlägt sonst jede
+   Stylesheet-Regel (auch den Schimmer aus index.css). */
+:root[data-spiel="gridmonster"] {
+  background: var(--grund) !important;
+}
+
+:root[data-spiel="gridmonster"] body {
+  background-color: var(--grund) !important;
+  background-attachment: fixed !important;
+  /* Gitter zuoberst: der Schleier darunter dunkelt nur das Kampagnenbild ab,
+     nicht das Gitter. */
+  background-image:
+    linear-gradient(var(--gm-gitter) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gm-gitter) 1px, transparent 1px),
+    linear-gradient(
+      rgb(var(--grund-rgb) / var(--hintergrund-schleier)),
+      rgb(var(--grund-rgb) / var(--hintergrund-schleier))
+    ),
+    var(--hintergrund-bild),
+    radial-gradient(ellipse 80% 50% at 20% 0%, var(--schimmer-oben), transparent),
+    radial-gradient(ellipse 60% 50% at 100% 100%, var(--schimmer-unten), transparent) !important;
+  background-position: center, center, center, var(--hintergrund-position), center, center !important;
+  background-size: 36px 36px, 36px 36px, cover, var(--hintergrund-groesse), auto, auto !important;
+  background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat !important;
+}
+
+/* Keine flackernden Röhren: Ränder tauchen weich auf statt zu "zünden". */
+:root[data-spiel="gridmonster"] .cl-roehre,
+:root[data-spiel="gridmonster"] .cl-roehre[data-muede] {
+  animation: gm-auftauchen 0.25s ease-out;
+}
+
+@keyframes gm-auftauchen {
+  /* nur Deckkraft — ein transform würde Fenster, die selbst per transform
+     sitzen, während der Animation verschieben */
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Sicherheitsnetz: selbst wenn eine Störung-Schicht im DOM steht, bleibt
+   sie in GridMonster unsichtbar. */
+:root[data-spiel="gridmonster"] .cl-stoerung,
+:root[data-spiel="gridmonster"] .cl-stoerung-bild {
+  display: none;
+}

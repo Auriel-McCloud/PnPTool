@@ -68,6 +68,18 @@ Der Body legt drei Ebenen übereinander: Schleier (`--hintergrund-schleier`, dun
 
 **Noch nicht angebunden:** Die Felder existieren im Frontend, aber es gibt weder Backend-Feld noch Einstellungs-UI. Das ist der nächste Schritt, wenn kampagnenspezifische Optik gebraucht wird.
 
+## Spiel-Optik (26.11.2026)
+
+Neben dem Theme (Grundstimmung von NeotopiA: Cyberpunk/Hextechpunk) gibt es
+die **Optik eines Spiels**: `App.tsx` setzt `<html data-spiel="gridmonster">`,
+solange eine GridMonster-Kampagne offen ist. `theme/gridmonster.css`
+überschreibt mit `:root[data-spiel="gridmonster"]` (spezifischer als
+`[data-theme=…]`) Palette, Form und Kulisse — unabhängig vom gewählten Theme.
+In GridMonster gibt es außerdem keine Bildstörung (`CommlinkShell
+atmosphaere={false}`), keinen Theme-Schalter und eine eigene Marke im Menü.
+Body-Hintergrund dort mit `!important`, weil `index.html` `<html>`/`<body>`
+eine Inline-Hintergrundfarbe gegen das Aufblitzen beim Laden mitgibt.
+
 ## Bewusst global geblieben
 
 Animationsdauern, Übergänge und das Flackern sind **nicht** pro Theme einstellbar. Ein Theme, das die Bewegung umbaut, wird schnell unruhig oder unlesbar. `prefers-reduced-motion` schaltet weiterhin global ab.

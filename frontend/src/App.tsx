@@ -269,6 +269,16 @@ function Dashboard() {
   // Ein gemerkter Bereich aus dem anderen Spiel gilt hier nicht — dann der erste.
   const bereich = systemBereiche.some((b) => b.id === bereichGemerkt) ? bereichGemerkt : systemBereiche[0].id;
   const [neueKampagneSpiel, setNeueKampagneSpiel] = useState("NeotopiA");
+  // Spiel-Optik (theme/gridmonster.css): gilt nur, solange man IN einer
+  // GridMonster-Kampagne ist; Startseite und NeotopiA bleiben beim Theme.
+  const gridOptik = imSpiel && istGridMonster;
+  useEffect(() => {
+    if (gridOptik) document.documentElement.dataset.spiel = "gridmonster";
+    else delete document.documentElement.dataset.spiel;
+    return () => {
+      delete document.documentElement.dataset.spiel;
+    };
+  }, [gridOptik]);
   const abmelden = () => {
     sessionStorage.removeItem(SPIEL_SCHLUESSEL);
     logout();
@@ -396,6 +406,9 @@ function Dashboard() {
       titel={kampagne ? `${kampagne.name} — ${TITEL[bereich] ?? ""}` : "Keine Kampagne"}
       werkzeuge={werkzeuge}
       fuss={fuss}
+      atmosphaere={!istGridMonster}
+      themeWahl={!istGridMonster}
+      marke={istGridMonster ? { zeichen: "✦", name: "GridMonster", zeile: "RPGrid // v0.1" } : undefined}
       /* Jede fokussierte Weltansicht teilt sich ihre Fläche selbst ein;
          lange Detailinhalte öffnen weiterhin im Fenster. */
       statisch={

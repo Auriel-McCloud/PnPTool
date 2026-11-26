@@ -48,6 +48,9 @@ export function CommlinkShell({
   werkzeuge,
   fuss,
   statisch = false,
+  atmosphaere = true,
+  marke = { zeichen: "⌬", name: "Commlink", zeile: "NeotopiA // v0.1" },
+  themeWahl = true,
   children,
 }: {
   bereiche: Bereich[];
@@ -62,6 +65,16 @@ export function CommlinkShell({
    * unerreichbar abgeschnitten.
    */
   statisch?: boolean;
+  /**
+   * NeotopiA-Atmosphäre: seltene Bildstörung mit Rauschen. GridMonster
+   * schaltet sie ab (Mark, 26.11.2026: „das Rauschen sollte nur ein
+   * NeotopiA-Ding sein“).
+   */
+  atmosphaere?: boolean;
+  /** Zeichen, Name und Zeile oben im Menü — je Spiel eigen. */
+  marke?: { zeichen: string; name: string; zeile: string };
+  /** Theme-Schalter (Cyberpunk/Hextechpunk) zeigen — die gehören zu NeotopiA. */
+  themeWahl?: boolean;
   children: ReactNode;
 }) {
   // Kennung des einen Eintrags, der aus der Symbolspalte herausgefahren ist
@@ -225,11 +238,11 @@ export function CommlinkShell({
         <nav className="cl-menue-tafel">
           <div className="cl-marke">
             <span className="cl-marke-zeichen" aria-hidden="true">
-              ⌬
+              {marke.zeichen}
             </span>
             <span>
-              <span className="cl-marke-name">Commlink</span>
-              <span className="cl-marke-zeile">NeotopiA // v0.1</span>
+              <span className="cl-marke-name">{marke.name}</span>
+              <span className="cl-marke-zeile">{marke.zeile}</span>
             </span>
           </div>
 
@@ -314,7 +327,7 @@ export function CommlinkShell({
             {/* Gilt für die ganze Oberfläche, deshalb hier und nicht in den
                 einzelnen Ansichten (docs/ui-konzept.md). */}
             <ErklaerungSchalter />
-            <ThemeSchalter />
+            {themeWahl && <ThemeSchalter />}
             {werkzeuge}
           </div>
         </header>
@@ -344,7 +357,7 @@ export function CommlinkShell({
         </span>
       )}
 
-      <Stoerung />
+      {atmosphaere && <Stoerung />}
     </div>
   );
 }
