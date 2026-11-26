@@ -2245,3 +2245,7 @@ Spiel-Kacheln nach dem SL-Login, GridMonster-Figuren (Mensch/Monster) mit eigene
 ## [2026-11-26] gebaut | GridMonster bekommt eigene Optik, Rauschen nur NeotopiA
 
 Spiel-Optik per `data-spiel`, Entwurf digitale Welt. Mensch/Monster-Schalter nur für Spieler entschieden. Siehe [[entities/mehrsystem-rpgrid]].
+
+## [2026-11-26] gebaut | GridMonster: 3D-Gitterboden fährt bei Menüwechsel
+
+Gitter in Perspektive bis zum Horizont, kurze Fahrt bei jedem Menüwechsel. Siehe [[entities/mehrsystem-rpgrid]].

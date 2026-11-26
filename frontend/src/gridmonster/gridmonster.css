@@ -269,3 +269,63 @@
   display: flex;
   justify-content: flex-end;
 }
+
+/* --- 3D-Gitterboden (GridBoden.tsx) --------------------------------------
+   Ebene in Perspektive: obere Kante = Horizont, läuft nach unten auf den
+   Betrachter zu. Die Fahrt verschiebt nur background-position (GPU-billig)
+   um genau 10 Zellen, damit Ende = Anfang aussieht und nichts springt. */
+.gm-horizont {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  perspective: 300px;
+  perspective-origin: 50% 46%;
+}
+
+/* Leuchten am Horizont */
+.gm-horizont::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(46% - 90px);
+  height: 180px;
+  background: radial-gradient(ellipse 60% 50% at 50% 50%, var(--gm-horizont-glut), transparent 70%);
+}
+
+.gm-boden {
+  position: absolute;
+  left: -100%;
+  right: -100%;
+  top: 46%;
+  height: 160%;
+  transform-origin: 50% 0;
+  transform: rotateX(74deg);
+  background-image:
+    linear-gradient(var(--gm-boden-linie) 2px, transparent 2px),
+    linear-gradient(90deg, var(--gm-boden-linie) 2px, transparent 2px);
+  background-size: 64px 64px;
+  background-position: 50% 0;
+  /* Zum Horizont hin weich ins Nichts */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+  animation: gm-fahrt 2.6s cubic-bezier(0.15, 0.6, 0.3, 1);
+}
+
+@keyframes gm-fahrt {
+  from {
+    background-position: 50% 0;
+  }
+  to {
+    background-position: 50% 640px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gm-boden {
+    animation: none;
+  }
+}
+

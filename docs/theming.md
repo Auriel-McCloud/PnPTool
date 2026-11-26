@@ -77,8 +77,10 @@ solange eine GridMonster-Kampagne offen ist. `theme/gridmonster.css`
 `[data-theme=…]`) Palette, Form und Kulisse — unabhängig vom gewählten Theme.
 In GridMonster gibt es außerdem keine Bildstörung (`CommlinkShell
 atmosphaere={false}`), keinen Theme-Schalter und eine eigene Marke im Menü.
-Body-Hintergrund dort mit `!important`, weil `index.html` `<html>`/`<body>`
-eine Inline-Hintergrundfarbe gegen das Aufblitzen beim Laden mitgibt.
+Hintergrund dort am `<html>` mit `!important` (Inline-Farbe aus `index.html`
+gegen das Aufblitzen beim Laden), `<body>` durchsichtig — sonst malt der
+body-Hintergrund über den 3D-Gitterboden (`gridmonster/GridBoden.tsx`,
+`z-index: -1`, fährt bei jedem Menüwechsel kurz an).
 
 ## Bewusst global geblieben
 

@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## GridMonster: 3D-Gitterboden ins Endlose, fährt bei Menüwechsel (26.11.2026)
+
+`gridmonster/GridBoden.tsx` (in `App.tsx` nur bei GridMonster-Optik): Gitter per `perspective`/`rotateX` bis zum Horizont mit Leuchten, `z-index: -1`, steht still und fährt per `key`-Neuaufbau bei jedem Menüwechsel 2,6 s auf den Betrachter zu (Mark: „nur ein paar Sekunden, wenn man in einen anderen Menüpunkt geht“). Flaches Gitter entfällt; Hintergrund-Ebenen sitzen jetzt am `<html>`, `<body>` durchsichtig, sonst verdeckt der Body den Boden. `prefers-reduced-motion` = keine Fahrt.
+
 ## GridMonster hat eigene Optik, Rauschen nur noch in NeotopiA (26.11.2026)
 
 Spiel-Optik getrennt vom Theme: `App.tsx` setzt `<html data-spiel="gridmonster">` in GridMonster-Kampagnen, `theme/gridmonster.css` (`:root[data-spiel=…]`, schlägt jedes Theme) färbt auf digitale Welt um: Himmelsblau, Gitter-Hintergrund, Orange aktiv, runde Ecken und Schrift. `CommlinkShell` hat neue Props `atmosphaere` (Bildstörung/Rauschen), `themeWahl` (◐) und `marke` — GridMonster schaltet die ersten beiden ab und zeigt „GridMonster / RPGrid“. Body-Hintergrund dort mit `!important` wegen der Inline-Farbe in `index.html`. Erster Optik-Entwurf, Mark entscheidet am Tisch. Doku `docs/theming.md` „Spiel-Optik“.

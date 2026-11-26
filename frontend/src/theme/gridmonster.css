@@ -60,7 +60,9 @@
   /* == 5. Kulisse ==================================================== */
   --schimmer-oben: color-mix(in srgb, var(--p-blau) 14%, transparent);
   --schimmer-unten: color-mix(in srgb, var(--p-orange) 9%, transparent);
-  --gm-gitter: color-mix(in srgb, var(--p-blau) 11%, transparent);
+  /* 3D-Gitterboden (gridmonster/GridBoden.tsx) */
+  --gm-boden-linie: color-mix(in srgb, var(--p-blau) 32%, transparent);
+  --gm-horizont-glut: color-mix(in srgb, var(--p-blau) 22%, transparent);
   --ladebalken-deckkraft: 0.35;
   --flacker-a: transparent;
   --flacker-b: transparent;
@@ -82,23 +84,18 @@
   --abdunkelung: rgb(4 14 36 / 0.7);
 }
 
-/* Leuchtendes Gitter hinter allem — Ebenen wie in index.css (Schleier,
-   Kampagnenbild, Schimmer), plus zwei Gitter-Ebenen.
+/* Hintergrund: Ebenen wie in index.css (Schleier, Kampagnenbild, Schimmer).
+   Das Gitter selbst ist der 3D-Boden aus GridBoden.tsx, kein flaches Muster
+   mehr (Mark, 26.11.2026: „Grid 3D ins Endlose“). */
+/* Alle Ebenen sitzen am <html> (wird zur Leinwand), <body> bleibt
+   durchsichtig: Sonst malt der body-Hintergrund über den 3D-Boden, der mit
+   z-index -1 zwischen Leinwand und Inhalt liegt.
    !important, weil index.html <html> und <body> eine Inline-Hintergrundfarbe
    gegen das weiße Aufblitzen beim Laden mitgibt; die schlägt sonst jede
-   Stylesheet-Regel (auch den Schimmer aus index.css). */
+   Stylesheet-Regel. */
 :root[data-spiel="gridmonster"] {
-  background: var(--grund) !important;
-}
-
-:root[data-spiel="gridmonster"] body {
   background-color: var(--grund) !important;
-  background-attachment: fixed !important;
-  /* Gitter zuoberst: der Schleier darunter dunkelt nur das Kampagnenbild ab,
-     nicht das Gitter. */
   background-image:
-    linear-gradient(var(--gm-gitter) 1px, transparent 1px),
-    linear-gradient(90deg, var(--gm-gitter) 1px, transparent 1px),
     linear-gradient(
       rgb(var(--grund-rgb) / var(--hintergrund-schleier)),
       rgb(var(--grund-rgb) / var(--hintergrund-schleier))
@@ -106,9 +103,14 @@
     var(--hintergrund-bild),
     radial-gradient(ellipse 80% 50% at 20% 0%, var(--schimmer-oben), transparent),
     radial-gradient(ellipse 60% 50% at 100% 100%, var(--schimmer-unten), transparent) !important;
-  background-position: center, center, center, var(--hintergrund-position), center, center !important;
-  background-size: 36px 36px, 36px 36px, cover, var(--hintergrund-groesse), auto, auto !important;
-  background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat !important;
+  background-position: center, var(--hintergrund-position), center, center !important;
+  background-size: cover, var(--hintergrund-groesse), auto, auto !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
+:root[data-spiel="gridmonster"] body {
+  background: transparent !important;
 }
 
 /* Keine flackernden Röhren: Ränder tauchen weich auf statt zu "zünden". */

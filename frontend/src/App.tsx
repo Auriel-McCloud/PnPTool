@@ -51,6 +51,7 @@ import { RaetselTafelAnsicht } from "./raetsel/RaetselTafel";
 import { DrohnenUebersicht } from "./drohnen/DrohnenUebersicht";
 import { SpielStart } from "./campaigns/SpielStart";
 import { GridFiguren } from "./gridmonster/GridFiguren";
+import { GridBoden } from "./gridmonster/GridBoden";
 
 /**
  * Bereiche der SL-Ansicht.
@@ -399,6 +400,8 @@ function Dashboard() {
 
   const shell = (
     <>
+      {/* 3D-Gitterboden der GridMonster-Optik, fährt bei jedem Menüwechsel kurz an. */}
+      {gridOptik && <GridBoden fahrt={`${kampagne?.id}:${bereich}`} />}
       <CommlinkShell
       bereiche={menueBereiche}
       aktiv={bereich}

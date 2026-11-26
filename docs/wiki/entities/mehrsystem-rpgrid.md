@@ -104,6 +104,14 @@ Orange als Aktiv-Farbe, Menschen himmelblau, Monster digitalgrün, runde Ecken
 (12px), dickere weiche Ränder, runde Schrift statt Monospace, kaum
 Buchstaben-Sperrung.
 
+**3D-Gitter (Mark, 26.11.2026, gebaut):** „Ob der Grid 3D ins Endlose gehen
+könnte?“ — dann: „Oder er läuft immer nur für ein paar Sekunden, wenn man in
+einen anderen Menüpunkt geht.“ Gebaut als Gitterboden in Perspektive mit
+Horizont-Leuchten (`gridmonster/GridBoden.tsx`), steht still und fährt bei
+jedem Menüwechsel 2,6 s weich abbremsend auf den Betrachter zu.
+*Annahmen Neko:* Horizont knapp über der Bildmitte, Fahrt 10 Zellen, auch beim
+Betreten des Spiels; „Bewegung reduzieren“ am Gerät = keine Fahrt.
+
 ## Gebaut: Grundgerüst (26.11.2026)
 
 - Startseite `frontend/src/campaigns/SpielStart.tsx` (nur SL), Spielwahl in
