@@ -129,7 +129,21 @@ Umgebaut: Die neue Ansicht kommt jetzt aus der Tiefe vom Horizont
 (`translateZ` unter derselben Perspektive wie der Boden) und wächst, während
 der Boden ausrollt — gleiche Dauer (1,2 s) und Kurve, beide stehen im selben
 Moment, kein Nachfedern mehr. Boden in zwei Teilen: anfahren (0,34 s, mit dem
-Wegfahren) + ausrollen (1,2 s, mit dem Ankommen).
+Wegfahren) + ausrollen (1,2 s, mit dem Ankommen). Mark: „genial“.
+
+**Fundstücke auf dem Gitter (Mark, 26.11.2026, gebaut):** „In Digimon gibt es
+zufällige Gegenstände, die ab und zu in der Digiwelt herumstehen, wie
+Telefonzellen, Kühlschränke, Disketten, CD-Player, Videorekorder, Fernseher …
+vor allem Elektronikzeug. Wäre es möglich, dass wir ab und zu so einen
+Gegenstand in ein Kastl vom Grid reinstellen … zufällig, nicht immer im Menü X.“
+Gebaut: `gridmonster/GridDinge.tsx` (8 eigene Linienzeichnungen: Telefonzelle,
+Kühlschrank, Diskette, CD-Player, Videorekorder, Röhrenfernseher,
+Ghettoblaster, Computer-Monitor) stehen aufrecht in einem Gitterfeld
+(`GridBoden.tsx`), bauen sich beim Auftauchen von unten nach oben auf und
+fahren beim nächsten Menüwechsel mit dem Boden davon.
+*Annahmen Neko:* 30 % Chance nach jedem Ankommen, in der Ruhe alle 45–120 s
+eine 50-%-Chance, höchstens 2 gleichzeitig, nur die zwei vorderen Feldreihen
+(weiter hinten zu klein, weiter vorn zu groß).
 
 ## Gebaut: Grundgerüst (26.11.2026)
 

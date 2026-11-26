@@ -92,9 +92,15 @@ async def anlegen(campaign_id: str, name: str, ist_monster: bool, person_type: s
     werte = [{"id": tid, "rating": r} for tid, r in katalog.startwerte(ist_monster).items()]
     query = """
         MATCH (c:Campaign {id: $campaign_id})
+        // Sichtbarkeits-Felder wie PersonCreate (entities/schemas.py) — ohne
+        // sie scheitert die allgemeine Personenliste (/personen, z. B. aus
+        // „Orte“) an der Antwort-Validierung (26.11.2026 gefunden).
         CREATE (n:Person {id: $id, campaignId: $campaign_id, stammtVonId: $id,
                           name: $name, personType: $person_type, istMonster: $ist_monster,
-                          description: $beschreibung, istEntwurf: false})
+                          description: $beschreibung, istEntwurf: false,
+                          sichtbarkeit: 'ALLE', sichtbarFuer: [],
+                          notizenSichtbarkeit: 'GM', notizenSichtbarFuer: [],
+                          erstelltAm: $jetzt})
         CREATE (c)-[:HAT_ENTITAET]->(n)
         WITH n
         UNWIND $werte AS w
@@ -105,7 +111,7 @@ async def anlegen(campaign_id: str, name: str, ist_monster: bool, person_type: s
     async with driver.session() as session:
         await session.run(
             query, campaign_id=campaign_id, id=figur_id, name=name, person_type=person_type,
-            ist_monster=ist_monster, beschreibung=beschreibung, werte=werte,
+            ist_monster=ist_monster, beschreibung=beschreibung, werte=werte, jetzt=_jetzt(),
         )
     figur = await einzeln(campaign_id, figur_id)
     assert figur is not None

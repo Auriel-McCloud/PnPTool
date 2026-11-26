@@ -2257,3 +2257,7 @@ Kein Ladebalken mehr in GridMonster. Siehe [[entities/mehrsystem-rpgrid]].
 ## [2026-11-26] update | GridMonster: neue Ansicht kommt synchron zum Boden an
 
 Ankommen aus der Tiefe statt Hüpfen von oben. Siehe [[entities/mehrsystem-rpgrid]].
+
+## [2026-11-26] gebaut | GridMonster: zufällige Fundstücke auf dem Gitter
+
+Elektronik-Dinge stehen ab und zu in einem Gitterfeld. Nebenbei: GridMonster-Figuren bekommen Sichtbarkeits-Felder (Orte-Ansicht scheiterte). Siehe [[entities/mehrsystem-rpgrid]].

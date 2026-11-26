@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## GridMonster: zufällige Fundstücke auf dem Gitter + Figuren-Sichtbarkeit gefixt (26.11.2026)
+
+`gridmonster/GridDinge.tsx`: 8 eigene SVG-Linienzeichnungen (Elektronik, Mark: „wie in der Digiwelt, zufällig, nicht immer im Menü X“). `GridBoden.tsx` umgebaut: `.gm-boden` ist die gekippte Ebene mit `preserve-3d` (keine Maske dort, sonst flach), Gitter als Kind `.gm-gitter` mit Maske + Fahrt-Animation, Dinge stehen per `rotateX(-74deg)` aufrecht in Ebenen-Koordinaten (Zellmitte = `50% + spalte*64px`, Reihen 1–2). Erscheinen 30 % nach Ankunft bzw. alle 45–120 s zu 50 %, max. 2, fahren bei `gm-ding-weg` (= `gm-anfahren`) mit davon. **Fix:** `gridmonster/repository.py::anlegen` setzt jetzt `sichtbarkeit`/`sichtbarFuer`/`notizenSichtbarkeit`/`notizenSichtbarFuer`/`erstelltAm` — ohne sie lehnte `/personen` (z. B. aus „Orte“) die GridMonster-Figuren mit 6 validation errors ab; Migration `015_gridmonster_figuren_sichtbarkeit.cypher` zieht Altbestand nach.
+
 ## GridMonster: neue Ansicht kommt synchron zum 3D-Boden an (26.11.2026)
 
 Mark: das Einparken von oben „hüpfte“ und lief nicht mit dem Boden. Jetzt `cl-ankommen`: `translateZ(-1475px)` → 0 unter `perspective: 300px` mit Fluchtpunkt auf Horizonthöhe (wie der Boden), 1,2 s easeOutQuad; Boden in zwei Animationen `gm-anfahren` (0,34 s easeInQuad, mit `cl-wegfahren`) + `gm-ausrollen` (1,2 s easeOutQuad, Strecke 24 Zellen ≈ 1475px Tiefe). Gleiche Dauer und Kurve = beide stehen im selben Moment. `REIN_MS` 1200 in `CommlinkShell.tsx`; Werte in commlink.css/gridmonster.css hängen zusammen (Kommentar dort). [ÜBERHOLT: „parkt von oben mit Nachfedern“ aus dem Eintrag darunter.]

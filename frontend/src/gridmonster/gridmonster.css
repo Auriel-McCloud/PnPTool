@@ -272,8 +272,8 @@
 
 /* --- 3D-Gitterboden (GridBoden.tsx) --------------------------------------
    Ebene in Perspektive: obere Kante = Horizont, läuft nach unten auf den
-   Betrachter zu. Die Fahrt verschiebt nur background-position (GPU-billig)
-   um genau 10 Zellen, damit Ende = Anfang aussieht und nichts springt. */
+   Betrachter zu. Die Fahrt verschiebt nur background-position des Gitters
+   (GPU-billig) um genau 31 Zellen, damit Ende = Anfang aussieht. */
 .gm-horizont {
   position: fixed;
   inset: 0;
@@ -303,6 +303,14 @@
   height: 160%;
   transform-origin: 50% 0;
   transform: rotateX(74deg);
+  /* Die Fundstücke stehen in 3D aufrecht auf dieser Ebene. Darum hier keine
+     Maske/opacity/filter — die würden die Kinder flach drücken. */
+  transform-style: preserve-3d;
+}
+
+.gm-gitter {
+  position: absolute;
+  inset: 0;
   background-image:
     linear-gradient(var(--gm-boden-linie) 2px, transparent 2px),
     linear-gradient(90deg, var(--gm-boden-linie) 2px, transparent 2px);
@@ -340,8 +348,74 @@
   }
 }
 
+/* --- Fundstücke (GridBoden.tsx / GridDinge.tsx) ---------------------------
+   Stehen aufrecht in einem Gitterfeld: Fußpunkt unten Mitte, um -74deg
+   zurückgekippt (= Gegenrichtung der Ebene). Tauchen als Daten auf (von
+   unten nach oben aufgebaut, kurzes Aufleuchten), fahren beim nächsten
+   Menüwechsel mit dem Boden davon (gleiche Strecke und Kurve wie
+   gm-anfahren). */
+.gm-ding {
+  position: absolute;
+  width: 48px;
+  height: 60px;
+  margin-left: -24px;
+  margin-top: -60px;
+  transform-origin: 50% 100%;
+  transform: rotateX(-74deg);
+  color: var(--gm-ding-linie);
+  animation: gm-materialisieren 1.4s ease-out both;
+}
+
+.gm-ding[data-geht="true"] {
+  animation: gm-ding-weg 0.34s cubic-bezier(0.11, 0, 0.5, 0) forwards;
+}
+
+.gm-ding-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: var(--gm-ding-fuellung);
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px var(--gm-ding-glut));
+}
+
+@keyframes gm-materialisieren {
+  0% {
+    clip-path: inset(100% -20% -20% -20%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  70% {
+    clip-path: inset(0 -20% -20% -20%);
+    filter: brightness(2.2);
+  }
+  100% {
+    clip-path: inset(-20% -20% -20% -20%);
+    filter: none;
+  }
+}
+
+@keyframes gm-ding-weg {
+  from {
+    transform: rotateX(-74deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(448px) rotateX(-74deg);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .gm-boden {
+  .gm-gitter,
+  .gm-ding,
+  .gm-ding[data-geht="true"] {
     animation: none;
   }
 }

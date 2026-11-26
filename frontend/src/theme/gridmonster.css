@@ -63,6 +63,10 @@
   /* 3D-Gitterboden (gridmonster/GridBoden.tsx) */
   --gm-boden-linie: color-mix(in srgb, var(--p-blau) 32%, transparent);
   --gm-horizont-glut: color-mix(in srgb, var(--p-blau) 22%, transparent);
+  /* Fundstücke auf dem Boden (gridmonster/GridDinge.tsx) */
+  --gm-ding-linie: color-mix(in srgb, var(--p-blau) 85%, var(--p-weiss));
+  --gm-ding-fuellung: color-mix(in srgb, var(--p-nacht) 85%, transparent);
+  --gm-ding-glut: var(--p-blau);
   --ladebalken-deckkraft: 0.35;
   --flacker-a: transparent;
   --flacker-b: transparent;
