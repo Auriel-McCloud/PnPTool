@@ -66,8 +66,25 @@ Massenregistrierung, Konto löschen (DSGVO).
 - **Recht:** Gewerbe, Impressum, AGB, Datenschutzerklärung/AVV, AGB des
   KI-Anbieters. Keine Rechtsberatung: vorher WKO-Gründerservice und IP-Anwalt.
 
+## Spieler finden (Frage Mark, 26.11.2026, offen)
+
+> „Wie findet ein SL seine Spieler, wenn sich dort mal jeder anmelden kann? Ob es
+> dann wie bei Discord Usernames mit einer Random-Zahl dahinter gibt?“
+
+Neko-Vorschlag (nicht entschieden):
+- **Hauptweg Einladungslink je Kampagne:** SL erzeugt Link/Code, schickt ihn
+  per Messenger, Spieler klickt, meldet sich an oder registriert sich, ist drin.
+  Link läuft ab oder ist widerrufbar. Kein durchsuchbares Personenverzeichnis →
+  weniger DSGVO-Fläche, kein Abgrasen von Namen.
+- Name#1234 hat Discord selbst 2023 abgeschafft (Leute merkten sich die Zahl
+  nicht); wenn Suche, dann eindeutiger Benutzername ohne Zahl — optional später
+  für „SL fügt bekannten Spieler direkt hinzu“.
+- Bestehender SL-angelegter Spieler-Zugang bleibt als Weg für Spieler ohne
+  eigenes Konto (Kinder, Gelegenheitsspieler).
+
 ## Offen
 
+- Spieler finden: Einladungslink vs. Suche nach Benutzername (siehe oben).
 - Preis und Inhalt des SL-Abos (Token-Budget, Speicher, Anzahl Kampagnen).
 - Zeitpunkt der Konto-Umstellung und Migration der Bestandszugänge.
 - Was die Discord-Anbindung können soll (Würfelergebnisse, SL-Ansagen,

@@ -2229,3 +2229,7 @@ Chronos fällt raus. Für den Umbau fehlt nur noch der neue Name für Gedanken. 
 ## [2026-11-26] neu | Mehrsystem-Kern RPGrid (offen)
 
 Mark will NeotopiA ↔ GridMonster umschalten können. Code-Befund + drei offene Achsen + Neko-Vorschlag. Siehe [[entities/mehrsystem-rpgrid]].
+
+## [2026-11-26] update | RPGrid-Startseite mit Spiele-Kacheln entschieden
+
+Nach dem Login Kacheln je Spiel (SL alle, Spieler nur eigene). Spieler-Finden (Einladungslink vs. Name#Zahl) offen in [[entities/konten-login-und-abo]].

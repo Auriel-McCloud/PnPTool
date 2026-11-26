@@ -34,11 +34,28 @@ kopieren.
   `hintergruende`, `kampf/repository.py` Rassen-Match, `wuerfel/logic.py`,
   `traits/bogen.py` …) — die müssen beim Umbau einzeln geprüft werden.
 
-## Offene Achsen (Formular lief am 26.11. ohne Antwort ab)
+## Entschieden: Startseite mit Spiele-Kacheln (Mark, 26.11.2026)
 
-1. **Umschalten:** pro Kampagne (System beim Anlegen wählen, Kampagnen-Auswahl
-   schaltet mit — passt zur bestehenden Architektur) **oder** eigener
-   System-Schalter über den Kampagnen.
+> „Ich logge mich in den RPGrid ein, und dann sehe ich Kacheln von Spielen,
+> die ich spielen kann, im Moment NeotopiA und GridMonster, und dann klicke ich
+> auf das, das ich spielen möchte. … Ein SL sieht alle Spiele, ein Spieler nur
+> die, in denen er mitspielt.“
+
+- Nach dem Login kommt eine Kachel-Startseite **über** den Kampagnen: eine
+  Kachel je Regelsystem (Spiel).
+- SL sieht alle Spiele; Spieler nur die, in denen er einen Zugang hat.
+- Datenmodell bleibt `Kampagne -NUTZT_REGELSYSTEM-> Regelsystem`; die Kacheln
+  gruppieren nur.
+- **Annahme Neko:** Hat das Spiel genau eine Kampagne, führt der Klick direkt
+  hinein; bei mehreren kommt die Kampagnen-Auswahl dieses Spiels. Ein Knopf
+  „Spiel wechseln“ führt zurück zu den Kacheln.
+- Spieler-Seite der Kacheln braucht das `Konto` über mehreren Kampagnen
+  ([[konten-login-und-abo]]); heute hängt ein Spieler-Zugang an genau einer
+  Kampagne und geht weiter direkt hinein.
+
+## Offene Achsen
+
+1. ~~Umschalten~~ → entschieden, siehe oben.
 2. **Umfang erstes Gerüst:** nur Schalter (GridMonster-Kampagne, NeotopiA-
    Bereiche ausgeblendet) / + Monster & Mensch mit Attributen, Fertigkeiten,
    Würfelstufen, LP/Energie / + Partnerschaft Mensch↔Monster und Spieler mit
@@ -49,7 +66,7 @@ kopieren.
 
 ## Vorschlag Neko (nicht entschieden)
 
-- Achse 1: pro Kampagne. Achse 3: Flag an `Person`. Achse 2: mittlere Stufe,
+- Achse 3: Flag an `Person`. Achse 2: mittlere Stufe,
   Partnerschaft als zweiter Schritt (Graph-Idee aus Marks Wiki:
   Zugang -SPIELT-> Mensch/Monster fix, Mensch -PARTNER-> Monster SL-änderbar).
 - In einer GridMonster-Kampagne ausblenden (Annahme, reversibel): Augments,
