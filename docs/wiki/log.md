@@ -2225,3 +2225,7 @@ Entschieden, nicht gebaut. Umbau zusammen mit dem Gedanken-Namen, der Kategorie-
 ## [2026-11-24] update | Chronurgie bekommt Kali als Häretiker-Göttin
 
 Chronos fällt raus. Für den Umbau fehlt nur noch der neue Name für Gedanken. Siehe [[concepts/magie-hexkraft]].
+
+## [2026-11-26] neu | Mehrsystem-Kern RPGrid (offen)
+
+Mark will NeotopiA ↔ GridMonster umschalten können. Code-Befund + drei offene Achsen + Neko-Vorschlag. Siehe [[entities/mehrsystem-rpgrid]].
